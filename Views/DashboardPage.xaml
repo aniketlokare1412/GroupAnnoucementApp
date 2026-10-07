@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.DashboardPage"
+    x:DataType="vm:DashboardViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <VerticalStackLayout Padding="30" Spacing="20" VerticalOptions="Center">
+
+        <Label Text="Dashboard (placeholder)" FontSize="24" HorizontalOptions="Center" />
+
+        <Label
+            Text="{Binding UserEmail, StringFormat='Signed in as {0}'}"
+            HorizontalOptions="Center" />
+
+        <Label
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding HasError}"
+            TextColor="Red"
+            HorizontalOptions="Center" />
+
+        <Button
+            Text="Log out"
+            Command="{Binding LogoutCommand}"
+            IsEnabled="{Binding IsNotBusy}" />
+
+        <ActivityIndicator
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}" />
+
+    </VerticalStackLayout>
+</ContentPage>

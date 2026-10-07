@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.RegisterPage"
+    x:DataType="vm:RegisterViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="Create account" FontSize="28" HorizontalOptions="Center" />
+
+            <Entry
+                Placeholder="Full name"
+                ReturnType="Next"
+                Text="{Binding Name}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Entry
+                Placeholder="Phone number"
+                Keyboard="Telephone"
+                ReturnType="Next"
+                Text="{Binding Phone}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Entry
+                Placeholder="Email"
+                Keyboard="Email"
+                ReturnType="Next"
+                Text="{Binding Email}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Entry
+                Placeholder="Password (min 6 characters)"
+                IsPassword="True"
+                ReturnType="Next"
+                Text="{Binding Password}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Entry
+                Placeholder="Confirm password"
+                IsPassword="True"
+                ReturnType="Done"
+                ReturnCommand="{Binding RegisterCommand}"
+                Text="{Binding ConfirmPassword}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="Red" />
+
+            <Button
+                Text="Create account"
+                Command="{Binding RegisterCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Button
+                Text="Already have an account? Log in"
+                Command="{Binding GoToLoginCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
