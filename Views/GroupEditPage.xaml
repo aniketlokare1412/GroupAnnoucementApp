@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.GroupEditPage"
+    x:DataType="vm:GroupEditViewModel"
+    Title="{Binding TitleText}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="12">
+
+            <Label Text="Name" FontAttributes="Bold" />
+            <Entry
+                Placeholder="Group name"
+                Text="{Binding Name}"
+                MaxLength="60"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label Text="Description (optional)" FontAttributes="Bold" />
+            <Editor
+                Placeholder="What is this group for?"
+                Text="{Binding Description}"
+                MaxLength="300"
+                HeightRequest="140"
+                AutoSize="Disabled"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="Red" />
+
+            <Button
+                Text="Save"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Button
+                Text="Cancel"
+                Command="{Binding CancelCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
