@@ -46,6 +46,24 @@ public class GroupRepository : IGroupRepository
         return groups;
     }
 
+    public async Task<List<AnnouncementGroup>> GetActiveAsync()
+    {
+        IQuery query = _firestore.GetCollection(GroupsCollection).WhereEqualsTo("isActive", true);
+        IQuerySnapshot<AnnouncementGroup> snapshot = await query.GetDocumentsAsync<AnnouncementGroup>();
+
+        List<AnnouncementGroup> groups = new List<AnnouncementGroup>();
+        foreach (IDocumentSnapshot<AnnouncementGroup> document in snapshot.Documents)
+        {
+            AnnouncementGroup? group = document.Data;
+            if (group != null)
+            {
+                groups.Add(group);
+            }
+        }
+
+        return groups;
+    }
+
     public Task UpdateDetailsAsync(string id, string name, string description)
     {
         IDocumentReference document = _firestore.GetDocument(GroupsCollection + "/" + id);

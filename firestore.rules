@@ -91,12 +91,66 @@ service cloud.firestore {
         && d.isActive is bool;
     }
 
+    // ---------- groups/{groupId}/members/{memberUid} ----------
+    // The member document id is the member's uid.
+
+    // The user exists, is active and is a Regular user (admins are never members).
+    function isActiveRegularUser(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.isActive == true
+        && get(/databases/$(database)/documents/users/$(uid)).data.userType == 'Regular';
+    }
+
+    function groupExists(groupId) {
+      return exists(/databases/$(database)/documents/groups/$(groupId));
+    }
+
+    function groupIsActive(groupId) {
+      return groupExists(groupId)
+        && get(/databases/$(database)/documents/groups/$(groupId)).data.isActive == true;
+    }
+
+    function isValidNewMember(groupId, memberUid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId', 'groupId', 'addedBy', 'addedAt'])
+        && d.keys().hasAll(['userId', 'groupId', 'addedBy', 'addedAt'])
+        && d.userId == memberUid
+        && d.groupId == groupId
+        && d.addedBy == request.auth.uid
+        && d.addedAt == request.time;
+    }
+
     match /groups/{groupId} {
-      // Admins only for now. Feature 6 adds "a member can read a group".
-      allow read: if isAdmin();
+      // Admins read every group. Any active user reads ACTIVE groups only (so they can
+      // search and join). A list query must filter on isActive == true to be allowed.
+      allow read: if isAdmin() || (isActiveUser() && resource.data.isActive == true);
       allow create: if isAdmin() && isValidNewGroup();
       allow update: if isAdmin() && isValidGroupUpdate();
       allow delete: if false;
+
+      match /members/{memberUid} {
+        // Admins read all members. A user reads their own membership document.
+        allow read: if isAdmin() || (isOwner(memberUid) && isActiveUser());
+
+        // Admin adds an active Regular user to any existing group.
+        // A Regular user can add THEMSELVES, but only to an active group.
+        allow create: if isValidNewMember(groupId, memberUid)
+                      && groupExists(groupId)
+                      && isActiveRegularUser(memberUid)
+                      && (isAdmin() || (isOwner(memberUid) && groupIsActive(groupId)));
+
+        // Memberships are only ever added or removed, never edited.
+        allow update: if false;
+
+        // Admin removes anyone. A user removes (leaves) their own membership.
+        allow delete: if isAdmin() || (isOwner(memberUid) && isActiveUser());
+      }
+    }
+
+    // Collection group query behind "My groups": members where userId == my uid.
+    // Each user can only ever read their own membership documents this way.
+    match /{path=**}/members/{memberUid} {
+      allow read: if isActiveUser() && resource.data.userId == request.auth.uid;
     }
 
     // ---------- Everything else is denied until a feature adds a rule ----------

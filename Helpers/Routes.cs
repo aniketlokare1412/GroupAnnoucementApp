@@ -18,4 +18,14 @@ public static class Routes
 
     // Used for both "new group" and "edit group" (groupedit?groupId=...).
     public const string GroupEdit = "groupedit";
+
+    // Admin: members of one group (groupmembers?groupId=...) and the add-members picker.
+    public const string GroupMembers = "groupmembers";
+
+    public const string AddMembers = "addmembers";
+
+    // Regular user: my groups, and the list of groups I can join.
+    public const string MyGroups = "mygroups";
+
+    public const string JoinGroups = "joingroups";
 }
