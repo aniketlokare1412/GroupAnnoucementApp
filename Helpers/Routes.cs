@@ -28,4 +28,15 @@ public static class Routes
     public const string MyGroups = "mygroups";
 
     public const string JoinGroups = "joingroups";
+
+    // Admin: pick a group, then see/manage its announcements.
+    public const string AnnouncementGroups = "announcementgroups";
+
+    // One group's announcements (announcements?groupId=...&groupName=...). Admins and members.
+    public const string Announcements = "announcements";
+
+    // Admin: new / edit announcement. No groupId = pick one or more groups.
+    // announcementedit?groupId=..&groupName=..  = new for that group
+    // announcementedit?groupId=..&groupName=..&announcementId=..  = edit
+    public const string AnnouncementEdit = "announcementedit";
 }

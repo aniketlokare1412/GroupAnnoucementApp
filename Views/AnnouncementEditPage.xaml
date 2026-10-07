@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.AnnouncementEditPage"
+    x:DataType="vm:AnnouncementEditViewModel"
+    Title="{Binding TitleText}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="24" Spacing="12">
+
+            <Label
+                Text="{Binding TargetText}"
+                IsVisible="{Binding HasTargetText}"
+                FontAttributes="Bold" />
+
+            <!-- Only when posting to one or more groups of the admin's choice. -->
+            <VerticalStackLayout Spacing="8" IsVisible="{Binding IsPickerVisible}">
+                <Label Text="Post to these groups" FontAttributes="Bold" />
+                <SearchBar Placeholder="Search groups" Text="{Binding SearchText}" />
+                <Label Text="{Binding SelectedCountText}" />
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
+                    <Button Grid.Column="0" Text="Select all shown" Command="{Binding SelectAllCommand}" IsEnabled="{Binding IsNotBusy}" />
+                    <Button Grid.Column="1" Text="Clear" Command="{Binding ClearSelectionCommand}" IsEnabled="{Binding IsNotBusy}" />
+                </Grid>
+                <Grid HeightRequest="260">
+                    <CollectionView
+                        ItemsSource="{Binding Groups}"
+                        SelectionMode="None"
+                        IsEnabled="{Binding IsNotBusy}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SelectableGroupItem">
+                                <Grid ColumnDefinitions="Auto,*" Padding="4,6" ColumnSpacing="8">
+                                    <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalOptions="Center" />
+                                    <Label Grid.Column="1" Text="{Binding Name}" VerticalOptions="Center" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    <Label
+                        Text="No active groups found."
+                        IsVisible="{Binding HasNoGroups}"
+                        HorizontalOptions="Center"
+                        VerticalOptions="Center" />
+                </Grid>
+            </VerticalStackLayout>
+
+            <Label Text="Title" FontAttributes="Bold" />
+            <Entry
+                Placeholder="Announcement title"
+                Text="{Binding Title}"
+                MaxLength="100"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label Text="Message" FontAttributes="Bold" />
+            <Editor
+                Placeholder="Write your announcement"
+                Text="{Binding Message}"
+                MaxLength="2000"
+                HeightRequest="200"
+                AutoSize="Disabled"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="Red" />
+
+            <Button
+                Text="{Binding PrimaryButtonText}"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Button
+                Text="Cancel"
+                Command="{Binding CancelCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

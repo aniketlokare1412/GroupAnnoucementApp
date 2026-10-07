@@ -73,6 +73,20 @@ public partial class DashboardViewModel : BaseViewModel
         return _navigation.GoToAsync(Routes.Groups);
     }
 
+    // Admin: pick a group, then see and manage its announcements.
+    [RelayCommand]
+    private Task OpenAnnouncementGroupsAsync()
+    {
+        return _navigation.GoToAsync(Routes.AnnouncementGroups);
+    }
+
+    // Admin: write one announcement and post it to one or more groups.
+    [RelayCommand]
+    private Task NewAnnouncementAsync()
+    {
+        return _navigation.GoToAsync(Routes.AnnouncementEdit);
+    }
+
     [RelayCommand]
     private Task OpenMyGroupsAsync()
     {

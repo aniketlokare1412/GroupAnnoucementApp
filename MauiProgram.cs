@@ -64,6 +64,7 @@ public static class MauiProgram
         services.AddSingleton<IUserRepository, UserRepository>();
         services.AddSingleton<IGroupRepository, GroupRepository>();
         services.AddSingleton<IMembershipRepository, MembershipRepository>();
+        services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
@@ -72,6 +73,7 @@ public static class MauiProgram
         services.AddSingleton<IGroupAdminService, GroupAdminService>();
         services.AddSingleton<IMembershipService, MembershipService>();
         services.AddSingleton<IMembershipAdminService, MembershipAdminService>();
+        services.AddSingleton<IAnnouncementService, AnnouncementService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -88,6 +90,9 @@ public static class MauiProgram
         services.AddTransient<AddMembersViewModel>();
         services.AddTransient<MyGroupsViewModel>();
         services.AddTransient<JoinGroupsViewModel>();
+        services.AddTransient<AnnouncementGroupsViewModel>();
+        services.AddTransient<AnnouncementsViewModel>();
+        services.AddTransient<AnnouncementEditViewModel>();
     }
 
     private static void RegisterViews(IServiceCollection services)
@@ -105,5 +110,8 @@ public static class MauiProgram
         services.AddTransient<AddMembersPage>();
         services.AddTransient<MyGroupsPage>();
         services.AddTransient<JoinGroupsPage>();
+        services.AddTransient<AnnouncementGroupsPage>();
+        services.AddTransient<AnnouncementsPage>();
+        services.AddTransient<AnnouncementEditPage>();
     }
 }
