@@ -7,8 +7,8 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// Regular user: the active groups I am a member of. Tap a group to leave it.
-// (Feature 7 will make a tap open the group's announcements instead.)
+// Regular user: the active groups I am a member of.
+// Tap a group (or its Announcements button) to read its announcements. The Leave button leaves it.
 public partial class MyGroupsViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
@@ -16,12 +16,10 @@ public partial class MyGroupsViewModel : BaseViewModel
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
 
-    private bool _hasLoaded;
-
-    public ObservableCollection<GroupListItem> Groups { get; } = new ObservableCollection<GroupListItem>();
+    public ObservableCollection<MyGroupListItem> Groups { get; } = new ObservableCollection<MyGroupListItem>();
 
     [ObservableProperty]
-    private GroupListItem? _selectedGroup;
+    private MyGroupListItem? _selectedGroup;
 
     [ObservableProperty]
     private bool _hasNoGroups;
@@ -38,12 +36,12 @@ public partial class MyGroupsViewModel : BaseViewModel
         _dialogs = dialogs;
     }
 
-    // Runs automatically when a row is tapped.
-    partial void OnSelectedGroupChanged(GroupListItem? value)
+    // Runs automatically when a row (not one of its buttons) is tapped.
+    partial void OnSelectedGroupChanged(MyGroupListItem? value)
     {
         if (value != null)
         {
-            _ = LeaveGroupAsync(value);
+            _ = OpenFromSelectionAsync(value);
         }
     }
 
@@ -78,10 +76,9 @@ public partial class MyGroupsViewModel : BaseViewModel
             List<AnnouncementGroup> groups = result.Value ?? new List<AnnouncementGroup>();
             for (int i = 0; i < groups.Count; i++)
             {
-                Groups.Add(GroupListItem.FromGroup(groups[i]));
+                Groups.Add(MyGroupListItem.FromGroup(groups[i], OpenAnnouncementsAsync, LeaveGroupAsync));
             }
 
-            _hasLoaded = true;
             HasNoGroups = Groups.Count == 0;
         }
         finally
@@ -102,7 +99,36 @@ public partial class MyGroupsViewModel : BaseViewModel
         return _navigation.GoToAsync(Routes.JoinGroups);
     }
 
-    private async Task LeaveGroupAsync(GroupListItem item)
+    private async Task OpenFromSelectionAsync(MyGroupListItem item)
+    {
+        try
+        {
+            await OpenAnnouncementsAsync(item);
+        }
+        finally
+        {
+            // Clear the selection so the same row can be tapped again.
+            SelectedGroup = null;
+        }
+    }
+
+    private async Task OpenAnnouncementsAsync(MyGroupListItem item)
+    {
+        try
+        {
+            string route = Routes.Announcements
+                + "?groupId=" + Uri.EscapeDataString(item.Id)
+                + "&groupName=" + Uri.EscapeDataString(item.Name);
+            await _navigation.GoToAsync(route);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("OPEN ANNOUNCEMENTS ERROR: " + ex);
+            ErrorMessage = "Something went wrong. Please try again.";
+        }
+    }
+
+    private async Task LeaveGroupAsync(MyGroupListItem item)
     {
         try
         {
@@ -152,11 +178,6 @@ public partial class MyGroupsViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("LEAVE GROUP ERROR: " + ex);
             ErrorMessage = "Something went wrong. Please try again.";
-        }
-        finally
-        {
-            // Clear the selection so the same row can be tapped again.
-            SelectedGroup = null;
         }
     }
 }

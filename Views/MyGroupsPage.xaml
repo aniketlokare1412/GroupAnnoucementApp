@@ -9,7 +9,7 @@
 
     <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
 
-        <Label Grid.Row="0" Text="Tap a group to leave it." TextColor="Gray" />
+        <Label Grid.Row="0" Text="Tap a group to read its announcements." TextColor="Gray" />
 
         <Label
             Grid.Row="1"
@@ -25,11 +25,23 @@
                 SelectedItem="{Binding SelectedGroup}"
                 IsEnabled="{Binding IsNotBusy}">
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:GroupListItem">
-                        <VerticalStackLayout Padding="8,10" Spacing="2">
-                            <Label Text="{Binding Name}" FontAttributes="Bold" />
-                            <Label Text="{Binding Description}" IsVisible="{Binding HasDescription}" />
-                        </VerticalStackLayout>
+                    <DataTemplate x:DataType="vm:MyGroupListItem">
+                        <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,*" Padding="8,10" RowSpacing="6" ColumnSpacing="8">
+                            <VerticalStackLayout Grid.Row="0" Grid.ColumnSpan="2" Spacing="2">
+                                <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                <Label Text="{Binding Description}" IsVisible="{Binding HasDescription}" />
+                            </VerticalStackLayout>
+                            <Button
+                                Grid.Row="1"
+                                Grid.Column="0"
+                                Text="Announcements"
+                                Command="{Binding OpenAnnouncementsCommand}" />
+                            <Button
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                Text="Leave group"
+                                Command="{Binding LeaveCommand}" />
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

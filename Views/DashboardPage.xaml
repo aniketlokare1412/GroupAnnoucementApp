@@ -21,15 +21,16 @@
 
             <Label Text="{Binding UserEmail}" HorizontalOptions="Center" />
 
-            <!-- Admin only. Announcements gets a real destination in Feature 7. -->
+            <!-- Admin only. -->
             <VerticalStackLayout Spacing="10" IsVisible="{Binding IsAdmin}">
                 <Label Text="Admin tools" FontAttributes="Bold" />
                 <Button Text="Manage users" Command="{Binding OpenUsersCommand}" />
                 <Button Text="Manage groups" Command="{Binding OpenGroupsCommand}" />
-                <Button Text="Announcements (coming soon)" IsEnabled="False" />
+                <Button Text="New announcement (one or more groups)" Command="{Binding NewAnnouncementCommand}" />
+                <Button Text="Group announcements" Command="{Binding OpenAnnouncementGroupsCommand}" />
             </VerticalStackLayout>
 
-            <!-- Regular users only. Announcements will be added in Feature 7. -->
+            <!-- Regular users only. Announcements open from My groups. -->
             <VerticalStackLayout Spacing="10" IsVisible="{Binding IsRegularUser}">
                 <Button Text="My groups" Command="{Binding OpenMyGroupsCommand}" />
                 <Button Text="Find and join groups" Command="{Binding OpenJoinGroupsCommand}" />

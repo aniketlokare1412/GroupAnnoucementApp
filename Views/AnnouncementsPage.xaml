@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.AnnouncementsPage"
+    x:DataType="vm:AnnouncementsViewModel"
+    Title="Announcements">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto,Auto" Padding="16" RowSpacing="8">
+
+        <Label Grid.Row="0" Text="{Binding GroupName}" FontSize="20" FontAttributes="Bold" />
+
+        <Label
+            Grid.Row="1"
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding HasError}"
+            TextColor="Red" />
+
+        <Grid Grid.Row="2">
+
+            <CollectionView
+                ItemsSource="{Binding Items}"
+                SelectionMode="None"
+                IsEnabled="{Binding IsNotBusy}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:AnnouncementListItem">
+                        <VerticalStackLayout Padding="4,10" Spacing="4">
+                            <Label Text="{Binding Title}" FontAttributes="Bold" FontSize="16" />
+                            <Label Text="{Binding Message}" />
+                            <HorizontalStackLayout Spacing="12">
+                                <Label Text="{Binding DateText}" TextColor="Gray" FontSize="12" />
+                                <Label Text="Edited" TextColor="Gray" FontSize="12" IsVisible="{Binding IsEdited}" />
+                                <Label Text="Deleted" TextColor="Red" FontSize="12" IsVisible="{Binding IsDeleted}" />
+                            </HorizontalStackLayout>
+                            <HorizontalStackLayout Spacing="8" IsVisible="{Binding CanManage}">
+                                <Button Text="Edit" Command="{Binding EditCommand}" />
+                                <Button Text="Delete" Command="{Binding DeleteCommand}" />
+                            </HorizontalStackLayout>
+                            <BoxView HeightRequest="1" Color="LightGray" Margin="0,6,0,0" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label
+                Text="No announcements yet."
+                IsVisible="{Binding HasNoItems}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+        </Grid>
+
+        <Button
+            Grid.Row="3"
+            Text="Load more"
+            Command="{Binding LoadMoreCommand}"
+            IsVisible="{Binding HasMore}"
+            IsEnabled="{Binding IsNotBusy}" />
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button
+                Grid.Column="0"
+                Text="New announcement"
+                Command="{Binding NewCommand}"
+                IsVisible="{Binding IsAdminView}"
+                IsEnabled="{Binding IsNotBusy}" />
+            <Button
+                Grid.Column="0"
+                Text="Leave group"
+                Command="{Binding LeaveGroupCommand}"
+                IsVisible="{Binding IsMemberView}"
+                IsEnabled="{Binding IsNotBusy}" />
+            <Button
+                Grid.Column="1"
+                Text="Refresh"
+                Command="{Binding RefreshCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+        </Grid>
+
+    </Grid>
+</ContentPage>
