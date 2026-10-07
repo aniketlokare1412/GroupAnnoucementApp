@@ -27,4 +27,34 @@ public class UserRepository : IUserRepository
         IDocumentSnapshot<UserProfile> snapshot = await document.GetDocumentSnapshotAsync<UserProfile>();
         return snapshot.Data;
     }
+
+    public async Task<List<UserProfile>> GetAllAsync()
+    {
+        ICollectionReference collection = _firestore.GetCollection(UsersCollection);
+        IQuerySnapshot<UserProfile> snapshot = await collection.GetDocumentsAsync<UserProfile>();
+
+        List<UserProfile> users = new List<UserProfile>();
+        foreach (IDocumentSnapshot<UserProfile> document in snapshot.Documents)
+        {
+            UserProfile? profile = document.Data;
+            if (profile != null)
+            {
+                users.Add(profile);
+            }
+        }
+
+        return users;
+    }
+
+    public Task SetActiveAsync(string uid, bool isActive)
+    {
+        IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        return document.UpdateDataAsync(("isActive", (object?)isActive));
+    }
+
+    public Task SetUserTypeAsync(string uid, string userType)
+    {
+        IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        return document.UpdateDataAsync(("userType", (object?)userType));
+    }
 }

@@ -1,12 +1,19 @@
-﻿using GroupAnnouncementApp.Services.Interfaces;
+﻿using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Views;
 
 namespace GroupAnnouncementApp;
 
 public partial class AppShell : Shell
 {
-    // The first ShellContent added is the page Shell shows at startup.
-    // So the session check is simply: signed in -> Dashboard first, else Login first.
+    // Runs once per app process (AppShell itself can be created more than once,
+    // and registering the same route twice must be avoided).
+    static AppShell()
+    {
+        Routing.RegisterRoute(Routes.Users, typeof(UsersPage));
+    }
+
+    // The first ShellContent is the page Shell shows at startup: the Splash page.
+    // Splash checks the session, loads the profile and then navigates to the right screen.
     public AppShell()
     {
         FlyoutBehavior = FlyoutBehavior.Disabled;

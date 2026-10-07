@@ -11,4 +11,6 @@ public static class Routes
     public const string CompleteProfile = "//completeprofile";
 
     public const string Dashboard = "//dashboard";
+
+    public const string Users = "users";
 }
