@@ -7,28 +7,48 @@
     x:DataType="vm:DashboardViewModel"
     Shell.NavBarIsVisible="False">
 
-    <VerticalStackLayout Padding="30" Spacing="20" VerticalOptions="Center">
+	<ScrollView>
+		<VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
 
-        <Label Text="Dashboard (placeholder)" FontSize="24" HorizontalOptions="Center" />
+			<Label Text="Dashboard" FontSize="28" HorizontalOptions="Center" />
 
-        <Label
-            Text="{Binding UserEmail, StringFormat='Signed in as {0}'}"
-            HorizontalOptions="Center" />
+			<Label
+                Text="{Binding DisplayName, StringFormat='Welcome, {0}'}"
+                FontSize="18"
+                HorizontalOptions="Center" />
 
-        <Label
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red"
-            HorizontalOptions="Center" />
+			<Label Text="{Binding RoleText}" HorizontalOptions="Center" />
 
-        <Button
-            Text="Log out"
-            Command="{Binding LogoutCommand}"
-            IsEnabled="{Binding IsNotBusy}" />
+			<Label Text="{Binding UserEmail}" HorizontalOptions="Center" />
 
-        <ActivityIndicator
-            IsRunning="{Binding IsBusy}"
-            IsVisible="{Binding IsBusy}" />
+			<!-- Admin only. These get real destinations in Features 4, 5 and 7. -->
+			<VerticalStackLayout Spacing="10" IsVisible="{Binding IsAdmin}">
+				<Label Text="Admin tools" FontAttributes="Bold" />
+				<Button Text="Manage users (coming soon)" IsEnabled="False" />
+				<Button Text="Manage groups (coming soon)" IsEnabled="False" />
+				<Button Text="Announcements (coming soon)" IsEnabled="False" />
+			</VerticalStackLayout>
 
-    </VerticalStackLayout>
+			<!-- Regular users only. Gets a real destination in Features 6 and 7. -->
+			<VerticalStackLayout Spacing="10" IsVisible="{Binding IsRegularUser}">
+				<Button Text="My groups (coming soon)" IsEnabled="False" />
+			</VerticalStackLayout>
+
+			<Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="Red"
+                HorizontalOptions="Center" />
+
+			<Button
+                Text="Log out"
+                Command="{Binding LogoutCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+			<ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+		</VerticalStackLayout>
+	</ScrollView>
 </ContentPage>
