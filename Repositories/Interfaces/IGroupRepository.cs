@@ -15,6 +15,10 @@ public interface IGroupRepository
     // Admin only (enforced by the Firestore rules).
     Task<List<AnnouncementGroup>> GetAllAsync();
 
+    // Only groups with isActive == true. Any active user may run this query:
+    // the Firestore rules allow reading active groups, but only with this filter.
+    Task<List<AnnouncementGroup>> GetActiveAsync();
+
     // Changes name and description in one write.
     Task UpdateDetailsAsync(string id, string name, string description);
 

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.MyGroupsPage"
+    x:DataType="vm:MyGroupsViewModel"
+    Title="My groups">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+
+        <Label Grid.Row="0" Text="Tap a group to leave it." TextColor="Gray" />
+
+        <Label
+            Grid.Row="1"
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding HasError}"
+            TextColor="Red" />
+
+        <Grid Grid.Row="2">
+
+            <CollectionView
+                ItemsSource="{Binding Groups}"
+                SelectionMode="Single"
+                SelectedItem="{Binding SelectedGroup}"
+                IsEnabled="{Binding IsNotBusy}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:GroupListItem">
+                        <VerticalStackLayout Padding="8,10" Spacing="2">
+                            <Label Text="{Binding Name}" FontAttributes="Bold" />
+                            <Label Text="{Binding Description}" IsVisible="{Binding HasDescription}" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label
+                Text="You have not joined any groups yet."
+                IsVisible="{Binding HasNoGroups}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+        </Grid>
+
+        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button
+                Grid.Column="0"
+                Text="Join a group"
+                Command="{Binding JoinGroupCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+            <Button
+                Grid.Column="1"
+                Text="Refresh"
+                Command="{Binding RefreshCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

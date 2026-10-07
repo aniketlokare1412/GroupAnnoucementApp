@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.AddMembersPage"
+    x:DataType="vm:AddMembersViewModel"
+    Title="Add members">
+
+    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+
+        <SearchBar
+            Grid.Row="0"
+            Placeholder="Search by name, email or phone"
+            Text="{Binding SearchText}" />
+
+        <Label Grid.Row="1" Text="{Binding SelectedCountText}" FontAttributes="Bold" />
+
+        <Label
+            Grid.Row="2"
+            Text="{Binding ErrorMessage}"
+            IsVisible="{Binding HasError}"
+            TextColor="Red" />
+
+        <Grid Grid.Row="3">
+
+            <CollectionView
+                ItemsSource="{Binding Users}"
+                SelectionMode="None"
+                IsEnabled="{Binding IsNotBusy}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:SelectableUserItem">
+                        <Grid ColumnDefinitions="Auto,*" Padding="4,8" ColumnSpacing="8">
+                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalOptions="Center" />
+                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <Label Text="{Binding Name}" FontAttributes="Bold" />
+                                <Label Text="{Binding Email}" />
+                            </VerticalStackLayout>
+                        </Grid>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label
+                Text="No users available to add."
+                IsVisible="{Binding HasNoUsers}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center"
+                VerticalOptions="Center" />
+
+        </Grid>
+
+        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+            <Button
+                Grid.Column="0"
+                Text="Add selected"
+                Command="{Binding AddSelectedCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+            <Button
+                Grid.Column="1"
+                Text="Cancel"
+                Command="{Binding CancelCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+        </Grid>
+
+    </Grid>
+</ContentPage>

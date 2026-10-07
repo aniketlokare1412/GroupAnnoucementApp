@@ -74,6 +74,18 @@ public partial class DashboardViewModel : BaseViewModel
     }
 
     [RelayCommand]
+    private Task OpenMyGroupsAsync()
+    {
+        return _navigation.GoToAsync(Routes.MyGroups);
+    }
+
+    [RelayCommand]
+    private Task OpenJoinGroupsAsync()
+    {
+        return _navigation.GoToAsync(Routes.JoinGroups);
+    }
+
+    [RelayCommand]
     private async Task LogoutAsync()
     {
         if (IsBusy)

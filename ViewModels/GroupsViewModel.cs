@@ -116,16 +116,22 @@ public partial class GroupsViewModel : BaseViewModel
                 return;
             }
 
+            string membersOption = "Manage members";
             string editOption = "Edit group";
             string activeOption = item.IsActive ? "Deactivate group" : "Activate group";
 
-            string? choice = await _dialogs.ChooseAsync(item.Name, "Cancel", new string[] { editOption, activeOption });
+            string? choice = await _dialogs.ChooseAsync(item.Name, "Cancel", new string[] { membersOption, editOption, activeOption });
             if (choice == null)
             {
                 return;
             }
 
-            if (choice == editOption)
+            if (choice == membersOption)
+            {
+                string membersRoute = Routes.GroupMembers + "?groupId=" + Uri.EscapeDataString(item.Id);
+                await _navigation.GoToAsync(membersRoute);
+            }
+            else if (choice == editOption)
             {
                 string route = Routes.GroupEdit + "?groupId=" + Uri.EscapeDataString(item.Id);
                 await _navigation.GoToAsync(route);

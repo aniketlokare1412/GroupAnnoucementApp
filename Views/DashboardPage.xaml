@@ -29,9 +29,10 @@
                 <Button Text="Announcements (coming soon)" IsEnabled="False" />
             </VerticalStackLayout>
 
-            <!-- Regular users only. Gets a real destination in Features 6 and 7. -->
+            <!-- Regular users only. Announcements will be added in Feature 7. -->
             <VerticalStackLayout Spacing="10" IsVisible="{Binding IsRegularUser}">
-                <Button Text="My groups (coming soon)" IsEnabled="False" />
+                <Button Text="My groups" Command="{Binding OpenMyGroupsCommand}" />
+                <Button Text="Find and join groups" Command="{Binding OpenJoinGroupsCommand}" />
             </VerticalStackLayout>
 
             <Label
