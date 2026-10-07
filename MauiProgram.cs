@@ -65,6 +65,8 @@ public static class MauiProgram
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
+        services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IUserAdminService, UserAdminService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -74,6 +76,7 @@ public static class MauiProgram
         services.AddTransient<SplashViewModel>();
         services.AddTransient<CompleteProfileViewModel>();
         services.AddTransient<DashboardViewModel>();
+        services.AddTransient<UsersViewModel>();
     }
 
     private static void RegisterViews(IServiceCollection services)
@@ -84,5 +87,6 @@ public static class MauiProgram
         services.AddTransient<SplashPage>();
         services.AddTransient<CompleteProfilePage>();
         services.AddTransient<DashboardPage>();
+        services.AddTransient<UsersPage>();
     }
 }
