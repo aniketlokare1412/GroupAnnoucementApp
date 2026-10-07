@@ -20,4 +20,11 @@ public class UserRepository : IUserRepository
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
         return document.SetDataAsync(profile);
     }
+
+    public async Task<UserProfile?> GetByIdAsync(string uid)
+    {
+        IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        IDocumentSnapshot<UserProfile> snapshot = await document.GetDocumentSnapshotAsync<UserProfile>();
+        return snapshot.Data;
+    }
 }

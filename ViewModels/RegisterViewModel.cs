@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GroupAnnouncementApp.Helpers;
+using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
@@ -12,6 +13,7 @@ public partial class RegisterViewModel : BaseViewModel
 
     private readonly INavigationService _navigation;
     private readonly IUserService _userService;
+    private readonly ISessionService _session;
 
     [ObservableProperty]
     private string _name = string.Empty;
@@ -28,10 +30,11 @@ public partial class RegisterViewModel : BaseViewModel
     [ObservableProperty]
     private string _confirmPassword = string.Empty;
 
-    public RegisterViewModel(INavigationService navigation, IUserService userService)
+    public RegisterViewModel(INavigationService navigation, IUserService userService, ISessionService session)
     {
         _navigation = navigation;
         _userService = userService;
+        _session = session;
     }
 
     public void Reset()
@@ -76,9 +79,19 @@ public partial class RegisterViewModel : BaseViewModel
                 return;
             }
 
-            Password = string.Empty;
-            ConfirmPassword = string.Empty;
-            await _navigation.GoToAsync(Routes.Dashboard);
+            // Account and profile exist. Load the session and go to the right screen.
+            SessionLoadResult session = await _session.LoadAsync(true);
+
+            if (session.Status == SessionStatus.Ready || session.Status == SessionStatus.ProfileMissing)
+            {
+                Password = string.Empty;
+                ConfirmPassword = string.Empty;
+                await _navigation.GoToAsync(session.Route ?? Routes.Dashboard);
+                return;
+            }
+
+            // The account was created but the profile could not be loaded: user was signed out.
+            ErrorMessage = _session.TakeNotice() ?? session.Message;
         }
         finally
         {

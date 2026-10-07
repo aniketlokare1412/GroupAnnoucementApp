@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.CompleteProfilePage"
+    x:DataType="vm:CompleteProfileViewModel"
+    Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+
+            <Label Text="Complete your profile" FontSize="28" HorizontalOptions="Center" />
+
+            <Label
+                Text="We could not find your profile. Please add your details to continue."
+                HorizontalTextAlignment="Center" />
+
+            <Label
+                Text="{Binding UserEmail, StringFormat='Signed in as {0}'}"
+                HorizontalOptions="Center" />
+
+            <Entry
+                Placeholder="Full name"
+                ReturnType="Next"
+                Text="{Binding Name}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Entry
+                Placeholder="Phone number"
+                Keyboard="Telephone"
+                ReturnType="Done"
+                ReturnCommand="{Binding SaveCommand}"
+                Text="{Binding Phone}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Label
+                Text="{Binding ErrorMessage}"
+                IsVisible="{Binding HasError}"
+                TextColor="Red" />
+
+            <Button
+                Text="Save and continue"
+                Command="{Binding SaveCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Button
+                Text="Log out"
+                Command="{Binding LogoutCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

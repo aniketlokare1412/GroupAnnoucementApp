@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Maui.LifecycleEvents;
 using Plugin.Firebase.Auth;
 using Plugin.Firebase.Firestore;
-using Android.SE.Omapi;
 
 
 #if ANDROID
@@ -65,20 +64,25 @@ public static class MauiProgram
         services.AddSingleton<IUserRepository, UserRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
+        services.AddSingleton<ISessionService, SessionService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)
     {
         services.AddTransient<LoginViewModel>();
         services.AddTransient<RegisterViewModel>();
+        services.AddTransient<SplashViewModel>();
+        services.AddTransient<CompleteProfileViewModel>();
         services.AddTransient<DashboardViewModel>();
     }
 
     private static void RegisterViews(IServiceCollection services)
     {
-        services.AddSingleton<AppShell>();
+        services.AddTransient<AppShell>();
         services.AddTransient<LoginPage>();
         services.AddTransient<RegisterPage>();
+        services.AddTransient<SplashPage>();
+        services.AddTransient<CompleteProfilePage>();
         services.AddTransient<DashboardPage>();
     }
 }

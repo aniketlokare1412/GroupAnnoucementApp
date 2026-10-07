@@ -7,39 +7,22 @@ public partial class AppShell : Shell
 {
     // The first ShellContent added is the page Shell shows at startup.
     // So the session check is simply: signed in -> Dashboard first, else Login first.
-    public AppShell(IAuthService authService)
+    public AppShell()
     {
         FlyoutBehavior = FlyoutBehavior.Disabled;
 
-        ShellContent loginContent = new ShellContent
-        {
-            Route = "login",
-            ContentTemplate = new DataTemplate(typeof(LoginPage))
-        };
+        Items.Add(CreateContent("splash", typeof(SplashPage)));
+        Items.Add(CreateContent("login", typeof(LoginPage)));
+        Items.Add(CreateContent("register", typeof(RegisterPage)));
+        Items.Add(CreateContent("completeprofile", typeof(CompleteProfilePage)));
+        Items.Add(CreateContent("dashboard", typeof(DashboardPage)));
+    }
 
-        ShellContent registerContent = new ShellContent
-        {
-            Route = "register",
-            ContentTemplate = new DataTemplate(typeof(RegisterPage))
-        };
-
-        ShellContent dashboardContent = new ShellContent
-        {
-            Route = "dashboard",
-            ContentTemplate = new DataTemplate(typeof(DashboardPage))
-        };
-
-        if (authService.IsAuthenticated)
-        {
-            Items.Add(dashboardContent);
-            Items.Add(loginContent);
-            Items.Add(registerContent);
-        }
-        else
-        {
-            Items.Add(loginContent);
-            Items.Add(registerContent);
-            Items.Add(dashboardContent);
-        }
+    private static ShellContent CreateContent(string route, Type pageType)
+    {
+        ShellContent content = new ShellContent();
+        content.Route = route;
+        content.ContentTemplate = new DataTemplate(pageType);
+        return content;
     }
 }

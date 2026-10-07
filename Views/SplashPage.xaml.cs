@@ -2,11 +2,11 @@ using GroupAnnouncementApp.ViewModels;
 
 namespace GroupAnnouncementApp.Views;
 
-public partial class DashboardPage : ContentPage
+public partial class SplashPage : ContentPage
 {
-    private readonly DashboardViewModel _viewModel;
+    private readonly SplashViewModel _viewModel;
 
-    public DashboardPage(DashboardViewModel viewModel)
+    public SplashPage(SplashViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;
@@ -16,6 +16,6 @@ public partial class DashboardPage : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
-        await _viewModel.RefreshAsync();
+        await _viewModel.StartAsync();
     }
 }
