@@ -10,6 +10,8 @@ public partial class AppShell : Shell
     static AppShell()
     {
         Routing.RegisterRoute(Routes.Users, typeof(UsersPage));
+        Routing.RegisterRoute(Routes.Groups, typeof(GroupsPage));
+        Routing.RegisterRoute(Routes.GroupEdit, typeof(GroupEditPage));
     }
 
     // The first ShellContent is the page Shell shows at startup: the Splash page.

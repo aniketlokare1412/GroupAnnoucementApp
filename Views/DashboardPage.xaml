@@ -21,11 +21,11 @@
 
             <Label Text="{Binding UserEmail}" HorizontalOptions="Center" />
 
-            <!-- Admin only. Groups and announcements get real destinations in Features 5 and 7. -->
+            <!-- Admin only. Announcements gets a real destination in Feature 7. -->
             <VerticalStackLayout Spacing="10" IsVisible="{Binding IsAdmin}">
                 <Label Text="Admin tools" FontAttributes="Bold" />
                 <Button Text="Manage users" Command="{Binding OpenUsersCommand}" />
-                <Button Text="Manage groups (coming soon)" IsEnabled="False" />
+                <Button Text="Manage groups" Command="{Binding OpenGroupsCommand}" />
                 <Button Text="Announcements (coming soon)" IsEnabled="False" />
             </VerticalStackLayout>
 

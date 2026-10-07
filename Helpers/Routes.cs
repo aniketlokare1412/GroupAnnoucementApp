@@ -13,4 +13,9 @@ public static class Routes
     public const string Dashboard = "//dashboard";
 
     public const string Users = "users";
+
+    public const string Groups = "groups";
+
+    // Used for both "new group" and "edit group" (groupedit?groupId=...).
+    public const string GroupEdit = "groupedit";
 }

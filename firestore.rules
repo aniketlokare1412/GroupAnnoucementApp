@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // The signed-in user has a profile and it is active.
+    function isActiveUser() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive == true;
+    }
+
+    // The signed-in user is an ACTIVE admin.
+    function isAdmin() {
+      return isActiveUser()
+        && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userType == 'Admin';
+    }
+
+    // ---------- users/{uid} ----------
+    function isValidNewProfile() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'phone', 'email', 'userType', 'isActive', 'createdAt'])
+        && d.keys().hasAll(['name', 'phone', 'email', 'userType', 'isActive', 'createdAt'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+        && d.phone is string && d.phone.size() >= 7 && d.phone.size() <= 25
+        && d.email is string && d.email == request.auth.token.email
+        && d.userType == 'Regular'
+        && d.isActive == true
+        && d.createdAt == request.time;
+    }
+
+    // A user editing their own profile: only name and phone may change.
+    function isValidOwnerUpdate() {
+      let d = request.resource.data;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 100
+        && d.phone is string && d.phone.size() >= 7 && d.phone.size() <= 25;
+    }
+
+    // An admin changing ANOTHER user: only isActive and userType may change.
+    // Admins cannot change themselves, so the acting admin always stays an admin.
+    function isValidAdminUpdate(uid) {
+      let d = request.resource.data;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive', 'userType'])
+        && d.isActive is bool
+        && d.userType in ['Admin', 'Regular']
+        && request.auth.uid != uid;
+    }
+
+    match /users/{uid} {
+      // A user can always read their own profile (the app needs it to detect deactivation).
+      allow read: if isOwner(uid) || isAdmin();
+      allow create: if isOwner(uid) && isValidNewProfile();
+      allow update: if (isOwner(uid) && isActiveUser() && isValidOwnerUpdate())
+                    || (isAdmin() && isValidAdminUpdate(uid));
+      allow delete: if false;
+    }
+
+    // ---------- groups/{groupId} ----------
+    // Keep the length limits in sync with Helpers/GroupLimits.cs.
+    // The maximum number of active groups cannot be enforced here (rules cannot count
+    // documents), so the app enforces it.
+    function isValidGroupText(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.description is string && d.description.size() <= 300;
+    }
+
+    function isValidNewGroup() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'description', 'isActive', 'createdBy', 'createdAt'])
+        && d.keys().hasAll(['name', 'description', 'isActive', 'createdBy', 'createdAt'])
+        && isValidGroupText(d)
+        && d.isActive == true
+        && d.createdBy == request.auth.uid
+        && d.createdAt == request.time;
+    }
+
+    // Only name, description and isActive may change. createdBy and createdAt are fixed.
+    function isValidGroupUpdate() {
+      let d = request.resource.data;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'isActive'])
+        && isValidGroupText(d)
+        && d.isActive is bool;
+    }
+
+    match /groups/{groupId} {
+      // Admins only for now. Feature 6 adds "a member can read a group".
+      allow read: if isAdmin();
+      allow create: if isAdmin() && isValidNewGroup();
+      allow update: if isAdmin() && isValidGroupUpdate();
+      allow delete: if false;
+    }
+
+    // ---------- Everything else is denied until a feature adds a rule ----------
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
