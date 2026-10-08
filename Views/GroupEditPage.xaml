@@ -7,44 +7,64 @@
     x:DataType="vm:GroupEditViewModel"
     Title="{Binding TitleText}">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24" Spacing="12">
+    <!-- Create / edit a group. Plain fields, one main button pinned to the bottom. Cancel = the back arrow. -->
+    <Grid RowDefinitions="*,Auto">
 
-            <Label Text="Name" FontAttributes="Bold" />
-            <Entry
-                Placeholder="Group name"
-                Text="{Binding Name}"
-                MaxLength="60"
-                IsEnabled="{Binding IsNotBusy}" />
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
 
-            <Label Text="Description (optional)" FontAttributes="Bold" />
-            <Editor
-                Placeholder="What is this group for?"
-                Text="{Binding Description}"
-                MaxLength="300"
-                HeightRequest="140"
-                AutoSize="Disabled"
-                IsEnabled="{Binding IsNotBusy}" />
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Name" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Group name"
+                            ReturnType="Next"
+                            Text="{Binding Name}"
+                            MaxLength="{Binding MaxNameLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Group name" />
+                    </Border>
+                </VerticalStackLayout>
 
-            <Label
-                Text="{Binding ErrorMessage}"
-                IsVisible="{Binding HasError}"
-                TextColor="Red" />
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Description (optional)" />
+                    <Border Style="{StaticResource FieldBorder}" Padding="10,6">
+                        <Editor
+                            Placeholder="What is this group for?"
+                            Text="{Binding Description}"
+                            MaxLength="{Binding MaxDescriptionLength}"
+                            HeightRequest="140"
+                            AutoSize="Disabled"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Group description" />
+                    </Border>
+                </VerticalStackLayout>
 
-            <Button
-                Text="Save"
-                Command="{Binding SaveCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
+            </VerticalStackLayout>
+        </ScrollView>
 
-            <Button
-                Text="Cancel"
-                Command="{Binding CancelCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
-
-            <ActivityIndicator
-                IsRunning="{Binding IsBusy}"
-                IsVisible="{Binding IsBusy}" />
-
+        <VerticalStackLayout Grid.Row="1" Spacing="0">
+            <BoxView Style="{StaticResource Hairline}" />
+            <VerticalStackLayout Padding="16,8,16,12" Spacing="8">
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
+                <Button
+                    Style="{StaticResource PillPrimary}"
+                    Text="Save"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    HorizontalOptions="Fill" />
+            </VerticalStackLayout>
         </VerticalStackLayout>
-    </ScrollView>
+
+        <ActivityIndicator
+            Grid.Row="0"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            HorizontalOptions="Center"
+            VerticalOptions="Start"
+            Margin="0,48,0,0" />
+
+    </Grid>
 </ContentPage>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="456" height="456" viewBox="0 0 456 456" version="1.1" xmlns="http://www.w3.org/2000/svg">
-  <g transform="translate(54 49) scale(2.6)">
+<svg width="128" height="128" viewBox="0 0 128 128" version="1.1" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="128" height="128" rx="30" fill="#0E8379"/>
+  <g transform="translate(-3 0)">
 <path fill="#FFFFFF" d="M30 54h12L76 36a4 4 0 0 1 6 3.5v49a4 4 0 0 1-6 3.5L42 74H30a6 6 0 0 1-6-6v-8a6 6 0 0 1 6-6z"/>
 <path fill="#FFFFFF" d="M38 72h16l4 26q.5 4-4 4h-4q-3.5 0-4-3z"/>
 <path d="M92 52Q100 64 92 76" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>

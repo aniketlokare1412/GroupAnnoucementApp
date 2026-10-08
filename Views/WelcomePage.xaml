@@ -7,18 +7,26 @@
     x:DataType="vm:WelcomeViewModel"
     Shell.NavBarIsVisible="False">
 
-    <ScrollView>
-        <VerticalStackLayout Padding="24,48,24,24" Spacing="20">
+    <!-- One page for "Log in" and "Create account". No card and no outlines: logo, plain fields, one main button,
+         and a quiet text link to switch. With few fields the content sits in the middle of the screen;
+         with more (Create account) it scrolls. -->
+    <ScrollView VerticalScrollBarVisibility="Never">
+        <VerticalStackLayout Padding="28,32,28,32" Spacing="0" VerticalOptions="Center">
 
             <!-- Brand -->
-            <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
-                <Border Style="{StaticResource BrandMark}">
-                    <Label Style="{StaticResource BrandMarkText}" Text="GA" />
-                </Border>
+            <VerticalStackLayout Spacing="6" HorizontalOptions="Center" Margin="0,0,0,36">
+                <Image
+                    Source="app_logo.png"
+                    WidthRequest="88"
+                    HeightRequest="88"
+                    HorizontalOptions="Center"
+                    Margin="0,0,0,10"
+                    AutomationProperties.IsInAccessibleTree="False" />
                 <Label
                     Style="{StaticResource PageTitle}"
                     Text="Group Announcements"
-                    HorizontalOptions="Center" />
+                    HorizontalOptions="Center"
+                    SemanticProperties.HeadingLevel="Level1" />
                 <Label
                     Style="{StaticResource Caption}"
                     Text="{Binding SubheadingText}"
@@ -26,135 +34,128 @@
                     HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
 
-            <!-- Mode switch: Sign in | Create account -->
-            <Grid ColumnDefinitions="*,*" ColumnSpacing="8">
-                <Button
-                    Grid.Column="0"
-                    Text="Sign in"
-                    Style="{StaticResource PillPrimary}"
-                    Command="{Binding ShowSignInCommand}"
-                    IsVisible="{Binding IsSignInMode}"
-                    IsEnabled="{Binding IsNotBusy}" />
-                <Button
-                    Grid.Column="0"
-                    Text="Sign in"
-                    Style="{StaticResource PillTonal}"
-                    Command="{Binding ShowSignInCommand}"
-                    IsVisible="{Binding IsRegisterMode}"
-                    IsEnabled="{Binding IsNotBusy}" />
-                <Button
-                    Grid.Column="1"
-                    Text="Create account"
-                    Style="{StaticResource PillTonal}"
-                    Command="{Binding ShowRegisterCommand}"
-                    IsVisible="{Binding IsSignInMode}"
-                    IsEnabled="{Binding IsNotBusy}" />
-                <Button
-                    Grid.Column="1"
-                    Text="Create account"
-                    Style="{StaticResource PillPrimary}"
-                    Command="{Binding ShowRegisterCommand}"
-                    IsVisible="{Binding IsRegisterMode}"
-                    IsEnabled="{Binding IsNotBusy}" />
-            </Grid>
-
-            <!-- Form -->
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="12">
-
-                    <!-- Create account only -->
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsRegisterMode}">
-                        <Label Style="{StaticResource Caption}" Text="Full name" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="Your name"
-                                ReturnType="Next"
-                                Text="{Binding Name}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsRegisterMode}">
-                        <Label Style="{StaticResource Caption}" Text="Phone number" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="e.g. 9876543210"
-                                Keyboard="Telephone"
-                                ReturnType="Next"
-                                Text="{Binding Phone}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <!-- Both modes -->
-                    <VerticalStackLayout Spacing="4">
-                        <Label Style="{StaticResource Caption}" Text="Email" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="name@example.com"
-                                Keyboard="Email"
-                                ReturnType="Next"
-                                Text="{Binding Email}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <!-- Password: Sign in (Enter submits) -->
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsSignInMode}">
-                        <Label Style="{StaticResource Caption}" Text="Password" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="Your password"
-                                IsPassword="True"
-                                ReturnType="Done"
-                                ReturnCommand="{Binding SubmitCommand}"
-                                Text="{Binding Password}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <!-- Password: Create account -->
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsRegisterMode}">
-                        <Label Style="{StaticResource Caption}" Text="Password" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="At least 6 characters"
-                                IsPassword="True"
-                                ReturnType="Next"
-                                Text="{Binding Password}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding IsRegisterMode}">
-                        <Label Style="{StaticResource Caption}" Text="Confirm password" />
-                        <Border Style="{StaticResource FieldBorder}">
-                            <Entry
-                                Placeholder="Repeat your password"
-                                IsPassword="True"
-                                ReturnType="Done"
-                                ReturnCommand="{Binding SubmitCommand}"
-                                Text="{Binding ConfirmPassword}"
-                                IsEnabled="{Binding IsNotBusy}" />
-                        </Border>
-                    </VerticalStackLayout>
-
-                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
-                        <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            <!-- Fields -->
+            <VerticalStackLayout Spacing="18">
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Full name" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Your name"
+                            ReturnType="Next"
+                            Text="{Binding Name}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Full name" />
                     </Border>
-
-                    <Button
-                        Text="{Binding SubmitText}"
-                        Command="{Binding SubmitCommand}"
-                        IsEnabled="{Binding IsNotBusy}" />
-
-                    <ActivityIndicator
-                        IsRunning="{Binding IsBusy}"
-                        IsVisible="{Binding IsBusy}"
-                        HorizontalOptions="Center" />
-
                 </VerticalStackLayout>
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Phone number" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="e.g. 9876543210"
+                            Keyboard="Telephone"
+                            ReturnType="Next"
+                            Text="{Binding Phone}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Phone number" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Email" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="name@example.com"
+                            Keyboard="Email"
+                            ReturnType="Next"
+                            Text="{Binding Email}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Email" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsSignInMode}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Password" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Your password"
+                            IsPassword="True"
+                            ReturnType="Done"
+                            ReturnCommand="{Binding SubmitCommand}"
+                            Text="{Binding Password}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Password" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Password" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="At least 6 characters"
+                            IsPassword="True"
+                            ReturnType="Next"
+                            Text="{Binding Password}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Password" />
+                    </Border>
+                </VerticalStackLayout>
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Confirm password" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Repeat your password"
+                            IsPassword="True"
+                            ReturnType="Done"
+                            ReturnCommand="{Binding SubmitCommand}"
+                            Text="{Binding ConfirmPassword}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Confirm password" />
+                    </Border>
+                </VerticalStackLayout>
+            </VerticalStackLayout>
+
+            <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}" Margin="0,18,0,0">
+                <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
             </Border>
+
+            <!-- The one main button, with clear space above it -->
+            <Button
+                Text="{Binding SubmitText}"
+                Command="{Binding SubmitCommand}"
+                IsEnabled="{Binding IsNotBusy}"
+                Margin="0,32,0,0" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center"
+                Margin="0,16,0,0" />
+
+            <!-- Switch between the two modes with a text link, not a button -->
+            <HorizontalStackLayout
+                HorizontalOptions="Center"
+                Spacing="0"
+                Margin="0,20,0,0"
+                IsVisible="{Binding IsSignInMode}">
+                <Label Style="{StaticResource Greeting}" Text="New here?" VerticalOptions="Center" />
+                <Button
+                    Style="{StaticResource LinkButton}"
+                    Text="Create account"
+                    Command="{Binding ShowRegisterCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    MinimumHeightRequest="44" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout
+                HorizontalOptions="Center"
+                Spacing="0"
+                Margin="0,20,0,0"
+                IsVisible="{Binding IsRegisterMode}">
+                <Label Style="{StaticResource Greeting}" Text="Already have an account?" VerticalOptions="Center" />
+                <Button
+                    Style="{StaticResource LinkButton}"
+                    Text="Sign in"
+                    Command="{Binding ShowSignInCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    MinimumHeightRequest="44" />
+            </HorizontalStackLayout>
 
         </VerticalStackLayout>
     </ScrollView>

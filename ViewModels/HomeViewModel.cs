@@ -39,9 +39,11 @@ public partial class HomeViewModel : BaseViewModel
     private string _initials = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowAdmin))]
     private bool _isAdmin;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMember))]
     private bool _isMember;
 
     // The dash is shown until the number is known (or if it could not be loaded).
@@ -65,7 +67,14 @@ public partial class HomeViewModel : BaseViewModel
 
     // True only for the very first load, so a refresh never blanks the screen.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowAdmin))]
+    [NotifyPropertyChangedFor(nameof(ShowMember))]
     private bool _showLoading;
+
+    // Admin / member sections stay hidden behind the skeleton during the first load.
+    public bool ShowAdmin => IsAdmin && !ShowLoading;
+
+    public bool ShowMember => IsMember && !ShowLoading;
 
     // Bound to the pull-to-refresh control.
     [ObservableProperty]

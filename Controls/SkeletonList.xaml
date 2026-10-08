@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentView
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    x:Class="GroupAnnouncementApp.Controls.SkeletonList"
+    InputTransparent="True"
+    SemanticProperties.Description="Loading">
+
+    <!-- Placeholder cards shown on the first load of a list. Kind="Row" (default), "Post" or "Pills".
+         The whole control pulses softly while it is visible. Place it over the list, never inside it. -->
+    <Grid>
+
+        <VerticalStackLayout x:Name="RowKind" Spacing="6">
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+                <Border Style="{StaticResource RowCard}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 10" VerticalOptions="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Center">
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="150" HeightRequest="12" />
+                            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="10" />
+                        </VerticalStackLayout>
+                        <Border Grid.Column="2" Style="{StaticResource SkeletonBlock}" WidthRequest="36" HeightRequest="36" StrokeShape="RoundRectangle 18" VerticalOptions="Center" />
+                    </Grid>
+                </Border>
+        </VerticalStackLayout>
+
+        <VerticalStackLayout x:Name="PostKind" Spacing="8" IsVisible="False">
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="170" HeightRequest="14" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="120" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="80" HeightRequest="10" Margin="0,4,0,0" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="170" HeightRequest="14" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="120" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="80" HeightRequest="10" Margin="0,4,0,0" />
+                    </VerticalStackLayout>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                    <VerticalStackLayout Spacing="8">
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="170" HeightRequest="14" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" HorizontalOptions="Fill" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="120" HeightRequest="10" />
+                        <Border Style="{StaticResource SkeletonBlock}" WidthRequest="80" HeightRequest="10" Margin="0,4,0,0" />
+                    </VerticalStackLayout>
+                </Border>
+        </VerticalStackLayout>
+
+        <FlexLayout x:Name="PillsKind" Wrap="Wrap" Direction="Row" JustifyContent="Start" AlignItems="Start" AlignContent="Start" IsVisible="False">
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="84" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="110" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="70" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="96" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="120" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="78" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+            <Border Style="{StaticResource SkeletonBlock}" WidthRequest="100" HeightRequest="32" StrokeShape="RoundRectangle 16" Margin="0,0,8,8" />
+        </FlexLayout>
+
+    </Grid>
+</ContentView>

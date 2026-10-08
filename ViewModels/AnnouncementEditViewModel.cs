@@ -64,6 +64,8 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     // True only in "pick one or more groups" mode.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPickerSkeleton))]
+    [NotifyPropertyChangedFor(nameof(ShowEditSpinner))]
     private bool _isPickerVisible;
 
     [ObservableProperty]
@@ -92,8 +94,10 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     [ObservableProperty]
     private string _messageCountText = string.Empty;
 
-    // True while the picker or the announcement is being loaded (spinner on the page).
+    // True while the picker or the announcement is being loaded.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowPickerSkeleton))]
+    [NotifyPropertyChangedFor(nameof(ShowEditSpinner))]
     private bool _showLoading;
 
     // True when loading failed, so the page can offer "Try again".
@@ -106,6 +110,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private string? _noticeMessage;
 
     public bool HasNoSelection => !HasSelection;
+
+    // Loading the group list: the pill area shows grey placeholder pills.
+    public bool ShowPickerSkeleton => ShowLoading && IsPickerVisible;
+
+    // Loading the post being edited: a small spinner over the message box.
+    public bool ShowEditSpinner => ShowLoading && !IsPickerVisible;
 
     public bool HasNotice => !string.IsNullOrWhiteSpace(NoticeMessage);
 

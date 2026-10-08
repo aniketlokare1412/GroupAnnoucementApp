@@ -8,17 +8,18 @@
     Title="Account">
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
+        <VerticalStackLayout Padding="20,16,20,20" Spacing="16">
 
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="8" HorizontalOptions="Fill">
+            <Border Style="{StaticResource Card}" Padding="20">
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Fill">
 
                     <Border Style="{StaticResource AvatarCircle}">
                         <Label Style="{StaticResource AvatarText}" Text="{Binding Initials}" />
                     </Border>
 
                     <Label
-                        Style="{StaticResource SectionTitle}"
+                        Style="{StaticResource HeroName}"
+                        SemanticProperties.HeadingLevel="Level1"
                         Text="{Binding DisplayName}"
                         HorizontalOptions="Center"
                         HorizontalTextAlignment="Center" />

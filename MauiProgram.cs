@@ -31,6 +31,18 @@ public static class MauiProgram
                 fonts.AddFont("MaterialIconsRound-Regular.otf", "MaterialIconsRound");
             });
 
+#if ANDROID
+        // Plain fields: remove the native underline under Entry and Editor.
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+        {
+            handler.PlatformView.Background = null;
+        });
+        Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+        {
+            handler.PlatformView.Background = null;
+        });
+#endif
+
         RegisterFirebaseServices(builder);
         RegisterAppServices(builder.Services);
         RegisterViewModels(builder.Services);
