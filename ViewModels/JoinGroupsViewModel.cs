@@ -74,7 +74,8 @@ public partial class JoinGroupsViewModel : BaseViewModel
     {
         if (_session.CurrentProfile == null || _session.IsAdmin)
         {
-            await _navigation.GoToAsync("..");
+            // Discover is a tab now (not a pushed page), so there is nothing to go back to.
+            await _navigation.GoToAsync(Routes.Splash);
             return;
         }
 

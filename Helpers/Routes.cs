@@ -1,20 +1,27 @@
-﻿namespace GroupAnnouncementApp.Helpers;
+namespace GroupAnnouncementApp.Helpers;
 
 public static class Routes
 {
+    // ---- Full-screen pages (no tab bar) ----
     public const string Splash = "//splash";
 
+    // The Welcome page (sign in + create account in one page). The route name is kept as "login".
     public const string Login = "//login";
-
-    public const string Register = "//register";
 
     public const string CompleteProfile = "//completeprofile";
 
-    public const string Dashboard = "//dashboard";
+    // ---- Admin tab bar: Home, Groups, Users ----
+    public const string AdminHome = "//adminshell/adminhome";
+    public const string AdminGroups = "//adminshell/admingroups";
+    public const string AdminUsers = "//adminshell/adminusers";
 
-    public const string Users = "users";
+    // ---- Member tab bar: Home, Discover ----
+    public const string MemberHome = "//membershell/memberhome";
+    public const string MemberDiscover = "//membershell/memberdiscover";
 
-    public const string Groups = "groups";
+    // ---- Pages pushed on top of a tab ----
+    // Account (profile + two-step log out). Opened from the avatar at the top of Home.
+    public const string Account = "account";
 
     // Used for both "new group" and "edit group" (groupedit?groupId=...).
     public const string GroupEdit = "groupedit";
@@ -24,12 +31,8 @@ public static class Routes
 
     public const string AddMembers = "addmembers";
 
-    // Regular user: my groups, and the list of groups I can join.
-    public const string MyGroups = "mygroups";
-
-    public const string JoinGroups = "joingroups";
-
-    // Admin: pick a group, then see/manage its announcements.
+    // Admin: pick a group, then see/manage its announcements. (No longer reachable from the UI;
+    // the admin Groups tab opens a group's announcements directly. Removed in a later phase.)
     public const string AnnouncementGroups = "announcementgroups";
 
     // One group's announcements (announcements?groupId=...&groupName=...). Admins and members.

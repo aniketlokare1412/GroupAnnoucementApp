@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
+    x:Class="GroupAnnouncementApp.Views.HomePage"
+    x:DataType="vm:HomeViewModel"
+    Title="Home"
+    Shell.NavBarIsVisible="False">
+
+    <Grid>
+
+        <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+            <ScrollView>
+                <VerticalStackLayout Padding="20,24,20,24" Spacing="20">
+
+                    <!-- Header: greeting + avatar (opens Account) -->
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                            <Label Style="{StaticResource Greeting}" Text="{Binding Greeting}" />
+                            <Label
+                                Style="{StaticResource HeroName}"
+                                Text="{Binding FirstName}"
+                                LineBreakMode="TailTruncation"
+                                MaxLines="1" />
+                        </VerticalStackLayout>
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource AvatarButton}"
+                            Text="{Binding Initials}"
+                            Command="{Binding OpenAccountCommand}"
+                            SemanticProperties.Description="Account"
+                            SemanticProperties.Hint="Opens your profile and log out" />
+                    </Grid>
+
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                    </Border>
+
+                    <ActivityIndicator
+                        IsRunning="{Binding ShowLoading}"
+                        IsVisible="{Binding ShowLoading}"
+                        HorizontalOptions="Center" />
+
+                    <!-- ================= ADMIN ================= -->
+                    <VerticalStackLayout Spacing="20" IsVisible="{Binding IsAdmin}">
+
+                        <!-- Counts -->
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                            <Border Grid.Column="0" Style="{StaticResource Card}">
+                                <VerticalStackLayout Spacing="10">
+                                    <Border Style="{StaticResource IconTile}">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                    </Border>
+                                    <VerticalStackLayout Spacing="0">
+                                        <Label Style="{StaticResource StatNumber}" Text="{Binding GroupsCountText}" />
+                                        <Label Style="{StaticResource Caption}" Text="Groups" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                            <Border Grid.Column="1" Style="{StaticResource Card}">
+                                <VerticalStackLayout Spacing="10">
+                                    <Border Style="{StaticResource IconTile}">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
+                                    </Border>
+                                    <VerticalStackLayout Spacing="0">
+                                        <Label Style="{StaticResource StatNumber}" Text="{Binding UsersCountText}" />
+                                        <Label Style="{StaticResource Caption}" Text="Users" />
+                                    </VerticalStackLayout>
+                                </VerticalStackLayout>
+                            </Border>
+                        </Grid>
+
+                        <!-- Quick actions: icon buttons with a caption; New post is the one solid button -->
+                        <VerticalStackLayout Spacing="10">
+                            <Label Style="{StaticResource SectionLabel}" Text="Quick actions" />
+                            <HorizontalStackLayout Spacing="20">
+                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                                    <Button
+                                        Style="{StaticResource IconButtonLarge}"
+                                        Text="{x:Static h:Icons.Group}"
+                                        Command="{Binding OpenGroupsCommand}"
+                                        SemanticProperties.Description="Groups" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="Groups" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                                    <Button
+                                        Style="{StaticResource IconButtonLarge}"
+                                        Text="{x:Static h:Icons.UserCheck}"
+                                        Command="{Binding OpenUsersCommand}"
+                                        SemanticProperties.Description="Users" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="Users" />
+                                </VerticalStackLayout>
+                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                                    <Button
+                                        Style="{StaticResource IconButtonLargeSolid}"
+                                        Text="{x:Static h:Icons.Add}"
+                                        Command="{Binding NewPostCommand}"
+                                        SemanticProperties.Description="New post"
+                                        SemanticProperties.Hint="Write an announcement for one or more groups" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="New post" />
+                                </VerticalStackLayout>
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+
+                        <!-- First few groups -->
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="Groups" />
+                                <Button
+                                    Grid.Column="1"
+                                    Style="{StaticResource LinkButton}"
+                                    Text="See all"
+                                    Command="{Binding OpenGroupsCommand}"
+                                    SemanticProperties.Hint="Opens the Groups tab" />
+                            </Grid>
+
+                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding AdminGroups}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:HomeGroupItem">
+                                        <Border
+                                            Style="{StaticResource RowCard}"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Opens announcements">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenCommand}" />
+                                            </Border.GestureRecognizers>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsActive}">
+                                                    <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                                </Border>
+                                                <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsInactive}">
+                                                    <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                                </Border>
+                                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                    <Label
+                                                        Style="{StaticResource CardTitle}"
+                                                        Text="{Binding Name}"
+                                                        LineBreakMode="TailTruncation"
+                                                        MaxLines="1" />
+                                                    <Label
+                                                        Style="{StaticResource Caption}"
+                                                        Text="{Binding Description}"
+                                                        IsVisible="{Binding HasDescription}"
+                                                        LineBreakMode="TailTruncation"
+                                                        MaxLines="1" />
+                                                    <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsInactive}">
+                                                        <Label Style="{StaticResource BadgeNeutralText}" Text="Inactive" />
+                                                    </Border>
+                                                </VerticalStackLayout>
+                                                <Label
+                                                    Grid.Column="2"
+                                                    Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False"
+                                                    Text="{x:Static h:Icons.ChevronRight}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                            <Label
+                                Style="{StaticResource Caption}"
+                                Text="No groups yet. Open the Groups tab to create one."
+                                IsVisible="{Binding HasNoAdminGroups}" />
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+
+                    <!-- ================= MEMBER ================= -->
+                    <VerticalStackLayout Spacing="20" IsVisible="{Binding IsMember}">
+
+                        <!-- Search my groups -->
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                                <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                                <Entry
+                                    Grid.Column="1"
+                                    Placeholder="Search groups"
+                                    ReturnType="Search"
+                                    Text="{Binding SearchText}"
+                                    SemanticProperties.Description="Search your groups" />
+                            </Grid>
+                        </Border>
+
+                        <VerticalStackLayout Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="My groups" />
+                                <Label
+                                    Grid.Column="1"
+                                    Style="{StaticResource Caption}"
+                                    Text="{Binding JoinedText}"
+                                    VerticalOptions="Center" />
+                            </Grid>
+
+                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding MyGroups}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:HomeGroupItem">
+                                        <Border
+                                            Style="{StaticResource RowCard}"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Opens announcements">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenCommand}" />
+                                            </Border.GestureRecognizers>
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
+                                                    <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                                </Border>
+                                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                    <Label
+                                                        Style="{StaticResource CardTitle}"
+                                                        Text="{Binding Name}"
+                                                        LineBreakMode="TailTruncation"
+                                                        MaxLines="1" />
+                                                    <Label
+                                                        Style="{StaticResource Caption}"
+                                                        Text="{Binding Description}"
+                                                        IsVisible="{Binding HasDescription}"
+                                                        LineBreakMode="TailTruncation"
+                                                        MaxLines="2" />
+                                                </VerticalStackLayout>
+                                                <Button
+                                                    Grid.Column="2"
+                                                    Style="{StaticResource IconButton}"
+                                                    Text="{x:Static h:Icons.Notifications}"
+                                                    Command="{Binding OpenCommand}"
+                                                    SemanticProperties.Description="{Binding AnnouncementsLabel}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                            <Label
+                                Style="{StaticResource Caption}"
+                                Text="You have not joined any groups yet."
+                                IsVisible="{Binding HasNoMyGroups}" />
+
+                            <!-- Find more groups -->
+                            <Border
+                                Style="{StaticResource CardDashed}"
+                                StrokeDashArray="4,4"
+                                SemanticProperties.Description="Find more groups"
+                                SemanticProperties.Hint="Opens Discover">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding FindMoreGroupsCommand}" />
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Border Grid.Column="0" Style="{StaticResource IconTile}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Explore}" />
+                                    </Border>
+                                    <Label
+                                        Grid.Column="1"
+                                        Style="{StaticResource CardTitle}"
+                                        Text="Find more groups"
+                                        VerticalOptions="Center" />
+                                    <Label
+                                        Grid.Column="2"
+                                        Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False"
+                                        Text="{x:Static h:Icons.ChevronRight}" />
+                                </Grid>
+                            </Border>
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+
+        <controls:ToastView x:Name="Toast" />
+
+    </Grid>
+</ContentPage>

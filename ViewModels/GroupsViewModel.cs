@@ -64,7 +64,7 @@ public partial class GroupsViewModel : BaseViewModel
         if (!_session.IsAdmin)
         {
             // Not an admin: never show this page.
-            await _navigation.GoToAsync("..");
+            await _navigation.GoToAsync(Routes.Splash);
             return;
         }
 
@@ -107,6 +107,13 @@ public partial class GroupsViewModel : BaseViewModel
         return _navigation.GoToAsync(Routes.GroupEdit);
     }
 
+    // Admin: write one announcement and post it to one or more groups.
+    [RelayCommand]
+    private Task NewAnnouncementAsync()
+    {
+        return _navigation.GoToAsync(Routes.AnnouncementEdit);
+    }
+
     private async Task ManageGroupAsync(GroupListItem item)
     {
         try
@@ -116,17 +123,25 @@ public partial class GroupsViewModel : BaseViewModel
                 return;
             }
 
+            string announcementsOption = "Announcements";
             string membersOption = "Manage members";
             string editOption = "Edit group";
             string activeOption = item.IsActive ? "Deactivate group" : "Activate group";
 
-            string? choice = await _dialogs.ChooseAsync(item.Name, "Cancel", new string[] { membersOption, editOption, activeOption });
+            string? choice = await _dialogs.ChooseAsync(item.Name, "Cancel", new string[] { announcementsOption, membersOption, editOption, activeOption });
             if (choice == null)
             {
                 return;
             }
 
-            if (choice == membersOption)
+            if (choice == announcementsOption)
+            {
+                string announcementsRoute = Routes.Announcements
+                    + "?groupId=" + Uri.EscapeDataString(item.Id)
+                    + "&groupName=" + Uri.EscapeDataString(item.Name);
+                await _navigation.GoToAsync(announcementsRoute);
+            }
+            else if (choice == membersOption)
             {
                 string membersRoute = Routes.GroupMembers + "?groupId=" + Uri.EscapeDataString(item.Id);
                 await _navigation.GoToAsync(membersRoute);

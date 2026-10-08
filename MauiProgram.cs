@@ -1,4 +1,4 @@
-﻿using GroupAnnouncementApp.Repositories;
+using GroupAnnouncementApp.Repositories;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using GroupAnnouncementApp.Services;
 using GroupAnnouncementApp.Services.Interfaces;
@@ -28,6 +28,7 @@ public static class MauiProgram
             {
                 fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("MaterialIconsRound-Regular.otf", "MaterialIconsRound");
             });
 
         RegisterFirebaseServices(builder);
@@ -69,6 +70,7 @@ public static class MauiProgram
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
         services.AddSingleton<IDialogService, DialogService>();
+        services.AddSingleton<IToastService, ToastService>();
         services.AddSingleton<IUserAdminService, UserAdminService>();
         services.AddSingleton<IGroupAdminService, GroupAdminService>();
         services.AddSingleton<IMembershipService, MembershipService>();
@@ -78,17 +80,16 @@ public static class MauiProgram
 
     private static void RegisterViewModels(IServiceCollection services)
     {
-        services.AddTransient<LoginViewModel>();
-        services.AddTransient<RegisterViewModel>();
+        services.AddTransient<WelcomeViewModel>();
         services.AddTransient<SplashViewModel>();
         services.AddTransient<CompleteProfileViewModel>();
-        services.AddTransient<DashboardViewModel>();
+        services.AddTransient<AccountViewModel>();
+        services.AddTransient<HomeViewModel>();
         services.AddTransient<UsersViewModel>();
         services.AddTransient<GroupsViewModel>();
         services.AddTransient<GroupEditViewModel>();
         services.AddTransient<GroupMembersViewModel>();
         services.AddTransient<AddMembersViewModel>();
-        services.AddTransient<MyGroupsViewModel>();
         services.AddTransient<JoinGroupsViewModel>();
         services.AddTransient<AnnouncementGroupsViewModel>();
         services.AddTransient<AnnouncementsViewModel>();
@@ -98,17 +99,16 @@ public static class MauiProgram
     private static void RegisterViews(IServiceCollection services)
     {
         services.AddTransient<AppShell>();
-        services.AddTransient<LoginPage>();
-        services.AddTransient<RegisterPage>();
+        services.AddTransient<WelcomePage>();
         services.AddTransient<SplashPage>();
         services.AddTransient<CompleteProfilePage>();
-        services.AddTransient<DashboardPage>();
+        services.AddTransient<AccountPage>();
+        services.AddTransient<HomePage>();
         services.AddTransient<UsersPage>();
         services.AddTransient<GroupsPage>();
         services.AddTransient<GroupEditPage>();
         services.AddTransient<GroupMembersPage>();
         services.AddTransient<AddMembersPage>();
-        services.AddTransient<MyGroupsPage>();
         services.AddTransient<JoinGroupsPage>();
         services.AddTransient<AnnouncementGroupsPage>();
         services.AddTransient<AnnouncementsPage>();

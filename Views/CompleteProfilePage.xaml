@@ -8,50 +8,78 @@
     Shell.NavBarIsVisible="False">
 
     <ScrollView>
-        <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+        <VerticalStackLayout Padding="24,48,24,24" Spacing="20">
 
-            <Label Text="Complete your profile" FontSize="28" HorizontalOptions="Center" />
+            <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
+                <Border Style="{StaticResource BrandMark}">
+                    <Label Style="{StaticResource BrandMarkText}" Text="GA" />
+                </Border>
+                <Label
+                    Style="{StaticResource PageTitle}"
+                    Text="Complete your profile"
+                    HorizontalOptions="Center" />
+                <Label
+                    Style="{StaticResource Caption}"
+                    Text="We could not find your profile. Add your details to continue."
+                    HorizontalOptions="Center"
+                    HorizontalTextAlignment="Center" />
+                <Border Style="{StaticResource BadgeNeutral}" HorizontalOptions="Center">
+                    <Label
+                        Style="{StaticResource BadgeNeutralText}"
+                        Text="{Binding UserEmail, StringFormat='Signed in as {0}'}" />
+                </Border>
+            </VerticalStackLayout>
 
-            <Label
-                Text="We could not find your profile. Please add your details to continue."
-                HorizontalTextAlignment="Center" />
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="12">
 
-            <Label
-                Text="{Binding UserEmail, StringFormat='Signed in as {0}'}"
-                HorizontalOptions="Center" />
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource Caption}" Text="Full name" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry
+                                Placeholder="Your name"
+                                ReturnType="Next"
+                                Text="{Binding Name}"
+                                IsEnabled="{Binding IsNotBusy}" />
+                        </Border>
+                    </VerticalStackLayout>
 
-            <Entry
-                Placeholder="Full name"
-                ReturnType="Next"
-                Text="{Binding Name}"
-                IsEnabled="{Binding IsNotBusy}" />
+                    <VerticalStackLayout Spacing="4">
+                        <Label Style="{StaticResource Caption}" Text="Phone number" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <Entry
+                                Placeholder="e.g. 9876543210"
+                                Keyboard="Telephone"
+                                ReturnType="Done"
+                                ReturnCommand="{Binding SaveCommand}"
+                                Text="{Binding Phone}"
+                                IsEnabled="{Binding IsNotBusy}" />
+                        </Border>
+                    </VerticalStackLayout>
 
-            <Entry
-                Placeholder="Phone number"
-                Keyboard="Telephone"
-                ReturnType="Done"
-                ReturnCommand="{Binding SaveCommand}"
-                Text="{Binding Phone}"
-                IsEnabled="{Binding IsNotBusy}" />
+                    <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                        <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                    </Border>
 
-            <Label
-                Text="{Binding ErrorMessage}"
-                IsVisible="{Binding HasError}"
-                TextColor="Red" />
+                    <Button
+                        Text="Save and continue"
+                        Command="{Binding SaveCommand}"
+                        IsEnabled="{Binding IsNotBusy}" />
 
-            <Button
-                Text="Save and continue"
-                Command="{Binding SaveCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
+                    <Button
+                        Text="Log out"
+                        Style="{StaticResource PillOutline}"
+                        HorizontalOptions="Center"
+                        Command="{Binding LogoutCommand}"
+                        IsEnabled="{Binding IsNotBusy}" />
 
-            <Button
-                Text="Log out"
-                Command="{Binding LogoutCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
+                    <ActivityIndicator
+                        IsRunning="{Binding IsBusy}"
+                        IsVisible="{Binding IsBusy}"
+                        HorizontalOptions="Center" />
 
-            <ActivityIndicator
-                IsRunning="{Binding IsBusy}"
-                IsVisible="{Binding IsBusy}" />
+                </VerticalStackLayout>
+            </Border>
 
         </VerticalStackLayout>
     </ScrollView>

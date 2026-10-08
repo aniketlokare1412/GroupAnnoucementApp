@@ -2,12 +2,13 @@
 
 namespace GroupAnnouncementApp;
 
-public class App : Application
+public partial class App : Application
 {
     private readonly IServiceProvider _serviceProvider;
 
     public App(IServiceProvider serviceProvider)
     {
+        InitializeComponent();
         _serviceProvider = serviceProvider;
     }
 
