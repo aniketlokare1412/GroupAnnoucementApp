@@ -26,4 +26,5 @@ public static class Icons
     public const string Check = "\ue5ca";
     public const string Refresh = "\ue5d5";
     public const string Logout = "\ue9ba";
+    public const string PowerSettings = "\ue8ac"; // power_settings_new: activate / deactivate a group
 }
