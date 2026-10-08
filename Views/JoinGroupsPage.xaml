@@ -3,69 +3,155 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.JoinGroupsPage"
     x:DataType="vm:JoinGroupsViewModel"
-    Title="Discover">
+    Title="Discover"
+    Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+    <!-- Member Discover tab. Same header style as Home (the nav bar is hidden). -->
+    <Grid>
 
-        <SearchBar
-            Grid.Row="0"
-            Placeholder="Search groups"
-            Text="{Binding SearchText}" />
+        <Grid RowDefinitions="Auto,*">
 
-        <Label Grid.Row="1" Text="{Binding SummaryText}" />
+            <!-- Header: title, search, summary, banners -->
+            <VerticalStackLayout Grid.Row="0" Padding="20,24,20,8" Spacing="12">
 
-        <Label
-            Grid.Row="2"
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red" />
+                <VerticalStackLayout Spacing="2">
+                    <Label Style="{StaticResource HeroName}" Text="Discover" />
+                    <Label Style="{StaticResource Greeting}" Text="Find groups and join the ones you care about" />
+                </VerticalStackLayout>
 
-        <Label
-            Grid.Row="3"
-            Text="{Binding NoticeMessage}"
-            IsVisible="{Binding HasNotice}"
-            TextColor="DarkOrange" />
+                <Border Style="{StaticResource FieldBorder}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                        <Entry
+                            Grid.Column="1"
+                            Placeholder="Search groups"
+                            ReturnType="Search"
+                            Text="{Binding SearchText}"
+                            SemanticProperties.Description="Search groups" />
+                    </Grid>
+                </Border>
 
-        <Grid Grid.Row="4">
+                <Label Style="{StaticResource SectionLabel}" Text="{Binding SummaryText}" />
 
-            <CollectionView
-                ItemsSource="{Binding Groups}"
-                SelectionMode="Single"
-                SelectedItem="{Binding SelectedGroup}"
-                IsEnabled="{Binding IsNotBusy}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:JoinGroupItem">
-                        <VerticalStackLayout Padding="8,10" Spacing="2">
-                            <Label Text="{Binding Name}" FontAttributes="Bold" />
-                            <Label Text="{Binding Description}" IsVisible="{Binding HasDescription}" />
-                            <Label Text="Joined" TextColor="Green" IsVisible="{Binding IsMember}" />
-                            <Label Text="Tap to join" TextColor="Gray" IsVisible="{Binding IsNotMember}" />
-                        </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
 
-            <Label
-                Text="No groups found."
-                IsVisible="{Binding HasNoGroups}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+                <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding HasNotice}">
+                    <Label Style="{StaticResource NoticeBannerText}" Text="{Binding NoticeMessage}" />
+                </Border>
 
-            <ActivityIndicator
-                IsRunning="{Binding IsBusy}"
-                IsVisible="{Binding IsBusy}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+            </VerticalStackLayout>
 
+            <!-- List -->
+            <Grid Grid.Row="1">
+
+                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+                    <CollectionView
+                        ItemsSource="{Binding Groups}"
+                        SelectionMode="None"
+                        Margin="20,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:JoinGroupItem">
+                                <Border
+                                    Style="{StaticResource RowCard}"
+                                    SemanticProperties.Description="{Binding CardLabel}"
+                                    SemanticProperties.Hint="{Binding CardHint}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding PrimaryCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+
+                                        <!-- Joined groups get the teal tint; others stay neutral -->
+                                        <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsMember}">
+                                            <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                        </Border>
+                                        <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsNotMember}">
+                                            <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label
+                                                Style="{StaticResource CardTitle}"
+                                                Text="{Binding Name}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="1" />
+                                            <Label
+                                                Style="{StaticResource Caption}"
+                                                Text="{Binding Description}"
+                                                IsVisible="{Binding HasDescription}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="2" />
+                                            <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding IsMember}" Margin="0,4,0,0" AutomationProperties.IsInAccessibleTree="False">
+                                                <HorizontalStackLayout Spacing="4">
+                                                    <Label Style="{StaticResource ChipIcon}" Text="{x:Static h:Icons.Check}" />
+                                                    <Label Style="{StaticResource BadgeSuccessText}" Text="Joined" />
+                                                </HorizontalStackLayout>
+                                            </Border>
+                                        </VerticalStackLayout>
+
+                                        <Button
+                                            Grid.Column="2"
+                                            Style="{StaticResource IconButton}"
+                                            Text="{x:Static h:Icons.Add}"
+                                            Command="{Binding JoinCommand}"
+                                            IsVisible="{Binding IsNotMember}"
+                                            SemanticProperties.Description="{Binding JoinLabel}" />
+                                        <Label
+                                            Grid.Column="2"
+                                            Style="{StaticResource IconMuted}"
+                                            AutomationProperties.IsInAccessibleTree="False"
+                                            IsVisible="{Binding IsMember}"
+                                            Text="{x:Static h:Icons.ChevronRight}" />
+
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.Footer>
+                            <BoxView HeightRequest="16" Color="Transparent" />
+                        </CollectionView.Footer>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout
+                                x:DataType="vm:JoinGroupsViewModel"
+                                IsVisible="{Binding HasNoGroups}"
+                                Spacing="8"
+                                Padding="0,48,0,0"
+                                HorizontalOptions="Center">
+                                <Border Style="{StaticResource EmptyIconTile}">
+                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                                </Border>
+                                <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="{Binding EmptyHint}"
+                                    HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </RefreshView>
+
+                <ActivityIndicator
+                    IsRunning="{Binding ShowLoading}"
+                    IsVisible="{Binding ShowLoading}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Start"
+                    Margin="0,48,0,0" />
+
+            </Grid>
         </Grid>
 
-        <Button
-            Grid.Row="5"
-            Text="Refresh"
-            Command="{Binding RefreshCommand}"
-            IsEnabled="{Binding IsNotBusy}" />
+        <controls:ToastView x:Name="Toast" />
 
     </Grid>
 </ContentPage>
