@@ -3,70 +3,133 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
     x:Class="GroupAnnouncementApp.Views.AddMembersPage"
     x:DataType="vm:AddMembersViewModel"
     Title="Add members">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+    <!-- Admin: tap cards to tick people, then the one main button adds them. Cancel = the back arrow. -->
+    <Grid RowDefinitions="Auto,*,Auto">
 
-        <SearchBar
-            Grid.Row="0"
-            Placeholder="Search by name, email or phone"
-            Text="{Binding SearchText}" />
+        <VerticalStackLayout Grid.Row="0" Padding="20,16,20,8" Spacing="12">
 
-        <Label Grid.Row="1" Text="{Binding SelectedCountText}" FontAttributes="Bold" />
+            <Border Style="{StaticResource FieldBorder}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                    <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                    <Entry
+                        Grid.Column="1"
+                        Placeholder="Search by name, email or phone"
+                        ReturnType="Search"
+                        Text="{Binding SearchText}"
+                        SemanticProperties.Description="Search users" />
+                </Grid>
+            </Border>
 
-        <Label
-            Grid.Row="2"
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red" />
+            <!-- Count chip: neutral when nothing is ticked, pale teal otherwise -->
+            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding HasNoSelection}">
+                <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding SelectedCountText}" />
+            </Border>
+            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding HasSelection}">
+                <Label Style="{StaticResource BadgeBrandText}" Text="{Binding SelectedCountText}" />
+            </Border>
 
-        <Grid Grid.Row="3">
+            <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            </Border>
+
+        </VerticalStackLayout>
+
+        <Grid Grid.Row="1">
 
             <CollectionView
                 ItemsSource="{Binding Users}"
                 SelectionMode="None"
+                Margin="20,0"
                 IsEnabled="{Binding IsNotBusy}">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                </CollectionView.ItemsLayout>
+
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="vm:SelectableUserItem">
-                        <Grid ColumnDefinitions="Auto,*" Padding="4,8" ColumnSpacing="8">
-                            <CheckBox Grid.Column="0" IsChecked="{Binding IsSelected}" VerticalOptions="Center" />
-                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
-                                <Label Text="{Binding Name}" FontAttributes="Bold" />
-                                <Label Text="{Binding Email}" />
-                            </VerticalStackLayout>
-                        </Grid>
+                        <Border
+                            Style="{StaticResource RowCard}"
+                            SemanticProperties.Description="{Binding CardLabel}"
+                            SemanticProperties.Hint="Double tap to select or unselect">
+                            <Border.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                            </Border.GestureRecognizers>
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+
+                                <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
+                                    <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                </Border>
+
+                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                    <Label
+                                        Style="{StaticResource CardTitle}"
+                                        Text="{Binding Name}"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="1" />
+                                    <Label
+                                        Style="{StaticResource Caption}"
+                                        Text="{Binding Email}"
+                                        IsVisible="{Binding HasEmail}"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="1" />
+                                </VerticalStackLayout>
+
+                                <!-- Tick: hollow ring, or pale teal with a check -->
+                                <Border Grid.Column="2" Style="{StaticResource SelectRing}" IsVisible="{Binding IsNotSelected}" AutomationProperties.IsInAccessibleTree="False" />
+                                <Border Grid.Column="2" Style="{StaticResource SelectRingOn}" IsVisible="{Binding IsSelected}" AutomationProperties.IsInAccessibleTree="False">
+                                    <Label Style="{StaticResource SelectCheck}" Text="{x:Static h:Icons.Check}" />
+                                </Border>
+
+                            </Grid>
+                        </Border>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
-            </CollectionView>
 
-            <Label
-                Text="No users available to add."
-                IsVisible="{Binding HasNoUsers}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+                <CollectionView.Footer>
+                    <BoxView HeightRequest="16" Color="Transparent" />
+                </CollectionView.Footer>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout
+                        x:DataType="vm:AddMembersViewModel"
+                        IsVisible="{Binding HasNoUsers}"
+                        Spacing="8"
+                        Padding="0,48,0,0"
+                        HorizontalOptions="Center">
+                        <Border Style="{StaticResource EmptyIconTile}">
+                            <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Person}" />
+                        </Border>
+                        <Label Style="{StaticResource CardTitle}" Text="No users to add" HorizontalOptions="Center" />
+                        <Label
+                            Style="{StaticResource Caption}"
+                            Text="Everyone is already in this group, or nothing matches your search."
+                            HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
 
             <ActivityIndicator
                 IsRunning="{Binding IsBusy}"
                 IsVisible="{Binding IsBusy}"
                 HorizontalOptions="Center"
-                VerticalOptions="Center" />
+                VerticalOptions="Start"
+                Margin="0,48,0,0" />
 
         </Grid>
 
-        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
-            <Button
-                Grid.Column="0"
-                Text="Add selected"
-                Command="{Binding AddSelectedCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
-            <Button
-                Grid.Column="1"
-                Text="Cancel"
-                Command="{Binding CancelCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
-        </Grid>
+        <Button
+            Grid.Row="2"
+            Style="{StaticResource PillPrimary}"
+            Text="{Binding AddButtonText}"
+            Command="{Binding AddSelectedCommand}"
+            IsEnabled="{Binding IsNotBusy}"
+            HorizontalOptions="Fill"
+            Margin="20,8,20,16" />
 
     </Grid>
 </ContentPage>

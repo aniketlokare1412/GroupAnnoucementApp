@@ -15,6 +15,7 @@ public partial class AddMembersViewModel : BaseViewModel
     private readonly INavigationService _navigation;
     private readonly ISessionService _session;
     private readonly IMembershipAdminService _membershipService;
+    private readonly IToastService _toasts;
 
     private List<SelectableUserItem> _allItems = new List<SelectableUserItem>();
     private bool _isLoaded;
@@ -30,17 +31,33 @@ public partial class AddMembersViewModel : BaseViewModel
     [ObservableProperty]
     private string _selectedCountText = "No users selected";
 
+    // Text of the main button: "Add selected" or "Add 3 members".
+    [ObservableProperty]
+    private string _addButtonText = "Add selected";
+
+    // True when at least one user is ticked (the count chip turns teal).
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoSelection))]
+    private bool _hasSelection;
+
+    public bool HasNoSelection
+    {
+        get { return !HasSelection; }
+    }
+
     [ObservableProperty]
     private bool _hasNoUsers;
 
     public AddMembersViewModel(
         INavigationService navigation,
         ISessionService session,
-        IMembershipAdminService membershipService)
+        IMembershipAdminService membershipService,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _membershipService = membershipService;
+        _toasts = toasts;
     }
 
     // Runs automatically whenever the search text changes.
@@ -133,11 +150,16 @@ public partial class AddMembersViewModel : BaseViewModel
 
         bool succeeded;
         string? failMessage = null;
+        int addedCount = selectedIds.Count;
         try
         {
             OperationResult<int> result = await _membershipService.AddMembersAsync(GroupId, selectedIds);
             succeeded = result.IsSuccess;
             failMessage = result.ErrorMessage;
+            if (succeeded && result.Value > 0)
+            {
+                addedCount = result.Value;
+            }
         }
         finally
         {
@@ -147,6 +169,9 @@ public partial class AddMembersViewModel : BaseViewModel
         if (succeeded)
         {
             await _navigation.GoToAsync("..");
+
+            // After going back: the Members page shows it (or keeps it until it appears).
+            _toasts.Show(addedCount == 1 ? "Added 1 member" : "Added " + addedCount + " members");
             return;
         }
 
@@ -182,13 +207,17 @@ public partial class AddMembersViewModel : BaseViewModel
             }
         }
 
+        HasSelection = count > 0;
+
         if (count == 0)
         {
             SelectedCountText = "No users selected";
+            AddButtonText = "Add selected";
         }
         else
         {
             SelectedCountText = count + " selected";
+            AddButtonText = count == 1 ? "Add 1 member" : "Add " + count + " members";
         }
     }
 

@@ -7,7 +7,7 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// Admin: the members of one group (groupId comes from the route). Tap a member to remove them.
+// Admin: the members of one group (groupId comes from the route). The x on a card removes that member.
 [QueryProperty(nameof(GroupId), "groupId")]
 public partial class GroupMembersViewModel : BaseViewModel
 {
@@ -16,6 +16,7 @@ public partial class GroupMembersViewModel : BaseViewModel
     private readonly IGroupAdminService _groupService;
     private readonly IMembershipAdminService _membershipService;
     private readonly IDialogService _dialogs;
+    private readonly IToastService _toasts;
 
     private bool _hasLoaded;
 
@@ -25,35 +26,40 @@ public partial class GroupMembersViewModel : BaseViewModel
     private string? _groupId;
 
     [ObservableProperty]
-    private MemberListItem? _selectedMember;
-
-    [ObservableProperty]
     private bool _hasNoMembers;
 
+    // Header: the group's name, its initials and "12 members".
     [ObservableProperty]
-    private string _summaryText = string.Empty;
+    private string _groupName = string.Empty;
+
+    [ObservableProperty]
+    private string _initials = string.Empty;
+
+    [ObservableProperty]
+    private string _countText = string.Empty;
+
+    // True only for the very first load, so a refresh or a removal never blanks the screen.
+    [ObservableProperty]
+    private bool _showLoading;
+
+    // Bound to the pull-to-refresh control.
+    [ObservableProperty]
+    private bool _isRefreshing;
 
     public GroupMembersViewModel(
         INavigationService navigation,
         ISessionService session,
         IGroupAdminService groupService,
         IMembershipAdminService membershipService,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _groupService = groupService;
         _membershipService = membershipService;
         _dialogs = dialogs;
-    }
-
-    // Runs automatically when a row is tapped.
-    partial void OnSelectedMemberChanged(MemberListItem? value)
-    {
-        if (value != null)
-        {
-            _ = RemoveMemberAsync(value);
-        }
+        _toasts = toasts;
     }
 
     // Called by the page every time it appears (so the list is fresh after adding members).
@@ -78,6 +84,7 @@ public partial class GroupMembersViewModel : BaseViewModel
 
         IsBusy = true;
         ErrorMessage = null;
+        ShowLoading = !_hasLoaded;
 
         try
         {
@@ -99,23 +106,34 @@ public partial class GroupMembersViewModel : BaseViewModel
             List<GroupMemberEntry> entries = result.Value ?? new List<GroupMemberEntry>();
             for (int i = 0; i < entries.Count; i++)
             {
-                Members.Add(MemberListItem.FromEntry(entries[i]));
+                Members.Add(MemberListItem.FromEntry(entries[i], RemoveMemberAsync));
             }
 
             _hasLoaded = true;
             HasNoMembers = Members.Count == 0;
-            SummaryText = groupResult.Value.Name + "  |  " + Members.Count + " members";
+            GroupName = groupResult.Value.Name;
+            Initials = InitialsHelper.From(groupResult.Value.Name);
+            CountText = Members.Count == 1 ? "1 member" : Members.Count + " members";
         }
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
     [RelayCommand]
-    private Task RefreshAsync()
+    private async Task RefreshAsync()
     {
-        return LoadAsync();
+        IsRefreshing = true;
+        try
+        {
+            await LoadAsync();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
     }
 
     [RelayCommand]
@@ -173,6 +191,7 @@ public partial class GroupMembersViewModel : BaseViewModel
 
             if (removed)
             {
+                _toasts.Show("Removed " + item.Name);
                 await LoadAsync();
             }
         }
@@ -180,11 +199,6 @@ public partial class GroupMembersViewModel : BaseViewModel
         {
             System.Diagnostics.Debug.WriteLine("REMOVE MEMBER ERROR: " + ex);
             ErrorMessage = "Something went wrong. Please try again.";
-        }
-        finally
-        {
-            // Clear the selection so the same row can be tapped again.
-            SelectedMember = null;
         }
     }
 }

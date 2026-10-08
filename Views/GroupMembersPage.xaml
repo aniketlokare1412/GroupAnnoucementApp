@@ -3,64 +3,141 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.GroupMembersPage"
     x:DataType="vm:GroupMembersViewModel"
-    Title="Group members">
+    Title="Members">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+    <!-- Admin: members of one group. "Add members" is the one text button; the x on a card removes. -->
+    <Grid>
 
-        <Label Grid.Row="0" Text="{Binding SummaryText}" FontAttributes="Bold" />
+        <Grid RowDefinitions="Auto,Auto,*">
 
-        <Label
-            Grid.Row="1"
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red" />
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="20,16,20,8">
+                <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
+                    <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                </Border>
 
-        <Grid Grid.Row="2">
+                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                    <Label
+                        Style="{StaticResource SectionTitle}"
+                        Text="{Binding GroupName}"
+                        LineBreakMode="TailTruncation"
+                        MaxLines="1" />
+                    <Label Style="{StaticResource Caption}" Text="{Binding CountText}" />
+                </VerticalStackLayout>
 
-            <CollectionView
-                ItemsSource="{Binding Members}"
-                SelectionMode="Single"
-                SelectedItem="{Binding SelectedMember}"
-                IsEnabled="{Binding IsNotBusy}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:MemberListItem">
-                        <VerticalStackLayout Padding="8,10" Spacing="2">
-                            <Label Text="{Binding Name}" FontAttributes="Bold" />
-                            <Label Text="{Binding Email}" />
-                            <Label Text="{Binding StatusText}" TextColor="Gray" IsVisible="{Binding HasStatus}" />
-                        </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <Button
+                    Grid.Column="2"
+                    Style="{StaticResource PillPrimary}"
+                    Text="Add members"
+                    Command="{Binding AddMembersCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    VerticalOptions="Center" />
+            </Grid>
 
-            <Label
-                Text="No members yet. Tap Add members."
-                IsVisible="{Binding HasNoMembers}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+            <Border
+                Grid.Row="1"
+                Style="{StaticResource ErrorBanner}"
+                Margin="20,0,20,8"
+                IsVisible="{Binding HasError}">
+                <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            </Border>
 
-            <ActivityIndicator
-                IsRunning="{Binding IsBusy}"
-                IsVisible="{Binding IsBusy}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+            <Grid Grid.Row="2">
 
+                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+                    <CollectionView
+                        ItemsSource="{Binding Members}"
+                        SelectionMode="None"
+                        Margin="20,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:MemberListItem">
+                                <Border Style="{StaticResource RowCard}">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+
+                                        <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsNormal}">
+                                            <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                        </Border>
+                                        <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsMuted}">
+                                            <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                        </Border>
+
+                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                            <Label
+                                                Style="{StaticResource CardTitle}"
+                                                Text="{Binding Name}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="1" />
+                                            <Label
+                                                Style="{StaticResource Caption}"
+                                                Text="{Binding Email}"
+                                                IsVisible="{Binding HasEmail}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="1" />
+                                            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdministrator}" Margin="0,4,0,0">
+                                                <Label Style="{StaticResource BadgeBrandText}" Text="Administrator" />
+                                            </Border>
+                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsDeactivated}" Margin="0,4,0,0">
+                                                <Label Style="{StaticResource BadgeNeutralText}" Text="Deactivated user" />
+                                            </Border>
+                                            <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsProfileMissing}" Margin="0,4,0,0">
+                                                <Label Style="{StaticResource BadgeDangerText}" Text="Profile missing" />
+                                            </Border>
+                                        </VerticalStackLayout>
+
+                                        <Button
+                                            Grid.Column="2"
+                                            Style="{StaticResource IconButtonDanger}"
+                                            Text="{x:Static h:Icons.Close}"
+                                            Command="{Binding RemoveCommand}"
+                                            SemanticProperties.Description="{Binding RemoveLabel}" />
+
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.Footer>
+                            <BoxView HeightRequest="16" Color="Transparent" />
+                        </CollectionView.Footer>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout
+                                x:DataType="vm:GroupMembersViewModel"
+                                IsVisible="{Binding HasNoMembers}"
+                                Spacing="8"
+                                Padding="0,48,0,0"
+                                HorizontalOptions="Center">
+                                <Border Style="{StaticResource EmptyIconTile}">
+                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                </Border>
+                                <Label Style="{StaticResource CardTitle}" Text="No members yet" HorizontalOptions="Center" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="Tap Add members to pick people for this group."
+                                    HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </RefreshView>
+
+                <ActivityIndicator
+                    IsRunning="{Binding ShowLoading}"
+                    IsVisible="{Binding ShowLoading}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Start"
+                    Margin="0,48,0,0" />
+
+            </Grid>
         </Grid>
 
-        <Grid Grid.Row="3" ColumnDefinitions="*,*" ColumnSpacing="8">
-            <Button
-                Grid.Column="0"
-                Text="Add members"
-                Command="{Binding AddMembersCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
-            <Button
-                Grid.Column="1"
-                Text="Refresh"
-                Command="{Binding RefreshCommand}"
-                IsEnabled="{Binding IsNotBusy}" />
-        </Grid>
+        <controls:ToastView x:Name="Toast" />
 
     </Grid>
 </ContentPage>
