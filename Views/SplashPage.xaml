@@ -7,29 +7,42 @@
     x:DataType="vm:SplashViewModel"
     Shell.NavBarIsVisible="False">
 
-    <VerticalStackLayout Padding="30" Spacing="16" VerticalOptions="Center">
+    <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center">
 
-        <Label Text="Group Announcements" FontSize="24" HorizontalOptions="Center" />
+        <Border Style="{StaticResource BrandMark}">
+            <Label Style="{StaticResource BrandMarkText}" Text="GA" />
+        </Border>
+
+        <Label
+            Style="{StaticResource PageTitle}"
+            Text="Group Announcements"
+            HorizontalOptions="Center" />
 
         <ActivityIndicator
             IsRunning="{Binding IsBusy}"
-            IsVisible="{Binding IsBusy}" />
+            IsVisible="{Binding IsBusy}"
+            HorizontalOptions="Center" />
 
-        <Label
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red"
-            HorizontalTextAlignment="Center" />
+        <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+            <Label
+                Style="{StaticResource ErrorBannerText}"
+                Text="{Binding ErrorMessage}"
+                HorizontalTextAlignment="Center" />
+        </Border>
 
-        <Button
-            Text="Try again"
-            Command="{Binding RetryCommand}"
-            IsVisible="{Binding ShowActions}" />
-
-        <Button
-            Text="Log out"
-            Command="{Binding LogoutCommand}"
-            IsVisible="{Binding ShowActions}" />
+        <HorizontalStackLayout
+            Spacing="8"
+            HorizontalOptions="Center"
+            IsVisible="{Binding ShowActions}">
+            <Button
+                Text="Try again"
+                Style="{StaticResource PillPrimary}"
+                Command="{Binding RetryCommand}" />
+            <Button
+                Text="Log out"
+                Style="{StaticResource PillOutline}"
+                Command="{Binding LogoutCommand}" />
+        </HorizontalStackLayout>
 
     </VerticalStackLayout>
 </ContentPage>

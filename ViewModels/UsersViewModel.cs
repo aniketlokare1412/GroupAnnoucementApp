@@ -67,7 +67,7 @@ public partial class UsersViewModel : BaseViewModel
         if (!_session.IsAdmin)
         {
             // Not an admin: never show this page.
-            await _navigation.GoToAsync("..");
+            await _navigation.GoToAsync(Routes.Splash);
             return;
         }
 

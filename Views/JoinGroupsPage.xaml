@@ -5,7 +5,7 @@
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
     x:Class="GroupAnnouncementApp.Views.JoinGroupsPage"
     x:DataType="vm:JoinGroupsViewModel"
-    Title="Join a group">
+    Title="Discover">
 
     <Grid RowDefinitions="Auto,Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
 

@@ -1,12 +1,12 @@
-using GroupAnnouncementApp.ViewModels;
+﻿using GroupAnnouncementApp.ViewModels;
 
 namespace GroupAnnouncementApp.Views;
 
-public partial class LoginPage : ContentPage
+public partial class WelcomePage : ContentPage
 {
-    private readonly LoginViewModel _viewModel;
+    private readonly WelcomeViewModel _viewModel;
 
-    public LoginPage(LoginViewModel viewModel)
+    public WelcomePage(WelcomeViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;

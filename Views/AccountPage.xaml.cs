@@ -1,12 +1,12 @@
-using GroupAnnouncementApp.ViewModels;
+﻿using GroupAnnouncementApp.ViewModels;
 
 namespace GroupAnnouncementApp.Views;
 
-public partial class DashboardPage : ContentPage
+public partial class AccountPage : ContentPage
 {
-    private readonly DashboardViewModel _viewModel;
+    private readonly AccountViewModel _viewModel;
 
-    public DashboardPage(DashboardViewModel viewModel)
+    public AccountPage(AccountViewModel viewModel)
     {
         InitializeComponent();
         _viewModel = viewModel;

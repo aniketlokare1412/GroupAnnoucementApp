@@ -80,7 +80,9 @@ public class SessionService : ISessionService
         }
 
         _currentProfile = profile;
-        return SessionLoadResult.Create(SessionStatus.Ready, null, Routes.Dashboard);
+        bool isAdmin = string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal);
+        string home = isAdmin ? Routes.AdminHome : Routes.MemberHome;
+        return SessionLoadResult.Create(SessionStatus.Ready, null, home);
     }
 
     public async Task<OperationResult> SignOutAsync()

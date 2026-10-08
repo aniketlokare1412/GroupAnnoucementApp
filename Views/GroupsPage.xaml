@@ -57,7 +57,7 @@
 
         </Grid>
 
-        <Grid Grid.Row="4" ColumnDefinitions="*,*" ColumnSpacing="8">
+        <Grid Grid.Row="4" ColumnDefinitions="*,*,*" ColumnSpacing="8">
             <Button
                 Grid.Column="0"
                 Text="Add group"
@@ -65,6 +65,11 @@
                 IsEnabled="{Binding IsNotBusy}" />
             <Button
                 Grid.Column="1"
+                Text="Announce"
+                Command="{Binding NewAnnouncementCommand}"
+                IsEnabled="{Binding IsNotBusy}" />
+            <Button
+                Grid.Column="2"
                 Text="Refresh"
                 Command="{Binding RefreshCommand}"
                 IsEnabled="{Binding IsNotBusy}" />

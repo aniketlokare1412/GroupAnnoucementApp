@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    x:Class="GroupAnnouncementApp.Views.AccountPage"
+    x:DataType="vm:AccountViewModel"
+    Title="Account">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="16" Spacing="16">
+
+            <Border Style="{StaticResource Card}">
+                <VerticalStackLayout Spacing="8" HorizontalOptions="Fill">
+
+                    <Border Style="{StaticResource AvatarCircle}">
+                        <Label Style="{StaticResource AvatarText}" Text="{Binding Initials}" />
+                    </Border>
+
+                    <Label
+                        Style="{StaticResource SectionTitle}"
+                        Text="{Binding DisplayName}"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center" />
+
+                    <Label
+                        Style="{StaticResource Caption}"
+                        Text="{Binding UserEmail}"
+                        HorizontalOptions="Center" />
+
+                    <Border Style="{StaticResource BadgeBrand}" HorizontalOptions="Center">
+                        <Label Style="{StaticResource BadgeBrandText}" Text="{Binding RoleText}" />
+                    </Border>
+
+                </VerticalStackLayout>
+            </Border>
+
+            <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            </Border>
+
+            <!-- Two-step log out: no dialog. -->
+            <Button
+                Text="Log out"
+                Style="{StaticResource PillOutline}"
+                HorizontalOptions="Center"
+                Command="{Binding LogoutCommand}"
+                IsVisible="{Binding IsNotConfirmingLogout}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <Button
+                Text="Tap again to log out"
+                Style="{StaticResource PillDangerSolid}"
+                HorizontalOptions="Center"
+                Command="{Binding LogoutCommand}"
+                IsVisible="{Binding IsConfirmingLogout}"
+                IsEnabled="{Binding IsNotBusy}" />
+
+            <ActivityIndicator
+                IsRunning="{Binding IsBusy}"
+                IsVisible="{Binding IsBusy}"
+                HorizontalOptions="Center" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>
