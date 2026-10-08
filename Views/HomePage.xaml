@@ -14,10 +14,10 @@
 
         <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
             <ScrollView>
-                <VerticalStackLayout Padding="20,24,20,24" Spacing="20">
+                <VerticalStackLayout Padding="16,14,16,16" Spacing="12">
 
                     <!-- Header: greeting + avatar (opens Account) -->
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
                         <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
                             <Label Style="{StaticResource Greeting}" Text="{Binding Greeting}" />
                             <Label
@@ -45,39 +45,39 @@
                         HorizontalOptions="Center" />
 
                     <!-- ================= ADMIN ================= -->
-                    <VerticalStackLayout Spacing="20" IsVisible="{Binding IsAdmin}">
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding IsAdmin}">
 
                         <!-- Counts -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
                             <Border Grid.Column="0" Style="{StaticResource Card}">
-                                <VerticalStackLayout Spacing="10">
-                                    <Border Style="{StaticResource IconTile}">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Border Grid.Column="0" Style="{StaticResource IconTile}" VerticalOptions="Center">
                                         <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
                                     </Border>
-                                    <VerticalStackLayout Spacing="0">
+                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding GroupsCountText}" />
                                         <Label Style="{StaticResource Caption}" Text="Groups" />
                                     </VerticalStackLayout>
-                                </VerticalStackLayout>
+                                </Grid>
                             </Border>
                             <Border Grid.Column="1" Style="{StaticResource Card}">
-                                <VerticalStackLayout Spacing="10">
-                                    <Border Style="{StaticResource IconTile}">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Border Grid.Column="0" Style="{StaticResource IconTile}" VerticalOptions="Center">
                                         <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
                                     </Border>
-                                    <VerticalStackLayout Spacing="0">
+                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding UsersCountText}" />
                                         <Label Style="{StaticResource Caption}" Text="Users" />
                                     </VerticalStackLayout>
-                                </VerticalStackLayout>
+                                </Grid>
                             </Border>
                         </Grid>
 
                         <!-- Quick actions: icon buttons with a caption; New post is the one solid button -->
-                        <VerticalStackLayout Spacing="10">
+                        <VerticalStackLayout Spacing="6">
                             <Label Style="{StaticResource SectionLabel}" Text="Quick actions" />
-                            <HorizontalStackLayout Spacing="20">
-                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                            <HorizontalStackLayout Spacing="16">
+                                <VerticalStackLayout Spacing="4" WidthRequest="56">
                                     <Button
                                         Style="{StaticResource IconButtonLarge}"
                                         Text="{x:Static h:Icons.Group}"
@@ -85,7 +85,7 @@
                                         SemanticProperties.Description="Groups" />
                                     <Label Style="{StaticResource QuickActionLabel}" Text="Groups" />
                                 </VerticalStackLayout>
-                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                                <VerticalStackLayout Spacing="4" WidthRequest="56">
                                     <Button
                                         Style="{StaticResource IconButtonLarge}"
                                         Text="{x:Static h:Icons.UserCheck}"
@@ -93,7 +93,7 @@
                                         SemanticProperties.Description="Users" />
                                     <Label Style="{StaticResource QuickActionLabel}" Text="Users" />
                                 </VerticalStackLayout>
-                                <VerticalStackLayout Spacing="6" WidthRequest="64">
+                                <VerticalStackLayout Spacing="4" WidthRequest="56">
                                     <Button
                                         Style="{StaticResource IconButtonLargeSolid}"
                                         Text="{x:Static h:Icons.Add}"
@@ -106,7 +106,7 @@
                         </VerticalStackLayout>
 
                         <!-- First few groups -->
-                        <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="6">
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="Groups" />
                                 <Button
@@ -117,7 +117,7 @@
                                     SemanticProperties.Hint="Opens the Groups tab" />
                             </Grid>
 
-                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding AdminGroups}">
+                            <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding AdminGroups}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:HomeGroupItem">
                                         <Border
@@ -127,14 +127,14 @@
                                             <Border.GestureRecognizers>
                                                 <TapGestureRecognizer Command="{Binding OpenCommand}" />
                                             </Border.GestureRecognizers>
-                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                                                 <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsActive}">
                                                     <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                                 </Border>
                                                 <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsInactive}">
                                                     <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                                 </Border>
-                                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                                     <Label
                                                         Style="{StaticResource CardTitle}"
                                                         Text="{Binding Name}"
@@ -169,7 +169,7 @@
                     </VerticalStackLayout>
 
                     <!-- ================= MEMBER ================= -->
-                    <VerticalStackLayout Spacing="20" IsVisible="{Binding IsMember}">
+                    <VerticalStackLayout Spacing="12" IsVisible="{Binding IsMember}">
 
                         <!-- Search my groups -->
                         <Border Style="{StaticResource FieldBorder}">
@@ -184,7 +184,7 @@
                             </Grid>
                         </Border>
 
-                        <VerticalStackLayout Spacing="8">
+                        <VerticalStackLayout Spacing="6">
                             <Grid ColumnDefinitions="*,Auto">
                                 <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="My groups" />
                                 <Label
@@ -194,7 +194,7 @@
                                     VerticalOptions="Center" />
                             </Grid>
 
-                            <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding MyGroups}">
+                            <VerticalStackLayout Spacing="6" BindableLayout.ItemsSource="{Binding MyGroups}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:HomeGroupItem">
                                         <Border
@@ -204,11 +204,11 @@
                                             <Border.GestureRecognizers>
                                                 <TapGestureRecognizer Command="{Binding OpenCommand}" />
                                             </Border.GestureRecognizers>
-                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                                                 <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
                                                     <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                                 </Border>
-                                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                                     <Label
                                                         Style="{StaticResource CardTitle}"
                                                         Text="{Binding Name}"
@@ -221,12 +221,10 @@
                                                         LineBreakMode="TailTruncation"
                                                         MaxLines="2" />
                                                 </VerticalStackLayout>
-                                                <Button
+                                                <Label
                                                     Grid.Column="2"
-                                                    Style="{StaticResource IconButton}"
-                                                    Text="{x:Static h:Icons.Notifications}"
-                                                    Command="{Binding OpenCommand}"
-                                                    SemanticProperties.Description="{Binding AnnouncementsLabel}" />
+                                                    Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False"
+                                                    Text="{x:Static h:Icons.ChevronRight}" />
                                             </Grid>
                                         </Border>
                                     </DataTemplate>
@@ -247,7 +245,7 @@
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding FindMoreGroupsCommand}" />
                                 </Border.GestureRecognizers>
-                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                                     <Border Grid.Column="0" Style="{StaticResource IconTile}" VerticalOptions="Center">
                                         <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Explore}" />
                                     </Border>

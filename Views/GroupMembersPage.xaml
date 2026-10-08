@@ -14,12 +14,12 @@
 
         <Grid RowDefinitions="Auto,Auto,*">
 
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="20,16,20,8">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="16,10,16,6">
                 <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
                     <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                 </Border>
 
-                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                     <Label
                         Style="{StaticResource SectionTitle}"
                         Text="{Binding GroupName}"
@@ -40,7 +40,7 @@
             <Border
                 Grid.Row="1"
                 Style="{StaticResource ErrorBanner}"
-                Margin="20,0,20,8"
+                Margin="16,0,16,6"
                 IsVisible="{Binding HasError}">
                 <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
             </Border>
@@ -51,15 +51,15 @@
                     <CollectionView
                         ItemsSource="{Binding Members}"
                         SelectionMode="None"
-                        Margin="20,0">
+                        Margin="16,0">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="vm:MemberListItem">
                                 <Border Style="{StaticResource RowCard}">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
 
                                         <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsNormal}">
                                             <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
@@ -68,7 +68,7 @@
                                             <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                         </Border>
 
-                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                             <Label
                                                 Style="{StaticResource CardTitle}"
                                                 Text="{Binding Name}"
@@ -80,13 +80,13 @@
                                                 IsVisible="{Binding HasEmail}"
                                                 LineBreakMode="TailTruncation"
                                                 MaxLines="1" />
-                                            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdministrator}" Margin="0,4,0,0">
+                                            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdministrator}" Margin="0,2,0,0">
                                                 <Label Style="{StaticResource BadgeBrandText}" Text="Administrator" />
                                             </Border>
-                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsDeactivated}" Margin="0,4,0,0">
+                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsDeactivated}" Margin="0,2,0,0">
                                                 <Label Style="{StaticResource BadgeNeutralText}" Text="Deactivated user" />
                                             </Border>
-                                            <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsProfileMissing}" Margin="0,4,0,0">
+                                            <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsProfileMissing}" Margin="0,2,0,0">
                                                 <Label Style="{StaticResource BadgeDangerText}" Text="Profile missing" />
                                             </Border>
                                         </VerticalStackLayout>
@@ -104,7 +104,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="16" Color="Transparent" />
+                            <BoxView HeightRequest="12" Color="Transparent" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -112,7 +112,7 @@
                                 x:DataType="vm:GroupMembersViewModel"
                                 IsVisible="{Binding HasNoMembers}"
                                 Spacing="8"
-                                Padding="0,48,0,0"
+                                Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
                                     <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />

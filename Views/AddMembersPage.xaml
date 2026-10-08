@@ -11,7 +11,7 @@
     <!-- Admin: tap cards to tick people, then the one main button adds them. Cancel = the back arrow. -->
     <Grid RowDefinitions="Auto,*,Auto">
 
-        <VerticalStackLayout Grid.Row="0" Padding="20,16,20,8" Spacing="12">
+        <VerticalStackLayout Grid.Row="0" Padding="16,10,16,6" Spacing="8">
 
             <Border Style="{StaticResource FieldBorder}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
@@ -44,10 +44,10 @@
             <CollectionView
                 ItemsSource="{Binding Users}"
                 SelectionMode="None"
-                Margin="20,0"
+                Margin="16,0"
                 IsEnabled="{Binding IsNotBusy}">
                 <CollectionView.ItemsLayout>
-                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
                 </CollectionView.ItemsLayout>
 
                 <CollectionView.ItemTemplate>
@@ -59,13 +59,13 @@
                             <Border.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding ToggleCommand}" />
                             </Border.GestureRecognizers>
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
 
                                 <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
                                     <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                 </Border>
 
-                                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                     <Label
                                         Style="{StaticResource CardTitle}"
                                         Text="{Binding Name}"
@@ -91,7 +91,7 @@
                 </CollectionView.ItemTemplate>
 
                 <CollectionView.Footer>
-                    <BoxView HeightRequest="16" Color="Transparent" />
+                    <BoxView HeightRequest="12" Color="Transparent" />
                 </CollectionView.Footer>
 
                 <CollectionView.EmptyView>
@@ -99,7 +99,7 @@
                         x:DataType="vm:AddMembersViewModel"
                         IsVisible="{Binding HasNoUsers}"
                         Spacing="8"
-                        Padding="0,48,0,0"
+                        Padding="0,40,0,0"
                         HorizontalOptions="Center">
                         <Border Style="{StaticResource EmptyIconTile}">
                             <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Person}" />

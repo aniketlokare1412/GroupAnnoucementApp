@@ -16,12 +16,12 @@
         <Grid RowDefinitions="Auto,Auto,*,Auto">
 
             <!-- Header: group initials, name, count, and the page action -->
-            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12" Padding="20,16,20,8">
+            <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="16,10,16,6">
                 <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
                     <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                 </Border>
 
-                <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                     <Label
                         Style="{StaticResource SectionTitle}"
                         Text="{Binding GroupName}"
@@ -56,7 +56,7 @@
             <Border
                 Grid.Row="1"
                 Style="{StaticResource ErrorBanner}"
-                Margin="20,0,20,8"
+                Margin="16,0,16,6"
                 IsVisible="{Binding HasError}">
                 <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
             </Border>
@@ -68,15 +68,15 @@
                     <CollectionView
                         ItemsSource="{Binding Items}"
                         SelectionMode="None"
-                        Margin="20,0">
+                        Margin="16,0">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="10" />
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="vm:AnnouncementListItem">
                                 <Border Style="{StaticResource Card}" Opacity="{Binding CardOpacity}">
-                                    <VerticalStackLayout Spacing="8">
+                                    <VerticalStackLayout Spacing="4">
 
                                         <!-- Chips: New, Edited, Deleted -->
                                         <HorizontalStackLayout Spacing="6" IsVisible="{Binding HasBadges}">
@@ -88,6 +88,9 @@
                                             </Border>
                                             <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeleted}">
                                                 <Label Style="{StaticResource BadgeDangerText}" Text="Deleted" />
+                                            </Border>
+                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsByOtherAdmin}">
+                                                <Label Style="{StaticResource BadgeNeutralText}" Text="Another admin" />
                                             </Border>
                                         </HorizontalStackLayout>
 
@@ -101,7 +104,7 @@
                                                 Style="{StaticResource Caption}"
                                                 Text="{Binding DateText}"
                                                 VerticalOptions="Center" />
-                                            <HorizontalStackLayout Grid.Column="1" Spacing="8" IsVisible="{Binding CanManage}">
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="4" IsVisible="{Binding CanManage}">
                                                 <Button
                                                     Style="{StaticResource IconButton}"
                                                     Text="{x:Static h:Icons.Edit}"
@@ -121,7 +124,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="16" Color="Transparent" />
+                            <BoxView HeightRequest="12" Color="Transparent" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -129,7 +132,7 @@
                                 x:DataType="vm:AnnouncementsViewModel"
                                 IsVisible="{Binding HasNoItems}"
                                 Spacing="8"
-                                Padding="0,48,0,0"
+                                Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
                                     <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Campaign}" />

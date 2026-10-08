@@ -7,6 +7,8 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
+// Admin Users tab. Every user is a compact card with icon buttons (make / remove admin,
+// activate / deactivate). The old "tap a row, pick from a list" dialog is gone.
 public partial class UsersViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
@@ -14,6 +16,7 @@ public partial class UsersViewModel : BaseViewModel
     private readonly IAuthService _authService;
     private readonly IUserAdminService _adminService;
     private readonly IDialogService _dialogs;
+    private readonly IToastService _toasts;
 
     private List<UserProfile> _allUsers = new List<UserProfile>();
     private bool _hasLoaded;
@@ -24,41 +27,46 @@ public partial class UsersViewModel : BaseViewModel
     private string _searchText = string.Empty;
 
     [ObservableProperty]
-    private UserListItem? _selectedUser;
-
-    [ObservableProperty]
     private bool _hasNoUsers;
 
+    // "12 users  -  2 admins", or "3 of 12 users" while searching.
     [ObservableProperty]
     private string _summaryText = string.Empty;
+
+    [ObservableProperty]
+    private string _emptyTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _emptyHint = string.Empty;
+
+    // True only for the very first load, so a refresh or a change never blanks the screen.
+    [ObservableProperty]
+    private bool _showLoading;
+
+    // Bound to the pull-to-refresh control.
+    [ObservableProperty]
+    private bool _isRefreshing;
 
     public UsersViewModel(
         INavigationService navigation,
         ISessionService session,
         IAuthService authService,
         IUserAdminService adminService,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _authService = authService;
         _adminService = adminService;
         _dialogs = dialogs;
+        _toasts = toasts;
     }
 
     // Runs automatically whenever the search text changes.
     partial void OnSearchTextChanged(string value)
     {
         ApplyFilter();
-    }
-
-    // Runs automatically when a row is tapped.
-    partial void OnSelectedUserChanged(UserListItem? value)
-    {
-        if (value != null)
-        {
-            _ = ManageUserAsync(value);
-        }
     }
 
     // Called by the page every time it appears.
@@ -78,6 +86,7 @@ public partial class UsersViewModel : BaseViewModel
 
         IsBusy = true;
         ErrorMessage = null;
+        ShowLoading = !_hasLoaded;
 
         try
         {
@@ -95,16 +104,25 @@ public partial class UsersViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
     [RelayCommand]
-    private Task RefreshAsync()
+    private async Task RefreshAsync()
     {
-        return LoadAsync();
+        IsRefreshing = true;
+        try
+        {
+            await LoadAsync();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
     }
 
-    private async Task ManageUserAsync(UserListItem item)
+    private async Task ChangeActiveAsync(UserListItem item)
     {
         try
         {
@@ -119,100 +137,98 @@ public partial class UsersViewModel : BaseViewModel
                 return;
             }
 
-            string activeOption = item.IsActive ? "Deactivate user" : "Activate user";
-            string roleOption = item.IsAdmin ? "Remove admin rights" : "Make admin";
+            bool newValue = !item.IsActive;
 
-            string? choice = await _dialogs.ChooseAsync(item.Name, "Cancel", new string[] { activeOption, roleOption });
-            if (choice == null)
+            string title;
+            string message;
+            string accept;
+            if (newValue)
+            {
+                title = "Activate user";
+                message = "Activate " + item.Name + "? They will be able to use the app again.";
+                accept = "Activate";
+            }
+            else
+            {
+                title = "Deactivate user";
+                message = "Deactivate " + item.Name + "? They will no longer be able to use the app.";
+                accept = "Deactivate";
+            }
+
+            bool confirmed = await _dialogs.ConfirmAsync(title, message, accept, "Cancel");
+            if (!confirmed)
             {
                 return;
             }
 
-            if (choice == activeOption)
+            bool saved = await RunChangeAsync(_adminService.SetActiveAsync(item.Id, newValue));
+            if (saved)
             {
-                await ChangeActiveAsync(item);
-            }
-            else if (choice == roleOption)
-            {
-                await ChangeRoleAsync(item);
+                _toasts.Show(newValue ? "Activated " + item.Name : "Deactivated " + item.Name);
+                await LoadAsync();
             }
         }
         catch (Exception ex)
         {
-            System.Diagnostics.Debug.WriteLine("MANAGE USER ERROR: " + ex);
+            System.Diagnostics.Debug.WriteLine("CHANGE USER ACTIVE ERROR: " + ex);
             ErrorMessage = "Something went wrong. Please try again.";
-        }
-        finally
-        {
-            // Clear the selection so the same row can be tapped again.
-            SelectedUser = null;
-        }
-    }
-
-    private async Task ChangeActiveAsync(UserListItem item)
-    {
-        bool newValue = !item.IsActive;
-
-        string title;
-        string message;
-        string accept;
-        if (newValue)
-        {
-            title = "Activate user";
-            message = "Activate " + item.Name + "? They will be able to use the app again.";
-            accept = "Activate";
-        }
-        else
-        {
-            title = "Deactivate user";
-            message = "Deactivate " + item.Name + "? They will no longer be able to use the app.";
-            accept = "Deactivate";
-        }
-
-        bool confirmed = await _dialogs.ConfirmAsync(title, message, accept, "Cancel");
-        if (!confirmed)
-        {
-            return;
-        }
-
-        bool saved = await RunChangeAsync(_adminService.SetActiveAsync(item.Id, newValue));
-        if (saved)
-        {
-            await LoadAsync();
         }
     }
 
     private async Task ChangeRoleAsync(UserListItem item)
     {
-        string newType;
-        string title;
-        string message;
-        string accept;
-        if (item.IsAdmin)
+        try
         {
-            newType = UserTypes.Regular;
-            title = "Remove admin rights";
-            message = "Remove admin rights from " + item.Name + "? They will become a regular member.";
-            accept = "Remove";
-        }
-        else
-        {
-            newType = UserTypes.Admin;
-            title = "Make admin";
-            message = "Make " + item.Name + " an administrator? Administrators can manage users, groups and announcements.";
-            accept = "Make admin";
-        }
+            if (IsBusy)
+            {
+                return;
+            }
 
-        bool confirmed = await _dialogs.ConfirmAsync(title, message, accept, "Cancel");
-        if (!confirmed)
-        {
-            return;
-        }
+            if (item.IsSelf)
+            {
+                await _dialogs.AlertAsync("Your account", "You cannot change your own role or status.", "OK");
+                return;
+            }
 
-        bool saved = await RunChangeAsync(_adminService.SetUserTypeAsync(item.Id, newType));
-        if (saved)
+            string newType;
+            string title;
+            string message;
+            string accept;
+            string toast;
+            if (item.IsAdmin)
+            {
+                newType = UserTypes.Regular;
+                title = "Remove admin rights";
+                message = "Remove admin rights from " + item.Name + "? They will become a regular member.";
+                accept = "Remove";
+                toast = item.Name + " is now a member";
+            }
+            else
+            {
+                newType = UserTypes.Admin;
+                title = "Make admin";
+                message = "Make " + item.Name + " an administrator? Administrators can manage users, groups and announcements.";
+                accept = "Make admin";
+                toast = item.Name + " is now an administrator";
+            }
+
+            bool confirmed = await _dialogs.ConfirmAsync(title, message, accept, "Cancel");
+            if (!confirmed)
+            {
+                return;
+            }
+
+            bool saved = await RunChangeAsync(_adminService.SetUserTypeAsync(item.Id, newType));
+            if (saved)
+            {
+                _toasts.Show(toast);
+                await LoadAsync();
+            }
+        }
+        catch (Exception ex)
         {
-            await LoadAsync();
+            System.Diagnostics.Debug.WriteLine("CHANGE USER ROLE ERROR: " + ex);
+            ErrorMessage = "Something went wrong. Please try again.";
         }
     }
 
@@ -245,24 +261,50 @@ public partial class UsersViewModel : BaseViewModel
         string? currentUid = _authService.GetCurrentUserId();
 
         Users.Clear();
+        int adminCount = 0;
         for (int i = 0; i < _allUsers.Count; i++)
         {
             UserProfile profile = _allUsers[i];
+
+            if (string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal))
+            {
+                adminCount++;
+            }
+
             if (Matches(profile, term))
             {
-                Users.Add(UserListItem.FromProfile(profile, currentUid));
+                Users.Add(UserListItem.FromProfile(profile, currentUid, ChangeRoleAsync, ChangeActiveAsync));
             }
         }
 
         HasNoUsers = _hasLoaded && Users.Count == 0;
 
-        if (_hasLoaded)
+        if (!_hasLoaded)
+        {
+            SummaryText = string.Empty;
+            return;
+        }
+
+        if (term.Length > 0)
         {
             SummaryText = Users.Count + " of " + _allUsers.Count + " users";
         }
         else
         {
-            SummaryText = string.Empty;
+            string total = _allUsers.Count == 1 ? "1 user" : _allUsers.Count + " users";
+            string admins = adminCount == 1 ? "1 admin" : adminCount + " admins";
+            SummaryText = total + "  -  " + admins;
+        }
+
+        if (_allUsers.Count == 0)
+        {
+            EmptyTitle = "No users yet";
+            EmptyHint = "People appear here after they register.";
+        }
+        else
+        {
+            EmptyTitle = "No users found";
+            EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
     }
 
