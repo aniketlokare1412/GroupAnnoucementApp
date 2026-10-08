@@ -3,67 +3,178 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.UsersPage"
     x:DataType="vm:UsersViewModel"
-    Title="Manage users">
+    Title="Users"
+    Shell.NavBarIsVisible="False">
 
-    <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
+    <!-- Admin Users tab. Same header style as Home and Groups (the nav bar is hidden). -->
+    <Grid>
 
-        <SearchBar
-            Grid.Row="0"
-            Placeholder="Search by name, email or phone"
-            Text="{Binding SearchText}" />
+        <Grid RowDefinitions="Auto,*">
 
-        <Label Grid.Row="1" Text="{Binding SummaryText}" />
+            <VerticalStackLayout Grid.Row="0" Padding="16,12,16,6" Spacing="8">
 
-        <Label
-            Grid.Row="2"
-            Text="{Binding ErrorMessage}"
-            IsVisible="{Binding HasError}"
-            TextColor="Red" />
+                <VerticalStackLayout Spacing="0">
+                    <Label Style="{StaticResource HeroName}" Text="Users" />
+                    <Label Style="{StaticResource Caption}" Text="{Binding SummaryText}" />
+                </VerticalStackLayout>
 
-        <Grid Grid.Row="3">
+                <Border Style="{StaticResource FieldBorder}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
+                        <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                        <Entry
+                            Grid.Column="1"
+                            Placeholder="Search by name, email or phone"
+                            ReturnType="Search"
+                            Text="{Binding SearchText}"
+                            SemanticProperties.Description="Search users" />
+                    </Grid>
+                </Border>
 
-            <CollectionView
-                ItemsSource="{Binding Users}"
-                SelectionMode="Single"
-                SelectedItem="{Binding SelectedUser}"
-                IsEnabled="{Binding IsNotBusy}">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="vm:UserListItem">
-                        <VerticalStackLayout Padding="8,10" Spacing="2">
-                            <Label Text="{Binding NameText}" FontAttributes="Bold" />
-                            <Label Text="{Binding Email}" />
-                            <Label Text="{Binding Phone}" />
-                            <HorizontalStackLayout Spacing="12">
-                                <Label Text="{Binding RoleText}" />
-                                <Label Text="Active" TextColor="Green" IsVisible="{Binding IsActive}" />
-                                <Label Text="Deactivated" TextColor="Red" IsVisible="{Binding IsDeactivated}" />
-                            </HorizontalStackLayout>
-                        </VerticalStackLayout>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
 
-            <Label
-                Text="No users found."
-                IsVisible="{Binding HasNoUsers}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+            </VerticalStackLayout>
 
-            <ActivityIndicator
-                IsRunning="{Binding IsBusy}"
-                IsVisible="{Binding IsBusy}"
-                HorizontalOptions="Center"
-                VerticalOptions="Center" />
+            <Grid Grid.Row="1">
 
+                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+                    <CollectionView
+                        ItemsSource="{Binding Users}"
+                        SelectionMode="None"
+                        Margin="16,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:UserListItem">
+                                <Border Style="{StaticResource RowCard}">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+
+                                        <!-- Who: initials, name + chips, contact lines -->
+                                        <Grid
+                                            Grid.Column="0"
+                                            ColumnDefinitions="Auto,*"
+                                            ColumnSpacing="10"
+                                            SemanticProperties.Description="{Binding CardLabel}">
+
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsActive}">
+                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            </Border>
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsDeactivated}">
+                                                <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            </Border>
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                                    <Label
+                                                        Grid.Column="0"
+                                                        Style="{StaticResource CardTitle}"
+                                                        Text="{Binding Name}"
+                                                        LineBreakMode="TailTruncation"
+                                                        MaxLines="1"
+                                                        VerticalOptions="Center" />
+                                                    <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                                        <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdmin}" AutomationProperties.IsInAccessibleTree="False">
+                                                            <Label Style="{StaticResource BadgeBrandText}" Text="Admin" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsSelf}" AutomationProperties.IsInAccessibleTree="False">
+                                                            <Label Style="{StaticResource BadgeNeutralText}" Text="You" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeactivated}" AutomationProperties.IsInAccessibleTree="False">
+                                                            <Label Style="{StaticResource BadgeDangerText}" Text="Inactive" />
+                                                        </Border>
+                                                    </HorizontalStackLayout>
+                                                </Grid>
+                                                <Label
+                                                    Style="{StaticResource Caption}"
+                                                    Text="{Binding Email}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                                <Label
+                                                    Style="{StaticResource Caption}"
+                                                    Text="{Binding Phone}"
+                                                    IsVisible="{Binding HasPhone}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+
+                                        <!-- Icon actions (none on your own card) -->
+                                        <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center" IsVisible="{Binding CanManage}">
+                                            <Button
+                                                Style="{StaticResource IconButton}"
+                                                Text="{x:Static h:Icons.AddModerator}"
+                                                Command="{Binding ToggleAdminCommand}"
+                                                IsVisible="{Binding CanMakeAdmin}"
+                                                SemanticProperties.Description="{Binding MakeAdminLabel}" />
+                                            <Button
+                                                Style="{StaticResource IconButtonDanger}"
+                                                Text="{x:Static h:Icons.RemoveModerator}"
+                                                Command="{Binding ToggleAdminCommand}"
+                                                IsVisible="{Binding CanRemoveAdmin}"
+                                                SemanticProperties.Description="{Binding RemoveAdminLabel}" />
+
+                                            <!-- Active: red-tint "deactivate". Deactivated: teal-tint "activate". -->
+                                            <Button
+                                                Style="{StaticResource IconButtonDanger}"
+                                                Text="{x:Static h:Icons.PowerSettings}"
+                                                Command="{Binding ToggleActiveCommand}"
+                                                IsVisible="{Binding CanDeactivate}"
+                                                SemanticProperties.Description="{Binding DeactivateLabel}" />
+                                            <Button
+                                                Style="{StaticResource IconButton}"
+                                                Text="{x:Static h:Icons.PowerSettings}"
+                                                Command="{Binding ToggleActiveCommand}"
+                                                IsVisible="{Binding CanActivate}"
+                                                SemanticProperties.Description="{Binding ActivateLabel}" />
+                                        </HorizontalStackLayout>
+
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.Footer>
+                            <BoxView HeightRequest="12" Color="Transparent" />
+                        </CollectionView.Footer>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout
+                                x:DataType="vm:UsersViewModel"
+                                IsVisible="{Binding HasNoUsers}"
+                                Spacing="8"
+                                Padding="0,40,0,0"
+                                HorizontalOptions="Center">
+                                <Border Style="{StaticResource EmptyIconTile}">
+                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
+                                </Border>
+                                <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="{Binding EmptyHint}"
+                                    HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </RefreshView>
+
+                <ActivityIndicator
+                    IsRunning="{Binding ShowLoading}"
+                    IsVisible="{Binding ShowLoading}"
+                    HorizontalOptions="Center"
+                    VerticalOptions="Start"
+                    Margin="0,40,0,0" />
+
+            </Grid>
         </Grid>
 
-        <Button
-            Grid.Row="4"
-            Text="Refresh"
-            Command="{Binding RefreshCommand}"
-            IsEnabled="{Binding IsNotBusy}" />
+        <controls:ToastView x:Name="Toast" />
 
     </Grid>
 </ContentPage>

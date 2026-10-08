@@ -8,10 +8,11 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// Admin: one page, three modes (decided by the route):
+// Admin: the announcement composer. One page, three modes (decided by the route):
 //   announcementedit                                   -> new announcement, pick ONE OR MORE groups
 //   announcementedit?groupId=..&groupName=..           -> new announcement for that one group
-//   announcementedit?groupId=..&announcementId=..      -> edit an existing announcement
+//   announcementedit?groupId=..&groupName=..&announcementId=..  -> edit an existing announcement
+// Cancel is the back arrow. After a successful save the page goes back and a toast confirms it.
 [QueryProperty(nameof(GroupId), "groupId")]
 [QueryProperty(nameof(GroupName), "groupName")]
 [QueryProperty(nameof(AnnouncementId), "announcementId")]
@@ -21,12 +22,16 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private readonly ISessionService _session;
     private readonly IAnnouncementService _announcementService;
     private readonly IGroupAdminService _groupService;
+    private readonly IToastService _toasts;
 
     private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
     private bool _isLoaded;
+    private bool _isSaving;
 
+    // The cards of the "Post to" picker (filtered by the search box).
     public ObservableCollection<SelectableGroupItem> Groups { get; } = new ObservableCollection<SelectableGroupItem>();
 
+    // Set by Shell from the route.
     [ObservableProperty]
     private string? _groupId;
 
@@ -36,17 +41,26 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     [ObservableProperty]
     private string? _announcementId;
 
+    // The page title ("New announcement" / "Edit announcement").
     [ObservableProperty]
     private string _titleText = "New announcement";
 
+    // The one main button at the bottom of the page.
     [ObservableProperty]
     private string _primaryButtonText = "Publish";
 
+    // The card that says where the announcement goes (single group and edit modes).
     [ObservableProperty]
-    private string _targetText = string.Empty;
+    private bool _hasTarget;
 
     [ObservableProperty]
-    private bool _hasTargetText;
+    private string _targetCaption = string.Empty;
+
+    [ObservableProperty]
+    private string _targetName = string.Empty;
+
+    [ObservableProperty]
+    private string _targetInitials = string.Empty;
 
     // True only in "pick one or more groups" mode.
     [ObservableProperty]
@@ -59,6 +73,10 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private string _selectedCountText = "No groups selected";
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNoSelection))]
+    private bool _hasSelection;
+
+    [ObservableProperty]
     private bool _hasNoGroups;
 
     [ObservableProperty]
@@ -66,6 +84,30 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _message = string.Empty;
+
+    // "12/100" and "340/2000", shown next to the field labels.
+    [ObservableProperty]
+    private string _titleCountText = string.Empty;
+
+    [ObservableProperty]
+    private string _messageCountText = string.Empty;
+
+    // True while the picker or the announcement is being loaded (spinner on the page).
+    [ObservableProperty]
+    private bool _showLoading;
+
+    // True when loading failed, so the page can offer "Try again".
+    [ObservableProperty]
+    private bool _showRetry;
+
+    // A warning (not an error): used when only some of the groups received the announcement.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasNotice))]
+    private string? _noticeMessage;
+
+    public bool HasNoSelection => !HasSelection;
+
+    public bool HasNotice => !string.IsNullOrWhiteSpace(NoticeMessage);
 
     public int MaxTitleLength
     {
@@ -91,12 +133,17 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         INavigationService navigation,
         ISessionService session,
         IAnnouncementService announcementService,
-        IGroupAdminService groupService)
+        IGroupAdminService groupService,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _announcementService = announcementService;
         _groupService = groupService;
+        _toasts = toasts;
+
+        TitleCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxTitleLength);
+        MessageCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxMessageLength);
     }
 
     // Runs automatically whenever the search text changes.
@@ -105,7 +152,18 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         ApplyFilter();
     }
 
+    partial void OnTitleChanged(string value)
+    {
+        TitleCountText = BuildCountText(value, AnnouncementLimits.MaxTitleLength);
+    }
+
+    partial void OnMessageChanged(string value)
+    {
+        MessageCountText = BuildCountText(value, AnnouncementLimits.MaxMessageLength);
+    }
+
     // Called by the page every time it appears. Loads once, so typed text and ticks are never lost.
+    // If loading failed, the next appearance (or "Try again") loads again.
     public async Task LoadAsync()
     {
         if (!_session.IsAdmin)
@@ -126,14 +184,13 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         else if (IsSingleGroup)
         {
             TitleText = "New announcement";
-            PrimaryButtonText = "Publish";
-            SetTarget("Posting to: " + GroupName);
+            SetTarget("Posting to", GroupName);
+            RefreshButtonText();
             _isLoaded = true;
         }
         else
         {
             TitleText = "New announcement";
-            PrimaryButtonText = "Publish";
             await LoadGroupPickerAsync();
         }
     }
@@ -147,10 +204,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
 
         TitleText = "Edit announcement";
-        PrimaryButtonText = "Save";
-        SetTarget("Group: " + GroupName);
+        SetTarget("Editing in", GroupName);
+        RefreshButtonText();
 
         IsBusy = true;
+        ShowLoading = true;
+        ShowRetry = false;
         ErrorMessage = null;
 
         try
@@ -159,6 +218,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
             if (!result.IsSuccess || result.Value == null)
             {
                 ErrorMessage = result.ErrorMessage ?? "We could not load the announcement.";
+                ShowRetry = true;
                 return;
             }
 
@@ -169,6 +229,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
@@ -176,6 +237,8 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     {
         IsPickerVisible = true;
         IsBusy = true;
+        ShowLoading = true;
+        ShowRetry = false;
         ErrorMessage = null;
 
         try
@@ -184,6 +247,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
             if (!result.IsSuccess)
             {
                 ErrorMessage = result.ErrorMessage;
+                ShowRetry = true;
                 return;
             }
 
@@ -212,9 +276,17 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
+    [RelayCommand]
+    private Task RetryAsync()
+    {
+        return LoadAsync();
+    }
+
+    // Ticks every group that is currently shown (so a search narrows what "Select all" does).
     [RelayCommand]
     private void SelectAll()
     {
@@ -243,7 +315,14 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
 
         IsBusy = true;
+        _isSaving = true;
+        RefreshButtonText();
         ErrorMessage = null;
+        NoticeMessage = null;
+
+        // Decided inside the try block, acted on after it (so the button is free again first).
+        bool leavePage = false;
+        string? toastText = null;
 
         try
         {
@@ -256,58 +335,68 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                     return;
                 }
 
-                await _navigation.GoToAsync("..");
-                return;
-            }
-
-            List<string> groupIds = new List<string>();
-            if (IsSingleGroup)
-            {
-                groupIds.Add(GroupId!);
+                leavePage = true;
+                toastText = "Changes saved";
             }
             else
             {
-                for (int i = 0; i < _allItems.Count; i++)
+                List<string> groupIds = new List<string>();
+                if (IsSingleGroup)
                 {
-                    if (_allItems[i].IsSelected)
+                    groupIds.Add(GroupId!);
+                }
+                else
+                {
+                    for (int i = 0; i < _allItems.Count; i++)
                     {
-                        groupIds.Add(_allItems[i].Id);
+                        if (_allItems[i].IsSelected)
+                        {
+                            groupIds.Add(_allItems[i].Id);
+                        }
                     }
                 }
-            }
 
-            if (groupIds.Count == 0)
-            {
-                ErrorMessage = "Select at least one group.";
-                return;
-            }
+                if (groupIds.Count == 0)
+                {
+                    ErrorMessage = "Select at least one group.";
+                    return;
+                }
 
-            OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds);
-            if (!result.IsSuccess)
-            {
-                ErrorMessage = result.ErrorMessage;
-                return;
-            }
+                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds);
+                if (!result.IsSuccess)
+                {
+                    ErrorMessage = result.ErrorMessage;
+                    return;
+                }
 
-            PublishResult published = result.Value ?? new PublishResult();
-            if (published.FailedGroupIds.Count == 0)
-            {
-                await _navigation.GoToAsync("..");
-                return;
+                PublishResult published = result.Value ?? new PublishResult();
+                if (published.FailedGroupIds.Count == 0)
+                {
+                    leavePage = true;
+                    toastText = groupIds.Count == 1 ? "Announcement posted" : "Posted to " + groupIds.Count + " groups";
+                }
+                else
+                {
+                    ShowPartialFailure(published, groupIds.Count);
+                }
             }
-
-            ShowPartialFailure(published, groupIds.Count);
         }
         finally
         {
+            _isSaving = false;
             IsBusy = false;
+            RefreshButtonText();
         }
-    }
 
-    [RelayCommand]
-    private Task CancelAsync()
-    {
-        return _navigation.GoToAsync("..");
+        if (leavePage)
+        {
+            // Go back first, then show the toast: the page we return to picks it up.
+            await _navigation.GoToAsync("..");
+            if (toastText != null)
+            {
+                _toasts.Show(toastText);
+            }
+        }
     }
 
     // Some groups got the announcement and some did not. Remove the groups that already
@@ -347,13 +436,15 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
 
         text = text + "Tap Publish to try the remaining groups again.";
-        ErrorMessage = text;
+        NoticeMessage = text;
     }
 
-    private void SetTarget(string text)
+    private void SetTarget(string caption, string? name)
     {
-        TargetText = text;
-        HasTargetText = true;
+        TargetCaption = caption;
+        TargetName = string.IsNullOrWhiteSpace(name) ? "This group" : name;
+        TargetInitials = InitialsHelper.From(name);
+        HasTarget = true;
     }
 
     private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -364,7 +455,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
     }
 
-    private void UpdateSelectedCount()
+    private int CountSelected()
     {
         int count = 0;
         for (int i = 0; i < _allItems.Count; i++)
@@ -374,6 +465,14 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                 count++;
             }
         }
+
+        return count;
+    }
+
+    private void UpdateSelectedCount()
+    {
+        int count = CountSelected();
+        HasSelection = count > 0;
 
         if (count == 0)
         {
@@ -387,6 +486,45 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         {
             SelectedCountText = count + " groups selected";
         }
+
+        RefreshButtonText();
+    }
+
+    // The main button says what it will do: "Publish", "Publish to 3 groups", "Save changes".
+    private void RefreshButtonText()
+    {
+        if (_isSaving)
+        {
+            PrimaryButtonText = IsEditing ? "Saving..." : "Publishing...";
+            return;
+        }
+
+        if (IsEditing)
+        {
+            PrimaryButtonText = "Save changes";
+            return;
+        }
+
+        if (IsPickerVisible)
+        {
+            int count = CountSelected();
+            if (count == 0)
+            {
+                PrimaryButtonText = "Publish";
+            }
+            else if (count == 1)
+            {
+                PrimaryButtonText = "Publish to 1 group";
+            }
+            else
+            {
+                PrimaryButtonText = "Publish to " + count + " groups";
+            }
+
+            return;
+        }
+
+        PrimaryButtonText = "Publish";
     }
 
     private void ApplyFilter()
@@ -403,5 +541,11 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
 
         HasNoGroups = _isLoaded && IsPickerVisible && Groups.Count == 0;
+    }
+
+    private static string BuildCountText(string? text, int max)
+    {
+        int length = text == null ? 0 : text.Length;
+        return length + "/" + max;
     }
 }

@@ -16,9 +16,9 @@
         <Grid RowDefinitions="Auto,*">
 
             <!-- Header: title, search, summary, banners -->
-            <VerticalStackLayout Grid.Row="0" Padding="20,24,20,8" Spacing="12">
+            <VerticalStackLayout Grid.Row="0" Padding="16,12,16,6" Spacing="8">
 
-                <VerticalStackLayout Spacing="2">
+                <VerticalStackLayout Spacing="0">
                     <Label Style="{StaticResource HeroName}" Text="Discover" />
                     <Label Style="{StaticResource Greeting}" Text="Find groups and join the ones you care about" />
                 </VerticalStackLayout>
@@ -54,9 +54,9 @@
                     <CollectionView
                         ItemsSource="{Binding Groups}"
                         SelectionMode="None"
-                        Margin="20,0">
+                        Margin="16,0">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
@@ -68,7 +68,7 @@
                                     <Border.GestureRecognizers>
                                         <TapGestureRecognizer Command="{Binding PrimaryCommand}" />
                                     </Border.GestureRecognizers>
-                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
 
                                         <!-- Joined groups get the teal tint; others stay neutral -->
                                         <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsMember}">
@@ -78,7 +78,7 @@
                                             <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                         </Border>
 
-                                        <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
+                                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                             <Label
                                                 Style="{StaticResource CardTitle}"
                                                 Text="{Binding Name}"
@@ -89,13 +89,7 @@
                                                 Text="{Binding Description}"
                                                 IsVisible="{Binding HasDescription}"
                                                 LineBreakMode="TailTruncation"
-                                                MaxLines="2" />
-                                            <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding IsMember}" Margin="0,4,0,0" AutomationProperties.IsInAccessibleTree="False">
-                                                <HorizontalStackLayout Spacing="4">
-                                                    <Label Style="{StaticResource ChipIcon}" Text="{x:Static h:Icons.Check}" />
-                                                    <Label Style="{StaticResource BadgeSuccessText}" Text="Joined" />
-                                                </HorizontalStackLayout>
-                                            </Border>
+                                                MaxLines="1" />
                                         </VerticalStackLayout>
 
                                         <Button
@@ -105,12 +99,17 @@
                                             Command="{Binding JoinCommand}"
                                             IsVisible="{Binding IsNotMember}"
                                             SemanticProperties.Description="{Binding JoinLabel}" />
-                                        <Label
+                                        <Border
                                             Grid.Column="2"
-                                            Style="{StaticResource IconMuted}"
-                                            AutomationProperties.IsInAccessibleTree="False"
+                                            Style="{StaticResource BadgeSuccess}"
                                             IsVisible="{Binding IsMember}"
-                                            Text="{x:Static h:Icons.ChevronRight}" />
+                                            VerticalOptions="Center"
+                                            AutomationProperties.IsInAccessibleTree="False">
+                                            <HorizontalStackLayout Spacing="3">
+                                                <Label Style="{StaticResource ChipIcon}" Text="{x:Static h:Icons.Check}" />
+                                                <Label Style="{StaticResource BadgeSuccessText}" Text="Joined" />
+                                            </HorizontalStackLayout>
+                                        </Border>
 
                                     </Grid>
                                 </Border>
@@ -118,7 +117,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="16" Color="Transparent" />
+                            <BoxView HeightRequest="12" Color="Transparent" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -126,7 +125,7 @@
                                 x:DataType="vm:JoinGroupsViewModel"
                                 IsVisible="{Binding HasNoGroups}"
                                 Spacing="8"
-                                Padding="0,48,0,0"
+                                Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
                                     <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />

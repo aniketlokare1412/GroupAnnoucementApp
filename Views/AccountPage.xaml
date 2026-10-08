@@ -8,7 +8,7 @@
     Title="Account">
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="16">
+        <VerticalStackLayout Padding="16" Spacing="12">
 
             <Border Style="{StaticResource Card}">
                 <VerticalStackLayout Spacing="8" HorizontalOptions="Fill">

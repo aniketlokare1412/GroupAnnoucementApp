@@ -193,7 +193,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         for (int i = _shownCount; i < target; i++)
         {
-            Items.Add(AnnouncementListItem.FromAnnouncement(_loaded[i], uid, EditItemAsync, DeleteItemAsync));
+            Items.Add(AnnouncementListItem.FromAnnouncement(_loaded[i], uid, EditItemAsync, DeleteItemAsync, IsAdminView));
         }
 
         _shownCount = target;

@@ -25,6 +25,9 @@ public sealed class AnnouncementListItem
     // True when the signed-in admin posted it (only then may they edit or delete it).
     public bool IsMine { get; private set; }
 
+    // Admin view only: someone else's post. It has no edit / delete icons, and this chip says why.
+    public bool IsByOtherAdmin { get; private set; }
+
     public ICommand? EditCommand { get; private set; }
     public ICommand? DeleteCommand { get; private set; }
 
@@ -42,7 +45,7 @@ public sealed class AnnouncementListItem
     // The chips row above the title is hidden when there is no chip to show.
     public bool HasBadges
     {
-        get { return IsNew || IsEdited || IsDeleted; }
+        get { return IsNew || IsEdited || IsDeleted || IsByOtherAdmin; }
     }
 
     // A deleted announcement (admins only) is shown faded.
@@ -66,7 +69,8 @@ public sealed class AnnouncementListItem
         Announcement announcement,
         string? currentUid,
         Func<AnnouncementListItem, Task> onEdit,
-        Func<AnnouncementListItem, Task> onDelete)
+        Func<AnnouncementListItem, Task> onDelete,
+        bool isAdminView = false)
     {
         AnnouncementListItem item = new AnnouncementListItem();
         item.Id = announcement.Id;
@@ -76,6 +80,7 @@ public sealed class AnnouncementListItem
         item.IsActive = announcement.IsActive;
         item.IsEdited = announcement.IsEdited;
         item.IsMine = !string.IsNullOrEmpty(currentUid) && announcement.CreatedBy == currentUid;
+        item.IsByOtherAdmin = isAdminView && !item.IsMine;
         item.EditCommand = new AsyncRelayCommand(() => onEdit(item));
         item.DeleteCommand = new AsyncRelayCommand(() => onDelete(item));
 
