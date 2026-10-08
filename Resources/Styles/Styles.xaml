@@ -944,4 +944,49 @@
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
 
+    <!-- ================================================================== -->
+    <!--  Phase B: Discover and announcements feed                          -->
+    <!-- ================================================================== -->
+
+    <!-- Message text inside an announcement card. -->
+    <Style TargetType="Label" x:Key="BodyText">
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="1.3" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+    </Style>
+
+    <!-- Soft warning banner (not an error): a Border (NoticeBanner) holding a Label (NoticeBannerText). -->
+    <Style TargetType="Border" x:Key="NoticeBanner">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 12" />
+        <Setter Property="Padding" Value="12,10" />
+    </Style>
+    <Style TargetType="Label" x:Key="NoticeBannerText">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+
+    <!-- Small check glyph inside the "Joined" chip. -->
+    <Style TargetType="Label" x:Key="ChipIcon">
+        <Setter Property="FontFamily" Value="MaterialIconsRound" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnSuccessDark}}" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <!-- Larger icon tile for empty states. -->
+    <Style TargetType="Border" x:Key="EmptyIconTile" BasedOn="{StaticResource IconTile}">
+        <Setter Property="StrokeShape" Value="RoundRectangle 22" />
+        <Setter Property="WidthRequest" Value="64" />
+        <Setter Property="HeightRequest" Value="64" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+    </Style>
+    <Style TargetType="Label" x:Key="EmptyIcon" BasedOn="{StaticResource Icon}">
+        <Setter Property="FontSize" Value="30" />
+    </Style>
+
 </ResourceDictionary>

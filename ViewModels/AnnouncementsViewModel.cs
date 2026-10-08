@@ -8,7 +8,7 @@ using GroupAnnouncementApp.Services.Interfaces;
 namespace GroupAnnouncementApp.ViewModels;
 
 // The announcements of ONE group, newest first, shown AnnouncementLimits.PageSize at a time.
-// Admins also see deleted ones and get New/Edit/Delete. Members get a Leave group button.
+// Admins also see deleted ones and get New post / edit / delete icons. Members get a leave icon.
 [QueryProperty(nameof(GroupId), "groupId")]
 [QueryProperty(nameof(GroupName), "groupName")]
 public partial class AnnouncementsViewModel : BaseViewModel
@@ -19,6 +19,9 @@ public partial class AnnouncementsViewModel : BaseViewModel
     private readonly IAnnouncementService _announcementService;
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
+    private readonly IToastService _toasts;
+
+    private bool _hasLoaded;
 
     // Everything that was loaded, newest first. The list on screen shows the first _shownCount.
     private List<Announcement> _loaded = new List<Announcement>();
@@ -45,13 +48,33 @@ public partial class AnnouncementsViewModel : BaseViewModel
     [ObservableProperty]
     private bool _hasMore;
 
+    // Header: the group's initials and "3 announcements".
+    [ObservableProperty]
+    private string _initials = string.Empty;
+
+    [ObservableProperty]
+    private string _countText = string.Empty;
+
+    // Empty state text (different for members and admins).
+    [ObservableProperty]
+    private string _emptyHint = string.Empty;
+
+    // True only for the very first load, so a refresh or a delete never blanks the screen.
+    [ObservableProperty]
+    private bool _showLoading;
+
+    // Bound to the pull-to-refresh control.
+    [ObservableProperty]
+    private bool _isRefreshing;
+
     public AnnouncementsViewModel(
         INavigationService navigation,
         ISessionService session,
         IAuthService authService,
         IAnnouncementService announcementService,
         IMembershipService membershipService,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
@@ -59,6 +82,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
         _announcementService = announcementService;
         _membershipService = membershipService;
         _dialogs = dialogs;
+        _toasts = toasts;
     }
 
     // Called by the page every time it appears (so the list is fresh after posting or editing).
@@ -84,8 +108,14 @@ public partial class AnnouncementsViewModel : BaseViewModel
         IsAdminView = _session.IsAdmin;
         IsMemberView = !_session.IsAdmin;
 
+        Initials = InitialsHelper.From(GroupName);
+        EmptyHint = IsAdminView
+            ? "Tap New post to write the first one."
+            : "When an admin posts here, it will show up on this page.";
+
         IsBusy = true;
         ErrorMessage = null;
+        ShowLoading = !_hasLoaded;
 
         try
         {
@@ -97,20 +127,51 @@ public partial class AnnouncementsViewModel : BaseViewModel
             }
 
             _loaded = result.Value ?? new List<Announcement>();
+            _hasLoaded = true;
             _shownCount = 0;
             Items.Clear();
             ShowNextPage();
+            CountText = BuildCountText();
         }
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
     [RelayCommand]
-    private Task RefreshAsync()
+    private async Task RefreshAsync()
     {
-        return LoadAsync();
+        IsRefreshing = true;
+        try
+        {
+            await LoadAsync();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
+    }
+
+    // Deleted announcements (admins only) are not counted.
+    private string BuildCountText()
+    {
+        int active = 0;
+        for (int i = 0; i < _loaded.Count; i++)
+        {
+            if (_loaded[i].IsActive)
+            {
+                active++;
+            }
+        }
+
+        if (active == 0)
+        {
+            return "No announcements yet";
+        }
+
+        return active == 1 ? "1 announcement" : active + " announcements";
     }
 
     // Shows the next batch of already-loaded announcements (no network call).
@@ -203,11 +264,12 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (deleted)
         {
+            _toasts.Show("Announcement deleted");
             await LoadAsync();
         }
     }
 
-    // Member: leave this group, then go back to My groups.
+    // Member: leave this group, then go back to the previous page (Home or Discover).
     [RelayCommand]
     private async Task LeaveGroupAsync()
     {
@@ -250,7 +312,11 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (left)
         {
+            string leftName = string.IsNullOrWhiteSpace(GroupName) ? "the group" : GroupName;
             await _navigation.GoToAsync("..");
+
+            // After going back: the previous page shows it (or keeps it until it appears).
+            _toasts.Show("Left " + leftName);
         }
     }
 

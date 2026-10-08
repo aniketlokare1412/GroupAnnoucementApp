@@ -7,15 +7,17 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// Regular user: search the active groups and tap one to join it.
+// Member "Discover" tab: search the active groups, join one, or open one you already joined.
 public partial class JoinGroupsViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
     private readonly ISessionService _session;
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
+    private readonly IToastService _toasts;
 
     private List<JoinableGroup> _allGroups = new List<JoinableGroup>();
+    private bool _membershipKnown = true;
     private bool _hasLoaded;
 
     public ObservableCollection<JoinGroupItem> Groups { get; } = new ObservableCollection<JoinGroupItem>();
@@ -24,13 +26,26 @@ public partial class JoinGroupsViewModel : BaseViewModel
     private string _searchText = string.Empty;
 
     [ObservableProperty]
-    private JoinGroupItem? _selectedGroup;
-
-    [ObservableProperty]
     private bool _hasNoGroups;
 
+    // "12 groups  -  3 joined" or "2 of 12 groups" while searching.
     [ObservableProperty]
     private string _summaryText = string.Empty;
+
+    // Empty state: different words for "nothing exists" and "nothing matches your search".
+    [ObservableProperty]
+    private string _emptyTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _emptyHint = string.Empty;
+
+    // True only for the very first load, so a refresh or a join never blanks the screen.
+    [ObservableProperty]
+    private bool _showLoading;
+
+    // Bound to the pull-to-refresh control.
+    [ObservableProperty]
+    private bool _isRefreshing;
 
     // A soft warning (not an error): the list works, but something non-essential failed.
     [ObservableProperty]
@@ -46,27 +61,20 @@ public partial class JoinGroupsViewModel : BaseViewModel
         INavigationService navigation,
         ISessionService session,
         IMembershipService membershipService,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _membershipService = membershipService;
         _dialogs = dialogs;
+        _toasts = toasts;
     }
 
     // Runs automatically whenever the search text changes.
     partial void OnSearchTextChanged(string value)
     {
         ApplyFilter();
-    }
-
-    // Runs automatically when a row is tapped.
-    partial void OnSelectedGroupChanged(JoinGroupItem? value)
-    {
-        if (value != null)
-        {
-            _ = JoinAsync(value);
-        }
     }
 
     // Called by the page every time it appears.
@@ -86,6 +94,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
         IsBusy = true;
         ErrorMessage = null;
+        ShowLoading = !_hasLoaded;
 
         try
         {
@@ -98,6 +107,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
             BrowseGroupsResult browse = result.Value ?? new BrowseGroupsResult();
             _allGroups = browse.Groups;
+            _membershipKnown = browse.MembershipKnown;
 
             if (browse.MembershipKnown)
             {
@@ -114,13 +124,22 @@ public partial class JoinGroupsViewModel : BaseViewModel
         finally
         {
             IsBusy = false;
+            ShowLoading = false;
         }
     }
 
     [RelayCommand]
-    private Task RefreshAsync()
+    private async Task RefreshAsync()
     {
-        return LoadAsync();
+        IsRefreshing = true;
+        try
+        {
+            await LoadAsync();
+        }
+        finally
+        {
+            IsRefreshing = false;
+        }
     }
 
     private async Task JoinAsync(JoinGroupItem item)
@@ -134,7 +153,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
             if (item.IsMember)
             {
-                await _dialogs.AlertAsync("Already joined", "You are already a member of \"" + item.Name + "\".", "OK");
+                await OpenAsync(item);
                 return;
             }
 
@@ -172,6 +191,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
             if (joined)
             {
+                _toasts.Show("Joined " + item.Name);
                 await LoadAsync();
             }
         }
@@ -180,10 +200,22 @@ public partial class JoinGroupsViewModel : BaseViewModel
             System.Diagnostics.Debug.WriteLine("JOIN GROUP ERROR: " + ex);
             ErrorMessage = "Something went wrong. Please try again.";
         }
-        finally
+    }
+
+    // A joined group: open its announcements (the member announcements feed).
+    private async Task OpenAsync(JoinGroupItem item)
+    {
+        try
         {
-            // Clear the selection so the same row can be tapped again.
-            SelectedGroup = null;
+            string route = Routes.Announcements
+                + "?groupId=" + Uri.EscapeDataString(item.Id)
+                + "&groupName=" + Uri.EscapeDataString(item.Name);
+            await _navigation.GoToAsync(route);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("OPEN ANNOUNCEMENTS ERROR: " + ex);
+            ErrorMessage = "Something went wrong. Please try again.";
         }
     }
 
@@ -196,20 +228,55 @@ public partial class JoinGroupsViewModel : BaseViewModel
         {
             if (Matches(_allGroups[i].Group, term))
             {
-                Groups.Add(JoinGroupItem.FromJoinable(_allGroups[i]));
+                Groups.Add(JoinGroupItem.FromJoinable(_allGroups[i], JoinAsync, OpenAsync));
             }
         }
 
         HasNoGroups = _hasLoaded && Groups.Count == 0;
 
-        if (_hasLoaded)
+        if (!_hasLoaded)
         {
-            SummaryText = Groups.Count + " of " + _allGroups.Count + " groups";
+            SummaryText = string.Empty;
+            return;
+        }
+
+        SummaryText = BuildSummary(term.Length > 0);
+
+        if (_allGroups.Count == 0)
+        {
+            EmptyTitle = "No groups yet";
+            EmptyHint = "Groups created by an admin will show up here.";
         }
         else
         {
-            SummaryText = string.Empty;
+            EmptyTitle = "No groups found";
+            EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
+    }
+
+    private string BuildSummary(bool searching)
+    {
+        if (searching)
+        {
+            return Groups.Count + " of " + _allGroups.Count + " groups";
+        }
+
+        string total = _allGroups.Count == 1 ? "1 group" : _allGroups.Count + " groups";
+        if (!_membershipKnown)
+        {
+            return total;
+        }
+
+        int joined = 0;
+        for (int i = 0; i < _allGroups.Count; i++)
+        {
+            if (_allGroups[i].IsMember)
+            {
+                joined++;
+            }
+        }
+
+        return total + "  -  " + joined + " joined";
     }
 
     private static bool Matches(AnnouncementGroup group, string term)

@@ -7,4 +7,9 @@ public interface IToastService
     event Action<string>? ToastRequested;
 
     void Show(string message);
+
+    // Phase B: a message shown while no page was listening (for example right after going back
+    // to the previous page). A ToastView asks for it when its page appears. Messages older than a
+    // few seconds are dropped. Returns null when there is nothing to show.
+    string? TakePending();
 }

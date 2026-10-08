@@ -24,6 +24,13 @@ public partial class ToastView : ContentView
         Detach();
         _service = service;
         _service.ToastRequested += OnToastRequested;
+
+        // A message sent while the previous page was closing (Phase B: "Left Dev team").
+        string? pending = service.TakePending();
+        if (pending != null)
+        {
+            OnToastRequested(pending);
+        }
     }
 
     public void Detach()
