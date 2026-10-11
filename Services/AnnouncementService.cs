@@ -45,6 +45,23 @@ public class AnnouncementService : IAnnouncementService
             List<Announcement> items = await ServiceHelper.WithTimeoutAsync(
                 _announcementRepository.GetByGroupAsync(groupId, activeOnly));
             items.Sort(CompareNewestFirst);
+
+            // Only the latest announcement of a group is shown.
+            if (items.Count > 1)
+            {
+                Announcement latest = items[0];
+                for (int i = 0; i < items.Count; i++)
+                {
+                    if (items[i].IsActive)
+                    {
+                        latest = items[i];
+                        break;
+                    }
+                }
+
+                items.Clear();
+                items.Add(latest);
+            }
             return OperationResult<List<Announcement>>.Success(items);
         }
         catch (TimeoutException)
@@ -174,6 +191,7 @@ public class AnnouncementService : IAnnouncementService
                 {
                     await ServiceHelper.WithTimeoutAsync(_announcementRepository.CreateAsync(groupId, announcementId, announcement));
                     result.PostedGroupIds.Add(groupId);
+                    await DeleteOlderAsync(groupId, announcementId);
                 }
                 catch (TimeoutException)
                 {
@@ -298,6 +316,27 @@ public class AnnouncementService : IAnnouncementService
 
     // Returns a failure when the announcement is missing, already deleted, or posted by
     // another admin. Returns null when the signed-in admin may change it.
+    // Only the newest announcement of a group is kept: older ones are deleted for good.
+    // This is best effort. If it fails, the list still shows only the latest one.
+    private async Task DeleteOlderAsync(string groupId, string keepId)
+    {
+        try
+        {
+            List<Announcement> all = await ServiceHelper.WithTimeoutAsync(_announcementRepository.GetByGroupAsync(groupId, false));
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (all[i].Id != keepId)
+                {
+                    await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, all[i].Id));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("DELETE OLDER ANNOUNCEMENTS ERROR: " + ex);
+        }
+    }
+
     private async Task<OperationResult?> CheckCanChangeAsync(string groupId, string announcementId, string uid)
     {
         Announcement? existing = await ServiceHelper.WithTimeoutAsync(_announcementRepository.GetByIdAsync(groupId, announcementId));

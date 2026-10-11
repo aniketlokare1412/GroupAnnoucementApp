@@ -70,6 +70,25 @@
                             </Border>
                         </Grid>
 
+                        <!-- Admin requests: only shown while someone is waiting -->
+                        <Border Style="{StaticResource Card}" IsVisible="{Binding HasPendingRequests}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                <Border Grid.Column="0" Style="{StaticResource IconTile}" VerticalOptions="Center">
+                                    <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.AddModerator}" />
+                                </Border>
+                                <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                    <Label Style="{StaticResource CardTitle}" Text="Admin requests" />
+                                    <Label Style="{StaticResource Caption}" Text="{Binding PendingRequestsText}" />
+                                </VerticalStackLayout>
+                                <Button
+                                    Grid.Column="2"
+                                    Style="{StaticResource PillTonal}"
+                                    Text="Review"
+                                    Command="{Binding OpenAdminRequestsCommand}"
+                                    SemanticProperties.Hint="Approve or decline requests to become an administrator" />
+                            </Grid>
+                        </Border>
+
                         <!-- Quick actions: icon buttons with a caption; New post is the one solid button -->
                         <VerticalStackLayout Spacing="6">
                             <Label Style="{StaticResource SectionLabel}" Text="Quick actions" />

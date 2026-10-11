@@ -26,6 +26,9 @@ public static class Routes
     // Used for both "new group" and "edit group" (groupedit?groupId=...).
     public const string GroupEdit = "groupedit";
 
+    // Admin: people who asked to become administrators. Opened from Home.
+    public const string AdminRequests = "adminrequests";
+
     // Admin: members of one group (groupmembers?groupId=...) and the add-members picker.
     public const string GroupMembers = "groupmembers";
 

@@ -64,6 +64,28 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+    // ---------- adminRequests/{uid} ----------
+    // A Regular user asks to become an admin. The document id is the person's uid, so there
+    // is at most one open request per person. Admins read and close requests. Approving sets
+    // users/{uid}.userType through the normal admin update rule above.
+    function isValidNewAdminRequest(uid) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['userId', 'phone', 'createdAt'])
+        && d.keys().hasAll(['userId', 'phone', 'createdAt'])
+        && d.userId == uid
+        && d.phone is string && d.phone.size() <= 25
+        && d.createdAt == request.time;
+    }
+
+    match /adminRequests/{uid} {
+      allow read: if isAdmin() || (isOwner(uid) && isActiveUser());
+      allow create: if isOwner(uid) && isActiveUser()
+                    && get(/databases/$(database)/documents/users/$(uid)).data.userType == 'Regular'
+                    && isValidNewAdminRequest(uid);
+      allow update: if false;
+      allow delete: if isAdmin() || (isOwner(uid) && isActiveUser());
+    }
+
     // ---------- groups/{groupId} ----------
     // Keep the length limits in sync with Helpers/GroupLimits.cs.
     // The maximum number of active groups cannot be enforced here (rules cannot count
@@ -197,8 +219,9 @@ service cloud.firestore {
                       && resource.data.createdBy == request.auth.uid
                       && isValidAnnouncementUpdate();
 
-        // Announcements are soft-deleted (isActive = false), never removed.
-        allow delete: if false;
+        // Deleted for good only by an admin, when a newer announcement replaces it
+        // (only the latest announcement of a group is kept).
+        allow delete: if isAdmin();
       }
     }
 

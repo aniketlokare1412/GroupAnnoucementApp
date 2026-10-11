@@ -115,16 +115,19 @@ public sealed class UserListItem
         item.IsAdmin = string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal);
         item.IsSelf = currentUid != null && profile.Id == currentUid;
 
-        if (string.IsNullOrWhiteSpace(profile.Name))
+        // The list shows phone numbers only (older accounts without one fall back to the name).
+        if (!string.IsNullOrWhiteSpace(profile.Phone))
         {
-            item.Name = profile.Email;
+            item.Name = profile.Phone;
+            string digits = PhoneLogin.Normalize(profile.Phone);
+            item.Initials = digits.Length >= 2 ? digits.Substring(digits.Length - 2) : "#";
         }
         else
         {
-            item.Name = profile.Name;
+            item.Name = string.IsNullOrWhiteSpace(profile.Name) ? profile.Email : profile.Name;
+            item.Initials = InitialsHelper.From(item.Name);
         }
 
-        item.Initials = InitialsHelper.From(item.Name);
         item.ToggleAdminCommand = new AsyncRelayCommand(() => onToggleAdmin(item));
         item.ToggleActiveCommand = new AsyncRelayCommand(() => onToggleActive(item));
         return item;

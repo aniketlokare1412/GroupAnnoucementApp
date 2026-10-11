@@ -36,18 +36,7 @@
 
             <!-- Fields -->
             <VerticalStackLayout Spacing="18">
-                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
-                    <Label Style="{StaticResource FieldLabel}" Text="Full name" />
-                    <Border Style="{StaticResource FieldBorder}">
-                        <Entry
-                            Placeholder="Your name"
-                            ReturnType="Next"
-                            Text="{Binding Name}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Full name" />
-                    </Border>
-                </VerticalStackLayout>
-                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
+                <VerticalStackLayout Spacing="6">
                     <Label Style="{StaticResource FieldLabel}" Text="Phone number" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry
@@ -57,18 +46,6 @@
                             Text="{Binding Phone}"
                             IsEnabled="{Binding IsNotBusy}"
                             SemanticProperties.Description="Phone number" />
-                    </Border>
-                </VerticalStackLayout>
-                <VerticalStackLayout Spacing="6">
-                    <Label Style="{StaticResource FieldLabel}" Text="Email" />
-                    <Border Style="{StaticResource FieldBorder}">
-                        <Entry
-                            Placeholder="name@example.com"
-                            Keyboard="Email"
-                            ReturnType="Next"
-                            Text="{Binding Email}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Email" />
                     </Border>
                 </VerticalStackLayout>
                 <VerticalStackLayout Spacing="6" IsVisible="{Binding IsSignInMode}">

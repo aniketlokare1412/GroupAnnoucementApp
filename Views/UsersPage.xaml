@@ -28,7 +28,7 @@
                         <Entry
                             Grid.Column="1"
                             Style="{StaticResource SearchEntry}"
-                            Placeholder="Search by name, email or phone"
+                            Placeholder="Search by phone number"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
                             SemanticProperties.Description="Search users" />
@@ -93,17 +93,6 @@
                                                         </Border>
                                                     </HorizontalStackLayout>
                                                 </FlexLayout>
-                                                <Label
-                                                    Style="{StaticResource Caption}"
-                                                    Text="{Binding Email}"
-                                                    LineBreakMode="TailTruncation"
-                                                    MaxLines="1" />
-                                                <Label
-                                                    Style="{StaticResource Caption}"
-                                                    Text="{Binding Phone}"
-                                                    IsVisible="{Binding HasPhone}"
-                                                    LineBreakMode="TailTruncation"
-                                                    MaxLines="1" />
                                             </VerticalStackLayout>
                                         </Grid>
 

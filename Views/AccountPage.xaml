@@ -40,6 +40,19 @@
                 <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
             </Border>
 
+            <!-- Members: ask an admin for admin rights -->
+            <Button
+                Style="{StaticResource PillTonal}"
+                Text="Request admin access"
+                Command="{Binding RequestAdminCommand}"
+                IsVisible="{Binding CanRequestAdmin}"
+                IsEnabled="{Binding IsNotBusy}"
+                HorizontalOptions="Center"
+                SemanticProperties.Hint="Asks an admin to make you an administrator" />
+            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsRequestPending}" HorizontalOptions="Center">
+                <Label Style="{StaticResource BadgeNeutralText}" Text="Admin request sent. Waiting for approval." />
+            </Border>
+
             <!-- Two-step log out: no dialog. -->
             <Button
                 Text="Log out"

@@ -139,7 +139,7 @@ public class AuthService : IAuthService
 
         if (text.Contains("badly formatted"))
         {
-            return "Please enter a valid email address.";
+            return "Please enter a valid phone number.";
         }
 
         if (text.Contains("invalidcredentials") || text.Contains("invaliduser")
@@ -147,7 +147,7 @@ public class AuthService : IAuthService
             || text.Contains("no user record") || text.Contains("invalid_login_credentials")
             || text.Contains("usernotfound") || text.Contains("invalidcredential"))
         {
-            return "Incorrect email or password.";
+            return "Incorrect phone number or password.";
         }
 
         return "Login failed. Please try again.";
@@ -165,7 +165,7 @@ public class AuthService : IAuthService
         if (text.Contains("usercollision") || text.Contains("already in use")
             || text.Contains("email_exists") || text.Contains("emailalreadyinuse"))
         {
-            return "An account with this email already exists. Try logging in instead.";
+            return "An account with this phone number already exists. Try logging in instead.";
         }
 
         if (text.Contains("weakpassword") || text.Contains("weak password")
@@ -176,7 +176,7 @@ public class AuthService : IAuthService
 
         if (text.Contains("badly formatted") || text.Contains("invalidemail"))
         {
-            return "Please enter a valid email address.";
+            return "Please enter a valid phone number.";
         }
 
         if (IsTooManyRequests(text))

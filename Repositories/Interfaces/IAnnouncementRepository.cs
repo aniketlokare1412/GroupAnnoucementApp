@@ -21,4 +21,7 @@ public interface IAnnouncementRepository
     Task UpdateAsync(string groupId, string id, string title, string message);
 
     Task SetActiveAsync(string groupId, string id, bool isActive);
+
+    // Removes the document for good (used to drop older announcements when a new one is posted).
+    Task DeleteAsync(string groupId, string id);
 }
