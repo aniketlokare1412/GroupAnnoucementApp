@@ -27,20 +27,23 @@ service cloud.firestore {
     // ---------- users/{uid} ----------
     function isValidNewProfile() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['name', 'phone', 'email', 'userType', 'isActive', 'createdAt'])
-        && d.keys().hasAll(['name', 'phone', 'email', 'userType', 'isActive', 'createdAt'])
+      return d.keys().hasOnly(['name', 'phone', 'email', 'userType', 'isActive', 'needsPassword', 'createdAt'])
+        && d.keys().hasAll(['name', 'phone', 'email', 'userType', 'isActive', 'needsPassword', 'createdAt'])
         && d.name is string && d.name.size() > 0 && d.name.size() <= 100
         && d.phone is string && d.phone.size() >= 7 && d.phone.size() <= 25
         && d.email is string && d.email == request.auth.token.email
         && d.userType == 'Regular'
         && d.isActive == true
+        && d.needsPassword == false
         && d.createdAt == request.time;
     }
 
     // A user editing their own profile: only name and phone may change.
     function isValidOwnerUpdate() {
       let d = request.resource.data;
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone'])
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'needsPassword'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['needsPassword'])
+            || (d.needsPassword == false && d.userType == 'Admin'))
         && d.name is string && d.name.size() > 0 && d.name.size() <= 100
         && d.phone is string && d.phone.size() >= 7 && d.phone.size() <= 25;
     }
@@ -49,7 +52,9 @@ service cloud.firestore {
     // Admins cannot change themselves, so the acting admin always stays an admin.
     function isValidAdminUpdate(uid) {
       let d = request.resource.data;
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive', 'userType'])
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isActive', 'userType', 'needsPassword'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['needsPassword'])
+            || d.needsPassword is bool)
         && d.isActive is bool
         && d.userType in ['Admin', 'Regular']
         && request.auth.uid != uid;
@@ -95,11 +100,17 @@ service cloud.firestore {
         && d.description is string && d.description.size() <= 300;
     }
 
+    // Group number: 3 to 12 letters or digits. Keep in sync with Helpers/GroupLimits.cs.
+    function isValidGroupNumber(n) {
+      return n is string && n.size() >= 3 && n.size() <= 12 && n.matches('^[A-Za-z0-9]+$');
+    }
+
     function isValidNewGroup() {
       let d = request.resource.data;
-      return d.keys().hasOnly(['name', 'description', 'isActive', 'createdBy', 'createdAt'])
-        && d.keys().hasAll(['name', 'description', 'isActive', 'createdBy', 'createdAt'])
+      return d.keys().hasOnly(['name', 'description', 'number', 'isActive', 'createdBy', 'createdAt'])
+        && d.keys().hasAll(['name', 'description', 'number', 'isActive', 'createdBy', 'createdAt'])
         && isValidGroupText(d)
+        && isValidGroupNumber(d.number)
         && d.isActive == true
         && d.createdBy == request.auth.uid
         && d.createdAt == request.time;
@@ -108,7 +119,9 @@ service cloud.firestore {
     // Only name, description and isActive may change. createdBy and createdAt are fixed.
     function isValidGroupUpdate() {
       let d = request.resource.data;
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'isActive'])
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'number', 'isActive'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['number'])
+            || isValidGroupNumber(d.number))
         && isValidGroupText(d)
         && d.isActive is bool;
     }

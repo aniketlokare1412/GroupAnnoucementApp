@@ -13,6 +13,13 @@ public partial class SelectableGroupItem : ObservableObject
     public string Id { get; private set; } = string.Empty;
     public string Name { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
+    public string Number { get; private set; } = string.Empty;
+
+    // Pill text: the name, then the group number when there is one.
+    public string PillText
+    {
+        get { return string.IsNullOrWhiteSpace(Number) ? Name : Name + " (" + Number + ")"; }
+    }
     public string Initials { get; private set; } = string.Empty;
 
     [ObservableProperty]
@@ -48,6 +55,7 @@ public partial class SelectableGroupItem : ObservableObject
         item.Id = group.Id;
         item.Name = group.Name;
         item.Description = group.Description;
+        item.Number = group.Number;
         item.Initials = InitialsHelper.From(group.Name);
         return item;
     }

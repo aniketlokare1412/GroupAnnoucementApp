@@ -26,6 +26,15 @@ public sealed class Announcement : IFirestoreObject
     public string Message { get; set; } = string.Empty;
 
     // Soft delete: false means deleted. Fail closed, like groups: a missing field counts as deleted.
+    // One optional attachment (an image or a document); the file itself is a separate document under
+    // this announcement (see AttachmentDocument). Empty strings when there is none.
+    [FirestoreProperty("attachmentName")]
+    public string AttachmentName { get; set; } = string.Empty;
+
+    // "image", "file" or "".
+    [FirestoreProperty("attachmentKind")]
+    public string AttachmentKind { get; set; } = string.Empty;
+
     [FirestoreProperty("isActive")]
     public bool IsActive { get; set; } = false;
 

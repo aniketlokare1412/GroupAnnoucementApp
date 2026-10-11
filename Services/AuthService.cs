@@ -80,6 +80,36 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<OperationResult> UpdatePasswordAsync(string newPassword)
+    {
+        IFirebaseUser? user = _auth.CurrentUser;
+        if (user == null)
+        {
+            return OperationResult.Fail("You are signed out. Please sign in again.");
+        }
+
+        try
+        {
+            await user.UpdatePasswordAsync(newPassword);
+            return OperationResult.Success();
+        }
+        catch (Exception ex)
+        {
+            string text = BuildErrorText(ex);
+            string message = "We could not set your password. Please try again.";
+            if (IsNetworkProblem(text))
+            {
+                message = "No internet connection. Please check your network and try again.";
+            }
+            else if (text.Contains("weak"))
+            {
+                message = "Password is too weak. Please use at least 6 characters.";
+            }
+
+            return OperationResult.Fail(WithDebugDetails(message, ex));
+        }
+    }
+
     public async Task<OperationResult> DeleteCurrentUserAsync()
     {
         IFirebaseUser? user = _auth.CurrentUser;

@@ -6,21 +6,20 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// One screen for both "Sign in" and "Create account" (replaces LoginViewModel and RegisterViewModel).
+// One login page. Members type their phone number only (no password, no registration):
+// a new number simply starts a new member account. Admins switch to "Log in with password".
 public partial class WelcomeViewModel : BaseViewModel
 {
-    private const int MinPasswordLength = 6;
-
     private readonly INavigationService _navigation;
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
     private readonly ISessionService _session;
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsSignInMode))]
+    [NotifyPropertyChangedFor(nameof(IsMemberMode))]
     [NotifyPropertyChangedFor(nameof(SubheadingText))]
     [NotifyPropertyChangedFor(nameof(SubmitText))]
-    private bool _isRegisterMode;
+    private bool _isAdminMode;
 
     [ObservableProperty]
     private string _phone = string.Empty;
@@ -28,27 +27,24 @@ public partial class WelcomeViewModel : BaseViewModel
     [ObservableProperty]
     private string _password = string.Empty;
 
-    [ObservableProperty]
-    private string _confirmPassword = string.Empty;
-
-    public bool IsSignInMode => !IsRegisterMode;
+    public bool IsMemberMode => !IsAdminMode;
 
     public string SubheadingText
     {
         get
         {
-            if (IsRegisterMode)
+            if (IsAdminMode)
             {
-                return "Create an account to join your groups.";
+                return "Admin login. Enter your phone number and password.";
             }
 
-            return "Sign in to see your group announcements.";
+            return "Enter your phone number to see your group announcements.";
         }
     }
 
     public string SubmitText
     {
-        get { return IsRegisterMode ? "Create account" : "Log in"; }
+        get { return IsAdminMode ? "Log in" : "Continue"; }
     }
 
     public WelcomeViewModel(
@@ -63,54 +59,53 @@ public partial class WelcomeViewModel : BaseViewModel
         _session = session;
     }
 
-    // Called by the page every time it appears, so a previous user's details never stay on screen
-    // after logout. Also shows a pending notice (for example "your account has been deactivated").
+    // Called each time the page appears.
     public void Reset()
     {
-        IsRegisterMode = false;
+        IsAdminMode = false;
         Phone = string.Empty;
-        ClearSecrets();
+        Password = string.Empty;
         ErrorMessage = _session.TakeNotice();
     }
 
     [RelayCommand]
-    private void ShowSignIn()
+    private void ShowAdminLogin()
     {
         if (IsBusy)
         {
             return;
         }
 
-        IsRegisterMode = false;
+        IsAdminMode = true;
         ErrorMessage = null;
-        ClearSecrets();
+        Password = string.Empty;
     }
 
     [RelayCommand]
-    private void ShowRegister()
+    private void ShowMemberLogin()
     {
         if (IsBusy)
         {
             return;
         }
 
-        IsRegisterMode = true;
+        IsAdminMode = false;
         ErrorMessage = null;
-        ClearSecrets();
+        Password = string.Empty;
     }
 
     [RelayCommand]
     private Task SubmitAsync()
     {
-        if (IsRegisterMode)
+        if (IsAdminMode)
         {
-            return RegisterAsync();
+            return AdminLoginAsync();
         }
 
-        return LoginAsync();
+        return MemberLoginAsync();
     }
 
-    private async Task LoginAsync()
+    private async Task AdminLoginAsync()
     {
         if (IsBusy)
         {
@@ -120,18 +115,22 @@ public partial class WelcomeViewModel : BaseViewModel
         ErrorMessage = null;
 
         string cleanPhone = PhoneLogin.Normalize(Phone ?? string.Empty);
-        string cleanEmail = PhoneLogin.ToEmail(cleanPhone);
-        string? validationError = ValidateLogin(cleanPhone, Password);
-        if (validationError != null)
+        string? problem = ValidatePhone(cleanPhone);
+        if (problem == null && string.IsNullOrEmpty(Password))
         {
-            ErrorMessage = validationError;
+            problem = "Please enter your password.";
+        }
+
+        if (problem != null)
+        {
+            ErrorMessage = problem;
             return;
         }
 
         IsBusy = true;
         try
         {
-            OperationResult result = await _authService.LoginAsync(cleanEmail, Password);
+            OperationResult result = await _authService.LoginAsync(PhoneLogin.ToEmail(cleanPhone), Password);
             if (!result.IsSuccess)
             {
                 ErrorMessage = result.ErrorMessage;
@@ -146,7 +145,7 @@ public partial class WelcomeViewModel : BaseViewModel
         }
     }
 
-    private async Task RegisterAsync()
+    private async Task MemberLoginAsync()
     {
         if (IsBusy)
         {
@@ -156,27 +155,44 @@ public partial class WelcomeViewModel : BaseViewModel
         ErrorMessage = null;
 
         string cleanPhone = PhoneLogin.Normalize(Phone ?? string.Empty);
-        // Lower-case so it always matches the email Firebase puts in the auth token.
-        string cleanEmail = PhoneLogin.ToEmail(cleanPhone);
-
-        string? validationError = ValidateRegister(cleanPhone, Password, ConfirmPassword);
-        if (validationError != null)
+        string? problem = ValidatePhone(cleanPhone);
+        if (problem != null)
         {
-            ErrorMessage = validationError;
+            ErrorMessage = problem;
             return;
         }
+
+        string email = PhoneLogin.ToEmail(cleanPhone);
+        string memberPassword = PhoneLogin.MemberPassword(cleanPhone);
 
         IsBusy = true;
         try
         {
-            OperationResult result = await _userService.RegisterAsync(cleanPhone, cleanPhone, cleanEmail, Password);
-            if (!result.IsSuccess)
+            // Known member: sign in.
+            OperationResult login = await _authService.LoginAsync(email, memberPassword);
+            if (login.IsSuccess)
             {
-                ErrorMessage = result.ErrorMessage;
+                await FinishSignInAsync();
                 return;
             }
 
-            await FinishSignInAsync();
+            // New number: start a member account (the name is the phone number).
+            OperationResult created = await _userService.RegisterAsync(cleanPhone, cleanPhone, email, memberPassword);
+            if (created.IsSuccess)
+            {
+                await FinishSignInAsync();
+                return;
+            }
+
+            string message = created.ErrorMessage ?? "Login failed. Please try again.";
+            if (message.Contains("already exists"))
+            {
+                // The number belongs to an admin (who has a password) or an older account.
+                ErrorMessage = "This number needs a password. Tap \"Log in with password\" below.";
+                return;
+            }
+
+            ErrorMessage = message;
         }
         finally
         {
@@ -184,68 +200,18 @@ public partial class WelcomeViewModel : BaseViewModel
         }
     }
 
-    // Signed in (or just registered). Load the profile and go to the right home screen.
     private async Task FinishSignInAsync()
     {
         SessionLoadResult session = await _session.LoadAsync(true);
 
         if (session.Status == SessionStatus.Ready || session.Status == SessionStatus.ProfileMissing)
         {
-            ClearSecrets();
+            Password = string.Empty;
             await _navigation.GoToAsync(session.Route ?? Routes.Splash);
             return;
         }
 
-        // Deactivated or load failed: the user was signed out. Show the reason here.
         ErrorMessage = _session.TakeNotice() ?? session.Message;
-    }
-
-    private void ClearSecrets()
-    {
-        Password = string.Empty;
-        ConfirmPassword = string.Empty;
-    }
-
-    private static string? ValidateLogin(string phone, string? password)
-    {
-        string? phoneProblem = ValidatePhone(phone);
-        if (phoneProblem != null)
-        {
-            return phoneProblem;
-        }
-
-        if (string.IsNullOrEmpty(password))
-        {
-            return "Please enter your password.";
-        }
-
-        return null;
-    }
-
-    private static string? ValidateRegister(string phone, string? password, string? confirmPassword)
-    {
-        string? phoneProblem = ValidatePhone(phone);
-        if (phoneProblem != null)
-        {
-            return phoneProblem;
-        }
-
-        if (string.IsNullOrEmpty(password))
-        {
-            return "Please enter a password.";
-        }
-
-        if (password.Length < MinPasswordLength)
-        {
-            return "Password must be at least " + MinPasswordLength + " characters.";
-        }
-
-        if (password != confirmPassword)
-        {
-            return "The two passwords do not match.";
-        }
-
-        return null;
     }
 
     private static string? ValidatePhone(string phone)

@@ -29,4 +29,7 @@ public static class Icons
     public const string PowerSettings = "\ue8ac"; // power_settings_new: activate / deactivate a group or user
     public const string AddModerator = "\ue97d";    // add_moderator: make a user an administrator
     public const string RemoveModerator = "\ue9d4"; // remove_moderator: remove admin rights
+    public const string AttachFile = "\ue226";    // attach_file: add an attachment
+    public const string File = "\ue24d";          // insert_drive_file: a document attachment
+    public const string GroupAdd = "\ue7f0";      // group_add: new group
 }

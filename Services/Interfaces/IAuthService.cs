@@ -17,6 +17,9 @@ public interface IAuthService
     // Creates the Firebase Auth account and signs the new user in. Returns the new uid.
     Task<OperationResult<string>> RegisterAsync(string email, string password);
 
+    // Changes the password of the signed-in user.
+    Task<OperationResult> UpdatePasswordAsync(string newPassword);
+
     // Used to roll back a half-finished registration. Also signs the user out.
     Task<OperationResult> DeleteCurrentUserAsync();
 }

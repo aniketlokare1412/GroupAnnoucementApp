@@ -15,5 +15,8 @@ public interface IUserRepository
 
     Task SetActiveAsync(string uid, bool isActive);
 
+    // Also sets needsPassword: true for a new admin, false otherwise.
     Task SetUserTypeAsync(string uid, string userType);
+
+    Task SetNeedsPasswordAsync(string uid, bool needsPassword);
 }

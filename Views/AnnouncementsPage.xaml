@@ -96,6 +96,26 @@
 
                                         <Label Style="{StaticResource CardTitle}" Text="{Binding Title}" />
                                         <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                        <Image
+                                            Source="{Binding Image}"
+                                            IsVisible="{Binding HasImage}"
+                                            Aspect="AspectFit"
+                                            MaximumHeightRequest="240"
+                                            HorizontalOptions="Fill"
+                                            SemanticProperties.Description="Attached image" />
+                                        <Border
+                                            Style="{StaticResource RowCard}"
+                                            IsVisible="{Binding HasFile}"
+                                            SemanticProperties.Description="{Binding FileLabel}"
+                                            SemanticProperties.Hint="Opens the file">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
+                                            </Border.GestureRecognizers>
+                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
+                                                <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
+                                            </Grid>
+                                        </Border>
 
                                         <!-- Footer: date, and (admin, own posts) edit / delete icons -->
                                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">

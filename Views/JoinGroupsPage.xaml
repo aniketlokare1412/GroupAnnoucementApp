@@ -29,10 +29,10 @@
                         <Entry
                             Grid.Column="1"
                             Style="{StaticResource SearchEntry}"
-                            Placeholder="Search groups"
+                            Placeholder="Enter group number"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
-                            SemanticProperties.Description="Search groups" />
+                            SemanticProperties.Description="Group number" />
                     </Grid>
                 </Border>
 

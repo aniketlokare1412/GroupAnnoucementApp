@@ -1,3 +1,6 @@
+using GroupAnnouncementApp.Services.Interfaces;
+using CommunityToolkit.Mvvm.ComponentModel;
+using GroupAnnouncementApp.Helpers;
 using System.Globalization;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Input;
@@ -8,7 +11,7 @@ namespace GroupAnnouncementApp.ViewModels;
 // What one card of an announcements list shows. Rebuilt whenever the list is reloaded.
 // The Edit and Delete buttons are commands that live on the row itself, so the page
 // needs no cross-binding to the view model.
-public sealed class AnnouncementListItem
+public sealed class AnnouncementListItem : ObservableObject
 {
     // An announcement newer than this gets a "New" chip.
     private static readonly TimeSpan NewWindow = TimeSpan.FromHours(24);
@@ -30,6 +33,64 @@ public sealed class AnnouncementListItem
 
     public ICommand? EditCommand { get; private set; }
     public ICommand? DeleteCommand { get; private set; }
+
+    private ImageSource? _image;
+
+    // The stored image, filled in a moment after the card appears (see LoadImageAsync).
+    public ImageSource? Image
+    {
+        get { return _image; }
+        private set { SetProperty(ref _image, value); }
+    }
+
+    public bool HasImage { get; private set; }
+    public string FileName { get; private set; } = string.Empty;
+    public bool HasFile { get; private set; }
+    public ICommand? OpenFileCommand { get; private set; }
+
+    private string _fileGroupId = string.Empty;
+    private string _fileAnnouncementId = string.Empty;
+
+    public string FileLabel
+    {
+        get { return "Attached file " + FileName; }
+    }
+
+    // An image shows inside the card; a document is a tappable row that opens the file.
+    private void ConfigureAttachment(string groupId, string announcementId, Announcement announcement, IAttachmentService? attachments)
+    {
+        _fileGroupId = groupId;
+        _fileAnnouncementId = announcementId;
+        HasImage = announcement.AttachmentKind == "image";
+        HasFile = announcement.AttachmentKind == "file";
+
+        if (HasFile)
+        {
+            FileName = string.IsNullOrEmpty(announcement.AttachmentName) ? "Attachment" : announcement.AttachmentName;
+            if (attachments != null)
+            {
+                OpenFileCommand = new AsyncRelayCommand(() => AttachmentOpener.OpenAsync(attachments, groupId, announcementId));
+            }
+        }
+    }
+
+    // Fetches the stored image (if any). Call without waiting, after the card is in the list.
+    public async Task LoadImageAsync(IAttachmentService attachments)
+    {
+        if (!HasImage)
+        {
+            return;
+        }
+
+        OperationResult<AttachmentFile> result = await attachments.GetAsync(_fileGroupId, _fileAnnouncementId);
+        if (!result.IsSuccess || result.Value == null)
+        {
+            return;
+        }
+
+        byte[] bytes = result.Value.Bytes;
+        Image = ImageSource.FromStream(() => new MemoryStream(bytes));
+    }
 
     public bool IsDeleted
     {
@@ -70,7 +131,8 @@ public sealed class AnnouncementListItem
         string? currentUid,
         Func<AnnouncementListItem, Task> onEdit,
         Func<AnnouncementListItem, Task> onDelete,
-        bool isAdminView = false)
+        bool isAdminView = false,
+        IAttachmentService? attachments = null)
     {
         AnnouncementListItem item = new AnnouncementListItem();
         item.Id = announcement.Id;
@@ -79,6 +141,7 @@ public sealed class AnnouncementListItem
         item.Message = announcement.Message;
         item.IsActive = announcement.IsActive;
         item.IsEdited = announcement.IsEdited;
+        item.ConfigureAttachment(announcement.GroupId, announcement.Id, announcement, attachments);
         item.IsMine = !string.IsNullOrEmpty(currentUid) && announcement.CreatedBy == currentUid;
         item.IsByOtherAdmin = isAdminView && !item.IsMine;
         item.EditCommand = new AsyncRelayCommand(() => onEdit(item));

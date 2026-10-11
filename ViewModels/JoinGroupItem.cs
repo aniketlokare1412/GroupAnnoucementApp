@@ -56,7 +56,7 @@ public sealed class JoinGroupItem
         JoinGroupItem item = new JoinGroupItem();
         item.Id = joinable.Group.Id;
         item.Name = joinable.Group.Name;
-        item.Description = joinable.Group.Description;
+        item.Description = GroupText.WithNumber(joinable.Group);
         item.Initials = InitialsHelper.From(joinable.Group.Name);
         item.IsMember = joinable.IsMember;
         item.JoinCommand = new AsyncRelayCommand(() => onJoin(item));

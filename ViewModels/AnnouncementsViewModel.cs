@@ -17,6 +17,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
     private readonly IAnnouncementService _announcementService;
+    private readonly IAttachmentService _attachments;
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
     private readonly IToastService _toasts;
@@ -74,8 +75,10 @@ public partial class AnnouncementsViewModel : BaseViewModel
         IAnnouncementService announcementService,
         IMembershipService membershipService,
         IDialogService dialogs,
-        IToastService toasts)
+        IToastService toasts,
+        IAttachmentService attachments)
     {
+        _attachments = attachments;
         _navigation = navigation;
         _session = session;
         _authService = authService;
@@ -193,7 +196,9 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         for (int i = _shownCount; i < target; i++)
         {
-            Items.Add(AnnouncementListItem.FromAnnouncement(_loaded[i], uid, EditItemAsync, DeleteItemAsync, IsAdminView));
+            AnnouncementListItem item = AnnouncementListItem.FromAnnouncement(_loaded[i], uid, EditItemAsync, DeleteItemAsync, IsAdminView, _attachments);
+            Items.Add(item);
+            _ = item.LoadImageAsync(_attachments);
         }
 
         _shownCount = target;

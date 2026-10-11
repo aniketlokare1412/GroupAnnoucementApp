@@ -16,4 +16,7 @@ public interface IUserService
     // Creates users/{uid} for the signed-in user who has no profile yet (always Regular).
     // Never deletes the Auth account if it fails.
     Task<OperationResult> CreateOwnProfileAsync(string name, string phone);
+
+    // Admin only: sets the new admin's own password and clears the "needs a password" flag.
+    Task<OperationResult> SetAdminPasswordAsync(string newPassword);
 }

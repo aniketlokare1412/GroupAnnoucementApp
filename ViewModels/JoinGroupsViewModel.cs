@@ -22,6 +22,9 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
     public ObservableCollection<JoinGroupItem> Groups { get; } = new ObservableCollection<JoinGroupItem>();
 
+    // Raised after a successful join, so Home can reload its announcements.
+    public event EventHandler? Joined;
+
     [ObservableProperty]
     private string _searchText = string.Empty;
 
@@ -192,6 +195,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
             if (joined)
             {
                 _toasts.Show("Joined " + item.Name);
+                Joined?.Invoke(this, EventArgs.Empty);
                 await LoadAsync();
             }
         }
@@ -226,7 +230,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
         Groups.Clear();
         for (int i = 0; i < _allGroups.Count; i++)
         {
-            if (Matches(_allGroups[i].Group, term))
+            if (IsExactNumber(_allGroups[i].Group, term))
             {
                 Groups.Add(JoinGroupItem.FromJoinable(_allGroups[i], JoinAsync, OpenAsync));
             }
@@ -240,18 +244,24 @@ public partial class JoinGroupsViewModel : BaseViewModel
             return;
         }
 
-        SummaryText = BuildSummary(term.Length > 0);
-
-        if (_allGroups.Count == 0)
+        if (term.Length == 0)
         {
-            EmptyTitle = "No groups yet";
-            EmptyHint = "Groups created by an admin will show up here.";
+            SummaryText = "Enter a group number to join";
+            EmptyTitle = "Enter a group number";
+            EmptyHint = "Ask your admin for the group number, type it above, then tap Join.";
         }
         else
         {
-            EmptyTitle = "No groups found";
-            EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
+            SummaryText = Groups.Count == 0 ? string.Empty : "1 group found";
+            EmptyTitle = "No group found";
+            EmptyHint = "Check the number \"" + term + "\" and try again.";
         }
+    }
+
+    // Only an exact group number shows a group. The list of all groups is never displayed.
+    private static bool IsExactNumber(AnnouncementGroup group, string term)
+    {
+        return term.Length > 0 && string.Equals(group.Number.Trim(), term, StringComparison.OrdinalIgnoreCase);
     }
 
     private string BuildSummary(bool searching)

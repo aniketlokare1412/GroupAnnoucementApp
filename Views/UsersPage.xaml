@@ -110,20 +110,6 @@
                                                 Command="{Binding ToggleAdminCommand}"
                                                 IsVisible="{Binding CanRemoveAdmin}"
                                                 SemanticProperties.Description="{Binding RemoveAdminLabel}" />
-
-                                            <!-- Active: red-tint "deactivate". Deactivated: teal-tint "activate". -->
-                                            <Button
-                                                Style="{StaticResource IconButtonDanger}"
-                                                Text="{x:Static h:Icons.PowerSettings}"
-                                                Command="{Binding ToggleActiveCommand}"
-                                                IsVisible="{Binding CanDeactivate}"
-                                                SemanticProperties.Description="{Binding DeactivateLabel}" />
-                                            <Button
-                                                Style="{StaticResource IconButton}"
-                                                Text="{x:Static h:Icons.PowerSettings}"
-                                                Command="{Binding ToggleActiveCommand}"
-                                                IsVisible="{Binding CanActivate}"
-                                                SemanticProperties.Description="{Binding ActivateLabel}" />
                                         </HorizontalStackLayout>
 
                                     </Grid>

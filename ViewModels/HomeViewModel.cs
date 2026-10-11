@@ -13,10 +13,11 @@ namespace GroupAnnouncementApp.ViewModels;
 // It only uses services that already exist. There is no cross-group announcements feed here.
 public partial class HomeViewModel : BaseViewModel
 {
-    private const int AdminPreviewCount = 3;
 
     private readonly INavigationService _navigation;
     private readonly IAdminRequestService _adminRequests;
+    private readonly IAnnouncementService _announcementService;
+    private readonly IAttachmentService _attachments;
     private readonly ISessionService _session;
     private readonly IGroupAdminService _groupAdminService;
     private readonly IUserAdminService _userAdminService;
@@ -27,6 +28,12 @@ public partial class HomeViewModel : BaseViewModel
     private bool _hasLoaded;
 
     // Admin: the first few groups. Member: my groups filtered by the search box.
+    // Member: the latest announcement of each joined group, newest first.
+    public ObservableCollection<MemberAnnouncementItem> MemberAnnouncements { get; } = new ObservableCollection<MemberAnnouncementItem>();
+
+    [ObservableProperty]
+    private bool _hasNoMemberAnnouncements;
+
     public ObservableCollection<HomeGroupItem> AdminGroups { get; } = new ObservableCollection<HomeGroupItem>();
     public ObservableCollection<HomeGroupItem> MyGroups { get; } = new ObservableCollection<HomeGroupItem>();
 
@@ -95,9 +102,13 @@ public partial class HomeViewModel : BaseViewModel
         IUserAdminService userAdminService,
         IMembershipService membershipService,
         IToastService toasts,
-        IAdminRequestService adminRequests)
+        IAdminRequestService adminRequests,
+        IAnnouncementService announcementService,
+        IAttachmentService attachments)
     {
+        _attachments = attachments;
         _adminRequests = adminRequests;
+        _announcementService = announcementService;
         _navigation = navigation;
         _session = session;
         _groupAdminService = groupAdminService;
@@ -110,6 +121,53 @@ public partial class HomeViewModel : BaseViewModel
     partial void OnSearchTextChanged(string value)
     {
         ApplyMemberFilter();
+    }
+
+    // One small request per active joined group; only the latest announcement of each is kept.
+    private async Task LoadMemberAnnouncementsAsync()
+    {
+        List<AnnouncementGroup> groups = new List<AnnouncementGroup>();
+        for (int i = 0; i < _memberGroups.Count; i++)
+        {
+            if (_memberGroups[i].IsActive)
+            {
+                groups.Add(_memberGroups[i]);
+            }
+        }
+
+        List<Task<OperationResult<List<Announcement>>>> tasks = new List<Task<OperationResult<List<Announcement>>>>();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            tasks.Add(_announcementService.GetForGroupAsync(groups[i].Id));
+        }
+
+        await Task.WhenAll(tasks);
+
+        List<MemberAnnouncementItem> items = new List<MemberAnnouncementItem>();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            OperationResult<List<Announcement>> result = tasks[i].Result;
+            if (result.IsSuccess && result.Value != null && result.Value.Count > 0)
+            {
+                items.Add(MemberAnnouncementItem.From(groups[i], result.Value[0], _attachments));
+            }
+        }
+
+        items.Sort((a, b) => b.CreatedAt.CompareTo(a.CreatedAt));
+
+        MemberAnnouncements.Clear();
+        for (int i = 0; i < items.Count; i++)
+        {
+            MemberAnnouncements.Add(items[i]);
+        }
+
+        HasNoMemberAnnouncements = MemberAnnouncements.Count == 0;
+
+        // Images arrive a moment later, so the cards show up first.
+        for (int i = 0; i < MemberAnnouncements.Count; i++)
+        {
+            _ = MemberAnnouncements[i].LoadImageAsync(_attachments);
+        }
     }
 
     // Called by the page every time it appears, so counts and lists are fresh after edits elsewhere.
@@ -182,7 +240,7 @@ public partial class HomeViewModel : BaseViewModel
             List<AnnouncementGroup> ordered = groups.OrderByDescending(g => g.IsActive).ToList();
 
             AdminGroups.Clear();
-            int shown = Math.Min(AdminPreviewCount, ordered.Count);
+            int shown = ordered.Count;
             for (int i = 0; i < shown; i++)
             {
                 AdminGroups.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync));
@@ -239,6 +297,7 @@ public partial class HomeViewModel : BaseViewModel
         _hasLoaded = true;
         JoinedText = _memberGroups.Count + " joined";
         ApplyMemberFilter();
+        await LoadMemberAnnouncementsAsync();
     }
 
     private void ApplyMemberFilter()
@@ -294,15 +353,15 @@ public partial class HomeViewModel : BaseViewModel
 
     // Admin main action: write one announcement and post it to one or more groups.
     [RelayCommand]
-    private Task NewPostAsync()
+    private Task NewGroupAsync()
     {
-        return _navigation.GoToAsync(Routes.AnnouncementEdit);
+        return _navigation.GoToAsync(Routes.GroupEdit);
     }
 
     [RelayCommand]
-    private Task FindMoreGroupsAsync()
+    private Task NewPostAsync()
     {
-        return _navigation.GoToAsync(Routes.MemberDiscover);
+        return _navigation.GoToAsync(Routes.AnnouncementEdit);
     }
 
     private async Task OpenAnnouncementsAsync(HomeGroupItem item)
@@ -329,6 +388,11 @@ public partial class HomeViewModel : BaseViewModel
         }
 
         if (ContainsText(group.Name, term))
+        {
+            return true;
+        }
+
+        if (ContainsText(group.Number, term))
         {
             return true;
         }

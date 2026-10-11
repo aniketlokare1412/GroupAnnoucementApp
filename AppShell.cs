@@ -31,6 +31,7 @@ public partial class AppShell : Shell
         Items.Add(CreateContent("splash", null, null, typeof(SplashPage)));
         Items.Add(CreateContent("login", null, null, typeof(WelcomePage)));
         Items.Add(CreateContent("completeprofile", null, null, typeof(CompleteProfilePage)));
+        Items.Add(CreateContent("setpassword", null, null, typeof(SetPasswordPage)));
 
         // Admin tab bar: Home, Groups, Users. Tab routes are unique across both bars on purpose.
         Items.Add(CreateTabBar(
@@ -39,11 +40,10 @@ public partial class AppShell : Shell
             CreateContent("admingroups", "Groups", "tab_groups.png", typeof(GroupsPage)),
             CreateContent("adminusers", "Users", "tab_users.png", typeof(UsersPage))));
 
-        // Member (regular user) tab bar: Home, Discover.
-        Items.Add(CreateTabBar(
-            "membershell",
-            CreateContent("memberhome", "Home", "tab_home.png", typeof(HomePage)),
-            CreateContent("memberdiscover", "Discover", "tab_discover.png", typeof(JoinGroupsPage))));
+        // Member (regular user): one screen, Home (join by group number + announcements), so no tab bar is shown.
+        ShellContent memberHome = CreateContent("memberhome", "Home", "tab_home.png", typeof(HomePage));
+        Shell.SetTabBarIsVisible(memberHome, false);
+        Items.Add(CreateTabBar("membershell", memberHome));
     }
 
     private static ShellContent CreateContent(string route, string? title, string? icon, Type pageType)

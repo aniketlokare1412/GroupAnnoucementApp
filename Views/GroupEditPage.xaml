@@ -14,6 +14,21 @@
             <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
 
                 <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Group number" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Whole number, e.g. 4821"
+                            Keyboard="Numeric"
+                            ReturnType="Next"
+                            Text="{Binding Number}"
+                            MaxLength="{Binding MaxNumberLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Group number"
+                            SemanticProperties.Hint="Members type this number to join the group" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
                     <Label Style="{StaticResource FieldLabel}" Text="Name" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry

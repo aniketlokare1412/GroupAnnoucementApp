@@ -38,7 +38,7 @@
             </VerticalStackLayout>
 
             <!-- 2. Message: fills whatever height is left -->
-            <Grid Grid.Row="1" RowDefinitions="Auto,*" RowSpacing="6">
+            <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto" RowSpacing="6">
                 <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                     <Label Grid.Column="0" Style="{StaticResource FieldLabel}" Text="Message" />
                     <Label
@@ -57,6 +57,33 @@
                         IsEnabled="{Binding IsNotBusy}"
                         SemanticProperties.Description="Announcement message" />
                 </Border>
+                <!-- Optional attachment: one image or document, up to 10 MB -->
+                <Grid Grid.Row="2" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" IsVisible="{Binding CanAttach}">
+                    <Button
+                        Grid.Column="0"
+                        Style="{StaticResource IconButton}"
+                        Text="{x:Static h:Icons.AttachFile}"
+                        Command="{Binding PickAttachmentCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Attach an image or document"
+                        SemanticProperties.Hint="Optional. One file. Photos are made smaller automatically; documents can be up to 700 kilobytes" />
+                    <Label
+                        Grid.Column="1"
+                        Style="{StaticResource Caption}"
+                        Text="{Binding AttachmentSummary}"
+                        VerticalOptions="Center"
+                        LineBreakMode="MiddleTruncation"
+                        MaxLines="1" />
+                    <Button
+                        Grid.Column="2"
+                        Style="{StaticResource IconButtonPlain}"
+                        Text="{x:Static h:Icons.Close}"
+                        Command="{Binding ClearAttachmentCommand}"
+                        IsVisible="{Binding HasAttachment}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Remove the attachment" />
+                </Grid>
+
                 <!-- Edit mode: the post is still loading -->
                 <ActivityIndicator
                     Grid.Row="1"
@@ -150,14 +177,14 @@
                                             <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSelected}">
                                                 <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
                                                     <Label Style="{StaticResource PillAdd}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Add}" />
-                                                    <Label Style="{StaticResource GroupPillText}" Text="{Binding Name}" MaximumWidthRequest="200" />
+                                                    <Label Style="{StaticResource GroupPillText}" Text="{Binding PillText}" MaximumWidthRequest="220" />
                                                 </HorizontalStackLayout>
                                             </Border>
 
                                             <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSelected}">
                                                 <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
                                                     <Label Style="{StaticResource PillCheck}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Check}" />
-                                                    <Label Style="{StaticResource GroupPillTextOn}" Text="{Binding Name}" MaximumWidthRequest="200" />
+                                                    <Label Style="{StaticResource GroupPillTextOn}" Text="{Binding PillText}" MaximumWidthRequest="220" />
                                                 </HorizontalStackLayout>
                                             </Border>
                                         </Grid>

@@ -55,6 +55,14 @@ public class UserRepository : IUserRepository
     public Task SetUserTypeAsync(string uid, string userType)
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
-        return document.UpdateDataAsync(("userType", (object?)userType));
+        return document.UpdateDataAsync(
+            ("userType", (object?)userType),
+            ("needsPassword", (object?)(userType == UserTypes.Admin)));
+    }
+
+    public Task SetNeedsPasswordAsync(string uid, bool needsPassword)
+    {
+        IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        return document.UpdateDataAsync(("needsPassword", (object?)needsPassword));
     }
 }
