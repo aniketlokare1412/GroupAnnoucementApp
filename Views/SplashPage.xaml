@@ -9,9 +9,12 @@
 
     <VerticalStackLayout Padding="24" Spacing="16" VerticalOptions="Center">
 
-        <Border Style="{StaticResource BrandMark}">
-            <Label Style="{StaticResource BrandMarkText}" Text="GA" />
-        </Border>
+        <Image
+            Source="app_logo.png"
+            WidthRequest="88"
+            HeightRequest="88"
+            HorizontalOptions="Center"
+            AutomationProperties.IsInAccessibleTree="False" />
 
         <Label
             Style="{StaticResource PageTitle}"

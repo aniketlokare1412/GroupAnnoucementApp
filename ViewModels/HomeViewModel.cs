@@ -16,6 +16,7 @@ public partial class HomeViewModel : BaseViewModel
     private const int AdminPreviewCount = 3;
 
     private readonly INavigationService _navigation;
+    private readonly IAdminRequestService _adminRequests;
     private readonly ISessionService _session;
     private readonly IGroupAdminService _groupAdminService;
     private readonly IUserAdminService _userAdminService;
@@ -39,9 +40,11 @@ public partial class HomeViewModel : BaseViewModel
     private string _initials = string.Empty;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowAdmin))]
     private bool _isAdmin;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMember))]
     private bool _isMember;
 
     // The dash is shown until the number is known (or if it could not be loaded).
@@ -65,7 +68,21 @@ public partial class HomeViewModel : BaseViewModel
 
     // True only for the very first load, so a refresh never blanks the screen.
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowAdmin))]
+    [NotifyPropertyChangedFor(nameof(ShowMember))]
     private bool _showLoading;
+
+    // Admin / member sections stay hidden behind the skeleton during the first load.
+    // Admin: how many people asked to become administrators.
+    [ObservableProperty]
+    private bool _hasPendingRequests;
+
+    [ObservableProperty]
+    private string _pendingRequestsText = string.Empty;
+
+    public bool ShowAdmin => IsAdmin && !ShowLoading;
+
+    public bool ShowMember => IsMember && !ShowLoading;
 
     // Bound to the pull-to-refresh control.
     [ObservableProperty]
@@ -77,8 +94,10 @@ public partial class HomeViewModel : BaseViewModel
         IGroupAdminService groupAdminService,
         IUserAdminService userAdminService,
         IMembershipService membershipService,
-        IToastService toasts)
+        IToastService toasts,
+        IAdminRequestService adminRequests)
     {
+        _adminRequests = adminRequests;
         _navigation = navigation;
         _session = session;
         _groupAdminService = groupAdminService;
@@ -189,6 +208,22 @@ public partial class HomeViewModel : BaseViewModel
             UsersCountText = "-";
             _toasts.Show("Could not load the user count.");
         }
+
+        OperationResult<List<AdminRequest>> requestsResult = await _adminRequests.GetPendingAsync();
+        int pending = 0;
+        if (requestsResult.IsSuccess && requestsResult.Value != null)
+        {
+            pending = requestsResult.Value.Count;
+        }
+
+        HasPendingRequests = pending > 0;
+        PendingRequestsText = pending == 1 ? "1 person wants to be an admin" : pending + " people want to be admins";
+    }
+
+    [RelayCommand]
+    private async Task OpenAdminRequestsAsync()
+    {
+        await _navigation.GoToAsync(Routes.AdminRequests);
     }
 
     private async Task LoadMemberAsync()

@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
+    x:Class="GroupAnnouncementApp.Views.AdminRequestsPage"
+    x:DataType="vm:AdminRequestsViewModel"
+    Title="Admin requests">
+
+    <!-- Admin: people who asked to become administrators. Tick = approve, x = decline. -->
+    <Grid>
+
+        <Grid RowDefinitions="Auto,*">
+
+            <Border Grid.Row="0" Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}" Margin="16,12,16,0">
+                <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            </Border>
+
+            <Grid Grid.Row="1">
+
+                <RefreshView IsRefreshing="{Binding IsRefreshing}" Command="{Binding RefreshCommand}">
+                    <CollectionView ItemsSource="{Binding Items}" SelectionMode="None" Margin="16,12,16,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AdminRequestItem">
+                                <Border Style="{StaticResource RowCard}">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                        <Grid Grid.Column="0" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}" VerticalOptions="Center">
+                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            </Border>
+                                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                                <Label
+                                                    Style="{StaticResource CardTitle}"
+                                                    Text="{Binding Phone}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                                <Label Style="{StaticResource Caption}" Text="Wants to be an administrator" />
+                                            </VerticalStackLayout>
+                                        </Grid>
+                                        <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                            <Button
+                                                Style="{StaticResource IconButton}"
+                                                Text="{x:Static h:Icons.Check}"
+                                                Command="{Binding ApproveCommand}"
+                                                SemanticProperties.Description="{Binding ApproveLabel}" />
+                                            <Button
+                                                Style="{StaticResource IconButtonDanger}"
+                                                Text="{x:Static h:Icons.Close}"
+                                                Command="{Binding DeclineCommand}"
+                                                SemanticProperties.Description="{Binding DeclineLabel}" />
+                                        </HorizontalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.Footer>
+                            <Grid HeightRequest="12" />
+                        </CollectionView.Footer>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout
+                                x:DataType="vm:AdminRequestsViewModel"
+                                IsVisible="{Binding HasNoItems}"
+                                Spacing="8"
+                                Padding="0,40,0,0"
+                                HorizontalOptions="Center">
+                                <Border Style="{StaticResource EmptyIconTile}">
+                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
+                                </Border>
+                                <Label Style="{StaticResource CardTitle}" Text="No requests" HorizontalOptions="Center" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="When someone asks to become an admin, it shows up here."
+                                    HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </RefreshView>
+
+                <controls:SkeletonList Kind="Row" IsVisible="{Binding ShowLoading}" VerticalOptions="Start" Margin="16,12,16,0" />
+
+            </Grid>
+        </Grid>
+
+        <controls:ToastView x:Name="Toast" />
+    </Grid>
+</ContentPage>

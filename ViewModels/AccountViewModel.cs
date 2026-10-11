@@ -15,6 +15,7 @@ public partial class AccountViewModel : BaseViewModel
 
     private readonly INavigationService _navigation;
     private readonly ISessionService _session;
+    private readonly IAdminRequestService _adminRequests;
 
     // Bumped every time the confirm state starts or ends, so an old timer never cancels a newer one.
     private int _confirmToken;
@@ -37,10 +38,18 @@ public partial class AccountViewModel : BaseViewModel
 
     public bool IsNotConfirmingLogout => !IsConfirmingLogout;
 
-    public AccountViewModel(INavigationService navigation, ISessionService session)
+    // Members can ask an admin to make them an admin; once asked, the button is replaced by a note.
+    [ObservableProperty]
+    private bool _canRequestAdmin;
+
+    [ObservableProperty]
+    private bool _isRequestPending;
+
+    public AccountViewModel(INavigationService navigation, ISessionService session, IAdminRequestService adminRequests)
     {
         _navigation = navigation;
         _session = session;
+        _adminRequests = adminRequests;
     }
 
     // Called by the page every time it appears (Shell reuses the page instance,
@@ -59,10 +68,49 @@ public partial class AccountViewModel : BaseViewModel
             return;
         }
 
-        DisplayName = string.IsNullOrWhiteSpace(profile.Name) ? profile.Email : profile.Name;
-        UserEmail = profile.Email;
+        DisplayName = string.IsNullOrWhiteSpace(profile.Phone) ? profile.Name : profile.Phone;
+        UserEmail = string.Empty;
         RoleText = _session.IsAdmin ? "Administrator" : "Member";
-        Initials = BuildInitials(DisplayName);
+        string digits = PhoneLogin.Normalize(DisplayName);
+        Initials = digits.Length >= 2 ? digits.Substring(digits.Length - 2) : BuildInitials(DisplayName);
+
+        bool pending = false;
+        if (!_session.IsAdmin)
+        {
+            OperationResult<bool> pendingResult = await _adminRequests.HasPendingRequestAsync();
+            pending = pendingResult.IsSuccess && pendingResult.Value;
+        }
+
+        IsRequestPending = pending;
+        CanRequestAdmin = !_session.IsAdmin && !pending;
+    }
+
+    [RelayCommand]
+    private async Task RequestAdminAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        ErrorMessage = null;
+        try
+        {
+            OperationResult result = await _adminRequests.RequestAsync();
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.ErrorMessage;
+                return;
+            }
+
+            IsRequestPending = true;
+            CanRequestAdmin = false;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand]

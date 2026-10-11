@@ -8,12 +8,10 @@
     Shell.NavBarIsVisible="False">
 
     <ScrollView>
-        <VerticalStackLayout Padding="24,48,24,24" Spacing="20">
+        <VerticalStackLayout Padding="28,48,28,24" Spacing="24">
 
             <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
-                <Border Style="{StaticResource BrandMark}">
-                    <Label Style="{StaticResource BrandMarkText}" Text="GA" />
-                </Border>
+                <Image Source="app_logo.png" WidthRequest="88" HeightRequest="88" HorizontalOptions="Center" AutomationProperties.IsInAccessibleTree="False" />
                 <Label
                     Style="{StaticResource PageTitle}"
                     Text="Complete your profile"
@@ -30,11 +28,10 @@
                 </Border>
             </VerticalStackLayout>
 
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="12">
+            <VerticalStackLayout Spacing="18">
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Style="{StaticResource Caption}" Text="Full name" />
+                    <VerticalStackLayout Spacing="6">
+                        <Label Style="{StaticResource FieldLabel}" Text="Full name" />
                         <Border Style="{StaticResource FieldBorder}">
                             <Entry
                                 Placeholder="Your name"
@@ -44,8 +41,8 @@
                         </Border>
                     </VerticalStackLayout>
 
-                    <VerticalStackLayout Spacing="4">
-                        <Label Style="{StaticResource Caption}" Text="Phone number" />
+                    <VerticalStackLayout Spacing="6">
+                        <Label Style="{StaticResource FieldLabel}" Text="Phone number" />
                         <Border Style="{StaticResource FieldBorder}">
                             <Entry
                                 Placeholder="e.g. 9876543210"
@@ -64,11 +61,12 @@
                     <Button
                         Text="Save and continue"
                         Command="{Binding SaveCommand}"
-                        IsEnabled="{Binding IsNotBusy}" />
+                        IsEnabled="{Binding IsNotBusy}"
+                        Margin="0,12,0,0" />
 
                     <Button
                         Text="Log out"
-                        Style="{StaticResource PillOutline}"
+                        Style="{StaticResource LinkButton}"
                         HorizontalOptions="Center"
                         Command="{Binding LogoutCommand}"
                         IsEnabled="{Binding IsNotBusy}" />
@@ -78,8 +76,7 @@
                         IsVisible="{Binding IsBusy}"
                         HorizontalOptions="Center" />
 
-                </VerticalStackLayout>
-            </Border>
+            </VerticalStackLayout>
 
         </VerticalStackLayout>
     </ScrollView>

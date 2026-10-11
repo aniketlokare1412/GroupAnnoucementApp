@@ -22,12 +22,13 @@
                     <Label Style="{StaticResource Caption}" Text="{Binding SummaryText}" />
                 </VerticalStackLayout>
 
-                <Border Style="{StaticResource FieldBorder}">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                        <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                <Border Style="{StaticResource SearchBorder}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
                         <Entry
                             Grid.Column="1"
-                            Placeholder="Search by name, email or phone"
+                            Style="{StaticResource SearchEntry}"
+                            Placeholder="Search by phone number"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
                             SemanticProperties.Description="Search users" />
@@ -71,15 +72,16 @@
                                             </Border>
 
                                             <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
-                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                                <!-- Name first, chips right after it. The name shrinks (and truncates) before the chips do. -->
+                                                <FlexLayout Direction="Row" AlignItems="Center">
                                                     <Label
-                                                        Grid.Column="0"
+                                                        FlexLayout.Shrink="1"
                                                         Style="{StaticResource CardTitle}"
                                                         Text="{Binding Name}"
                                                         LineBreakMode="TailTruncation"
                                                         MaxLines="1"
                                                         VerticalOptions="Center" />
-                                                    <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                                    <HorizontalStackLayout FlexLayout.Shrink="0" Margin="6,0,0,0" Spacing="4" VerticalOptions="Center">
                                                         <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdmin}" AutomationProperties.IsInAccessibleTree="False">
                                                             <Label Style="{StaticResource BadgeBrandText}" Text="Admin" />
                                                         </Border>
@@ -90,18 +92,7 @@
                                                             <Label Style="{StaticResource BadgeDangerText}" Text="Inactive" />
                                                         </Border>
                                                     </HorizontalStackLayout>
-                                                </Grid>
-                                                <Label
-                                                    Style="{StaticResource Caption}"
-                                                    Text="{Binding Email}"
-                                                    LineBreakMode="TailTruncation"
-                                                    MaxLines="1" />
-                                                <Label
-                                                    Style="{StaticResource Caption}"
-                                                    Text="{Binding Phone}"
-                                                    IsVisible="{Binding HasPhone}"
-                                                    LineBreakMode="TailTruncation"
-                                                    MaxLines="1" />
+                                                </FlexLayout>
                                             </VerticalStackLayout>
                                         </Grid>
 
@@ -141,7 +132,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="12" Color="Transparent" />
+                            <Grid HeightRequest="12" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -164,12 +155,7 @@
                     </CollectionView>
                 </RefreshView>
 
-                <ActivityIndicator
-                    IsRunning="{Binding ShowLoading}"
-                    IsVisible="{Binding ShowLoading}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Start"
-                    Margin="0,40,0,0" />
+                <controls:SkeletonList Kind="Row" IsVisible="{Binding ShowLoading}" VerticalOptions="Start" Margin="16,0" />
 
             </Grid>
         </Grid>

@@ -40,11 +40,12 @@
                         VerticalOptions="Center" />
                 </Grid>
 
-                <Border Style="{StaticResource FieldBorder}">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                        <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                <Border Style="{StaticResource SearchBorder}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                        <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
                         <Entry
                             Grid.Column="1"
+                            Style="{StaticResource SearchEntry}"
                             Placeholder="Search by name or description"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
@@ -148,7 +149,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="12" Color="Transparent" />
+                            <Grid HeightRequest="12" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -171,12 +172,7 @@
                     </CollectionView>
                 </RefreshView>
 
-                <ActivityIndicator
-                    IsRunning="{Binding ShowLoading}"
-                    IsVisible="{Binding ShowLoading}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Start"
-                    Margin="0,40,0,0" />
+                <controls:SkeletonList Kind="Row" IsVisible="{Binding ShowLoading}" VerticalOptions="Start" Margin="16,0" />
 
             </Grid>
         </Grid>

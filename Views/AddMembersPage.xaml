@@ -13,12 +13,13 @@
 
         <VerticalStackLayout Grid.Row="0" Padding="16,10,16,6" Spacing="8">
 
-            <Border Style="{StaticResource FieldBorder}">
-                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="8">
-                    <Label Grid.Column="0" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+            <Border Style="{StaticResource SearchBorder}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                    <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
                     <Entry
                         Grid.Column="1"
-                        Placeholder="Search by name, email or phone"
+                        Style="{StaticResource SearchEntry}"
+                            Placeholder="Search by name, email or phone"
                         ReturnType="Search"
                         Text="{Binding SearchText}"
                         SemanticProperties.Description="Search users" />
@@ -91,7 +92,7 @@
                 </CollectionView.ItemTemplate>
 
                 <CollectionView.Footer>
-                    <BoxView HeightRequest="12" Color="Transparent" />
+                    <Grid HeightRequest="12" />
                 </CollectionView.Footer>
 
                 <CollectionView.EmptyView>

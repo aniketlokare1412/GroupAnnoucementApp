@@ -31,6 +31,18 @@ public static class MauiProgram
                 fonts.AddFont("MaterialIconsRound-Regular.otf", "MaterialIconsRound");
             });
 
+#if ANDROID
+        // Plain fields: remove the native underline under Entry and Editor.
+        Microsoft.Maui.Handlers.EntryHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+        {
+            handler.PlatformView.Background = null;
+        });
+        Microsoft.Maui.Handlers.EditorHandler.Mapper.AppendToMapping("NoUnderline", (handler, view) =>
+        {
+            handler.PlatformView.Background = null;
+        });
+#endif
+
         RegisterFirebaseServices(builder);
         RegisterAppServices(builder.Services);
         RegisterViewModels(builder.Services);
@@ -66,6 +78,7 @@ public static class MauiProgram
         services.AddSingleton<IGroupRepository, GroupRepository>();
         services.AddSingleton<IMembershipRepository, MembershipRepository>();
         services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
+        services.AddSingleton<IAdminRequestRepository, AdminRequestRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
@@ -76,6 +89,7 @@ public static class MauiProgram
         services.AddSingleton<IMembershipService, MembershipService>();
         services.AddSingleton<IMembershipAdminService, MembershipAdminService>();
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
+        services.AddSingleton<IAdminRequestService, AdminRequestService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -94,6 +108,7 @@ public static class MauiProgram
         services.AddTransient<AnnouncementGroupsViewModel>();
         services.AddTransient<AnnouncementsViewModel>();
         services.AddTransient<AnnouncementEditViewModel>();
+        services.AddTransient<AdminRequestsViewModel>();
     }
 
     private static void RegisterViews(IServiceCollection services)
@@ -113,5 +128,6 @@ public static class MauiProgram
         services.AddTransient<AnnouncementGroupsPage>();
         services.AddTransient<AnnouncementsPage>();
         services.AddTransient<AnnouncementEditPage>();
+        services.AddTransient<AdminRequestsPage>();
     }
 }

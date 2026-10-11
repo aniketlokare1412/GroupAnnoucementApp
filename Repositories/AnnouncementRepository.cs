@@ -69,6 +69,12 @@ public class AnnouncementRepository : IAnnouncementRepository
         return document.UpdateDataAsync(("isActive", (object?)isActive));
     }
 
+    public Task DeleteAsync(string groupId, string id)
+    {
+        IDocumentReference document = _firestore.GetDocument(DocumentPath(groupId, id));
+        return document.DeleteDocumentAsync();
+    }
+
     private static string CollectionPath(string groupId)
     {
         return GroupsCollection + "/" + groupId + "/" + AnnouncementsCollection;

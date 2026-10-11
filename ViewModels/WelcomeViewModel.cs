@@ -10,7 +10,6 @@ namespace GroupAnnouncementApp.ViewModels;
 public partial class WelcomeViewModel : BaseViewModel
 {
     private const int MinPasswordLength = 6;
-    private const int MaxNameLength = 100;
 
     private readonly INavigationService _navigation;
     private readonly IAuthService _authService;
@@ -24,13 +23,7 @@ public partial class WelcomeViewModel : BaseViewModel
     private bool _isRegisterMode;
 
     [ObservableProperty]
-    private string _name = string.Empty;
-
-    [ObservableProperty]
     private string _phone = string.Empty;
-
-    [ObservableProperty]
-    private string _email = string.Empty;
 
     [ObservableProperty]
     private string _password = string.Empty;
@@ -75,9 +68,7 @@ public partial class WelcomeViewModel : BaseViewModel
     public void Reset()
     {
         IsRegisterMode = false;
-        Name = string.Empty;
         Phone = string.Empty;
-        Email = string.Empty;
         ClearSecrets();
         ErrorMessage = _session.TakeNotice();
     }
@@ -128,8 +119,9 @@ public partial class WelcomeViewModel : BaseViewModel
 
         ErrorMessage = null;
 
-        string cleanEmail = (Email ?? string.Empty).Trim();
-        string? validationError = ValidateLogin(cleanEmail, Password);
+        string cleanPhone = PhoneLogin.Normalize(Phone ?? string.Empty);
+        string cleanEmail = PhoneLogin.ToEmail(cleanPhone);
+        string? validationError = ValidateLogin(cleanPhone, Password);
         if (validationError != null)
         {
             ErrorMessage = validationError;
@@ -163,12 +155,11 @@ public partial class WelcomeViewModel : BaseViewModel
 
         ErrorMessage = null;
 
-        string cleanName = (Name ?? string.Empty).Trim();
-        string cleanPhone = (Phone ?? string.Empty).Trim();
+        string cleanPhone = PhoneLogin.Normalize(Phone ?? string.Empty);
         // Lower-case so it always matches the email Firebase puts in the auth token.
-        string cleanEmail = (Email ?? string.Empty).Trim().ToLowerInvariant();
+        string cleanEmail = PhoneLogin.ToEmail(cleanPhone);
 
-        string? validationError = ValidateRegister(cleanName, cleanPhone, cleanEmail, Password, ConfirmPassword);
+        string? validationError = ValidateRegister(cleanPhone, Password, ConfirmPassword);
         if (validationError != null)
         {
             ErrorMessage = validationError;
@@ -178,7 +169,7 @@ public partial class WelcomeViewModel : BaseViewModel
         IsBusy = true;
         try
         {
-            OperationResult result = await _userService.RegisterAsync(cleanName, cleanPhone, cleanEmail, Password);
+            OperationResult result = await _userService.RegisterAsync(cleanPhone, cleanPhone, cleanEmail, Password);
             if (!result.IsSuccess)
             {
                 ErrorMessage = result.ErrorMessage;
@@ -215,16 +206,12 @@ public partial class WelcomeViewModel : BaseViewModel
         ConfirmPassword = string.Empty;
     }
 
-    private static string? ValidateLogin(string email, string? password)
+    private static string? ValidateLogin(string phone, string? password)
     {
-        if (email.Length == 0)
+        string? phoneProblem = ValidatePhone(phone);
+        if (phoneProblem != null)
         {
-            return "Please enter your email.";
-        }
-
-        if (!InputValidator.IsValidEmail(email))
-        {
-            return "Please enter a valid email address.";
+            return phoneProblem;
         }
 
         if (string.IsNullOrEmpty(password))
@@ -235,36 +222,12 @@ public partial class WelcomeViewModel : BaseViewModel
         return null;
     }
 
-    private static string? ValidateRegister(string name, string phone, string email, string? password, string? confirmPassword)
+    private static string? ValidateRegister(string phone, string? password, string? confirmPassword)
     {
-        if (name.Length == 0)
+        string? phoneProblem = ValidatePhone(phone);
+        if (phoneProblem != null)
         {
-            return "Please enter your name.";
-        }
-
-        if (name.Length > MaxNameLength)
-        {
-            return "Name is too long.";
-        }
-
-        if (phone.Length == 0)
-        {
-            return "Please enter your phone number.";
-        }
-
-        if (!InputValidator.IsValidPhone(phone))
-        {
-            return "Please enter a valid phone number (7 to 15 digits).";
-        }
-
-        if (email.Length == 0)
-        {
-            return "Please enter your email.";
-        }
-
-        if (!InputValidator.IsValidEmail(email))
-        {
-            return "Please enter a valid email address.";
+            return phoneProblem;
         }
 
         if (string.IsNullOrEmpty(password))
@@ -274,12 +237,27 @@ public partial class WelcomeViewModel : BaseViewModel
 
         if (password.Length < MinPasswordLength)
         {
-            return "Password must be at least 6 characters.";
+            return "Password must be at least " + MinPasswordLength + " characters.";
         }
 
         if (password != confirmPassword)
         {
-            return "Passwords do not match.";
+            return "The two passwords do not match.";
+        }
+
+        return null;
+    }
+
+    private static string? ValidatePhone(string phone)
+    {
+        if (phone.Length == 0)
+        {
+            return "Please enter your phone number.";
+        }
+
+        if (!InputValidator.IsValidPhone(phone))
+        {
+            return "Please enter a valid phone number (7 to 15 digits).";
         }
 
         return null;

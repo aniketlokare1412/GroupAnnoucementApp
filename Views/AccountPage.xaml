@@ -8,17 +8,18 @@
     Title="Account">
 
     <ScrollView>
-        <VerticalStackLayout Padding="16" Spacing="12">
+        <VerticalStackLayout Padding="20,16,20,20" Spacing="16">
 
-            <Border Style="{StaticResource Card}">
-                <VerticalStackLayout Spacing="8" HorizontalOptions="Fill">
+            <Border Style="{StaticResource Card}" Padding="20">
+                <VerticalStackLayout Spacing="10" HorizontalOptions="Fill">
 
                     <Border Style="{StaticResource AvatarCircle}">
                         <Label Style="{StaticResource AvatarText}" Text="{Binding Initials}" />
                     </Border>
 
                     <Label
-                        Style="{StaticResource SectionTitle}"
+                        Style="{StaticResource HeroName}"
+                        SemanticProperties.HeadingLevel="Level1"
                         Text="{Binding DisplayName}"
                         HorizontalOptions="Center"
                         HorizontalTextAlignment="Center" />
@@ -37,6 +38,19 @@
 
             <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
                 <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+            </Border>
+
+            <!-- Members: ask an admin for admin rights -->
+            <Button
+                Style="{StaticResource PillTonal}"
+                Text="Request admin access"
+                Command="{Binding RequestAdminCommand}"
+                IsVisible="{Binding CanRequestAdmin}"
+                IsEnabled="{Binding IsNotBusy}"
+                HorizontalOptions="Center"
+                SemanticProperties.Hint="Asks an admin to make you an administrator" />
+            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsRequestPending}" HorizontalOptions="Center">
+                <Label Style="{StaticResource BadgeNeutralText}" Text="Admin request sent. Waiting for approval." />
             </Border>
 
             <!-- Two-step log out: no dialog. -->

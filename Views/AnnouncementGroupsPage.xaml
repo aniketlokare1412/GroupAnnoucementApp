@@ -14,13 +14,13 @@
             Placeholder="Search groups"
             Text="{Binding SearchText}" />
 
-        <Label Grid.Row="1" Text="Tap a group to see and manage its announcements." TextColor="Gray" />
+        <Label Grid.Row="1" Text="Tap a group to see and manage its announcements." Style="{StaticResource Caption}" />
 
         <Label
             Grid.Row="2"
             Text="{Binding ErrorMessage}"
             IsVisible="{Binding HasError}"
-            TextColor="Red" />
+            Style="{StaticResource ErrorText}" />
 
         <Grid Grid.Row="3">
 
@@ -33,7 +33,7 @@
                     <DataTemplate x:DataType="vm:GroupListItem">
                         <VerticalStackLayout Padding="8,10" Spacing="2">
                             <Label Text="{Binding Name}" FontAttributes="Bold" />
-                            <Label Text="Inactive group" TextColor="Red" IsVisible="{Binding IsInactive}" />
+                            <Label Text="Inactive group" Style="{StaticResource ErrorText}" IsVisible="{Binding IsInactive}" />
                         </VerticalStackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>

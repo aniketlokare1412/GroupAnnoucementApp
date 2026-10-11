@@ -104,7 +104,7 @@
                         </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
-                            <BoxView HeightRequest="12" Color="Transparent" />
+                            <Grid HeightRequest="12" />
                         </CollectionView.Footer>
 
                         <CollectionView.EmptyView>
@@ -127,12 +127,7 @@
                     </CollectionView>
                 </RefreshView>
 
-                <ActivityIndicator
-                    IsRunning="{Binding ShowLoading}"
-                    IsVisible="{Binding ShowLoading}"
-                    HorizontalOptions="Center"
-                    VerticalOptions="Start"
-                    Margin="0,48,0,0" />
+                <controls:SkeletonList Kind="Row" IsVisible="{Binding ShowLoading}" VerticalOptions="Start" Margin="16,0" />
 
             </Grid>
         </Grid>
