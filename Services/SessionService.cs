@@ -82,6 +82,11 @@ public class SessionService : ISessionService
         _currentProfile = profile;
         bool isAdmin = string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal);
         string home = isAdmin ? Routes.AdminHome : Routes.MemberHome;
+        if (isAdmin && profile.NeedsPassword)
+        {
+            home = Routes.SetPassword;
+        }
+
         return SessionLoadResult.Create(SessionStatus.Ready, null, home);
     }
 

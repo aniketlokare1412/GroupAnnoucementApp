@@ -127,20 +127,6 @@
                                                 Text="{x:Static h:Icons.Edit}"
                                                 Command="{Binding EditCommand}"
                                                 SemanticProperties.Description="{Binding EditLabel}" />
-
-                                            <!-- Active: red-tint "deactivate". Inactive: teal-tint "activate". -->
-                                            <Button
-                                                Style="{StaticResource IconButtonDanger}"
-                                                Text="{x:Static h:Icons.PowerSettings}"
-                                                Command="{Binding ToggleActiveCommand}"
-                                                IsVisible="{Binding IsActive}"
-                                                SemanticProperties.Description="{Binding DeactivateLabel}" />
-                                            <Button
-                                                Style="{StaticResource IconButton}"
-                                                Text="{x:Static h:Icons.PowerSettings}"
-                                                Command="{Binding ToggleActiveCommand}"
-                                                IsVisible="{Binding IsInactive}"
-                                                SemanticProperties.Description="{Binding ActivateLabel}" />
                                         </HorizontalStackLayout>
 
                                     </Grid>

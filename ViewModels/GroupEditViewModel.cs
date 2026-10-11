@@ -29,6 +29,14 @@ public partial class GroupEditViewModel : BaseViewModel
     [ObservableProperty]
     private string _description = string.Empty;
 
+    [ObservableProperty]
+    private string _number = string.Empty;
+
+    public int MaxNumberLength
+    {
+        get { return GroupLimits.MaxNumberLength; }
+    }
+
     public int MaxNameLength
     {
         get { return GroupLimits.MaxNameLength; }
@@ -90,6 +98,7 @@ public partial class GroupEditViewModel : BaseViewModel
 
             Name = result.Value.Name;
             Description = result.Value.Description;
+            Number = result.Value.Number;
             _isLoaded = true;
         }
         finally
@@ -115,11 +124,11 @@ public partial class GroupEditViewModel : BaseViewModel
             OperationResult result;
             if (IsEditing)
             {
-                result = await _groupService.UpdateGroupAsync(GroupId!, Name, Description);
+                result = await _groupService.UpdateGroupAsync(GroupId!, Name, Description, Number);
             }
             else
             {
-                result = await _groupService.CreateGroupAsync(Name, Description);
+                result = await _groupService.CreateGroupAsync(Name, Description, Number);
             }
 
             if (!result.IsSuccess)

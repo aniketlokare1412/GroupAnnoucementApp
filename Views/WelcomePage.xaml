@@ -7,13 +7,10 @@
     x:DataType="vm:WelcomeViewModel"
     Shell.NavBarIsVisible="False">
 
-    <!-- One page for "Log in" and "Create account". No card and no outlines: logo, plain fields, one main button,
-         and a quiet text link to switch. With few fields the content sits in the middle of the screen;
-         with more (Create account) it scrolls. -->
+    <!-- One login page. Members: phone number only. Admins: tap the link to also enter a password. -->
     <ScrollView VerticalScrollBarVisibility="Never">
         <VerticalStackLayout Padding="28,32,28,32" Spacing="0" VerticalOptions="Center">
 
-            <!-- Brand -->
             <VerticalStackLayout Spacing="6" HorizontalOptions="Center" Margin="0,0,0,36">
                 <Image
                     Source="app_logo.png"
@@ -34,21 +31,23 @@
                     HorizontalTextAlignment="Center" />
             </VerticalStackLayout>
 
-            <!-- Fields -->
             <VerticalStackLayout Spacing="18">
+
                 <VerticalStackLayout Spacing="6">
                     <Label Style="{StaticResource FieldLabel}" Text="Phone number" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry
                             Placeholder="e.g. 9876543210"
                             Keyboard="Telephone"
-                            ReturnType="Next"
+                            ReturnType="Done"
+                            ReturnCommand="{Binding SubmitCommand}"
                             Text="{Binding Phone}"
                             IsEnabled="{Binding IsNotBusy}"
                             SemanticProperties.Description="Phone number" />
                     </Border>
                 </VerticalStackLayout>
-                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsSignInMode}">
+
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsAdminMode}">
                     <Label Style="{StaticResource FieldLabel}" Text="Password" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry
@@ -61,38 +60,13 @@
                             SemanticProperties.Description="Password" />
                     </Border>
                 </VerticalStackLayout>
-                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
-                    <Label Style="{StaticResource FieldLabel}" Text="Password" />
-                    <Border Style="{StaticResource FieldBorder}">
-                        <Entry
-                            Placeholder="At least 6 characters"
-                            IsPassword="True"
-                            ReturnType="Next"
-                            Text="{Binding Password}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Password" />
-                    </Border>
-                </VerticalStackLayout>
-                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsRegisterMode}">
-                    <Label Style="{StaticResource FieldLabel}" Text="Confirm password" />
-                    <Border Style="{StaticResource FieldBorder}">
-                        <Entry
-                            Placeholder="Repeat your password"
-                            IsPassword="True"
-                            ReturnType="Done"
-                            ReturnCommand="{Binding SubmitCommand}"
-                            Text="{Binding ConfirmPassword}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Confirm password" />
-                    </Border>
-                </VerticalStackLayout>
+
             </VerticalStackLayout>
 
             <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}" Margin="0,18,0,0">
                 <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
             </Border>
 
-            <!-- The one main button, with clear space above it -->
             <Button
                 Text="{Binding SubmitText}"
                 Command="{Binding SubmitCommand}"
@@ -105,34 +79,25 @@
                 HorizontalOptions="Center"
                 Margin="0,16,0,0" />
 
-            <!-- Switch between the two modes with a text link, not a button -->
-            <HorizontalStackLayout
+            <Button
+                Style="{StaticResource LinkButton}"
+                Text="Admin? Log in with password"
+                Command="{Binding ShowAdminLoginCommand}"
+                IsVisible="{Binding IsMemberMode}"
+                IsEnabled="{Binding IsNotBusy}"
                 HorizontalOptions="Center"
-                Spacing="0"
                 Margin="0,20,0,0"
-                IsVisible="{Binding IsSignInMode}">
-                <Label Style="{StaticResource Greeting}" Text="New here?" VerticalOptions="Center" />
-                <Button
-                    Style="{StaticResource LinkButton}"
-                    Text="Create account"
-                    Command="{Binding ShowRegisterCommand}"
-                    IsEnabled="{Binding IsNotBusy}"
-                    MinimumHeightRequest="44" />
-            </HorizontalStackLayout>
+                MinimumHeightRequest="44" />
 
-            <HorizontalStackLayout
+            <Button
+                Style="{StaticResource LinkButton}"
+                Text="Not an admin? Continue with phone only"
+                Command="{Binding ShowMemberLoginCommand}"
+                IsVisible="{Binding IsAdminMode}"
+                IsEnabled="{Binding IsNotBusy}"
                 HorizontalOptions="Center"
-                Spacing="0"
                 Margin="0,20,0,0"
-                IsVisible="{Binding IsRegisterMode}">
-                <Label Style="{StaticResource Greeting}" Text="Already have an account?" VerticalOptions="Center" />
-                <Button
-                    Style="{StaticResource LinkButton}"
-                    Text="Sign in"
-                    Command="{Binding ShowSignInCommand}"
-                    IsEnabled="{Binding IsNotBusy}"
-                    MinimumHeightRequest="44" />
-            </HorizontalStackLayout>
+                MinimumHeightRequest="44" />
 
         </VerticalStackLayout>
     </ScrollView>

@@ -11,14 +11,17 @@ public class AnnouncementService : IAnnouncementService
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
     private readonly IAnnouncementRepository _announcementRepository;
+    private readonly IAttachmentService _attachments;
     private readonly IGroupRepository _groupRepository;
 
     public AnnouncementService(
         ISessionService session,
         IAuthService authService,
         IAnnouncementRepository announcementRepository,
-        IGroupRepository groupRepository)
+        IGroupRepository groupRepository,
+        IAttachmentService attachments)
     {
+        _attachments = attachments;
         _session = session;
         _authService = authService;
         _announcementRepository = announcementRepository;
@@ -109,7 +112,7 @@ public class AnnouncementService : IAnnouncementService
         }
     }
 
-    public async Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds)
+    public async Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds, AttachmentPick? attachment = null)
     {
         string? uid = GetAdminUid();
         if (uid == null)
@@ -189,6 +192,20 @@ public class AnnouncementService : IAnnouncementService
 
                 try
                 {
+                    // Each group gets its own copy of the file, so replacing one group's
+                    // announcement never removes a file another group still shows.
+                    if (attachment != null)
+                    {
+                        OperationResult<UploadedAttachment> uploaded = await _attachments.UploadAsync(groupId, announcementId, attachment);
+                        if (!uploaded.IsSuccess || uploaded.Value == null)
+                        {
+                            throw new InvalidOperationException(uploaded.ErrorMessage ?? "The file could not be saved.");
+                        }
+
+                        announcement.AttachmentName = uploaded.Value.Name;
+                        announcement.AttachmentKind = uploaded.Value.Kind;
+                    }
+
                     await ServiceHelper.WithTimeoutAsync(_announcementRepository.CreateAsync(groupId, announcementId, announcement));
                     result.PostedGroupIds.Add(groupId);
                     await DeleteOlderAsync(groupId, announcementId);
@@ -327,6 +344,11 @@ public class AnnouncementService : IAnnouncementService
             {
                 if (all[i].Id != keepId)
                 {
+                    if (!string.IsNullOrEmpty(all[i].AttachmentKind))
+                    {
+                        await _attachments.DeleteAsync(groupId, all[i].Id);
+                    }
+
                     await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, all[i].Id));
                 }
             }
@@ -402,6 +424,17 @@ public class AnnouncementService : IAnnouncementService
 
     private static int CompareNewestFirst(Announcement a, Announcement b)
     {
+        // A just-posted announcement can still have no server time on this device: it is the newest.
+        if (a.CreatedAt == default && b.CreatedAt != default)
+        {
+            return -1;
+        }
+
+        if (b.CreatedAt == default && a.CreatedAt != default)
+        {
+            return 1;
+        }
+
         return b.CreatedAt.CompareTo(a.CreatedAt);
     }
 

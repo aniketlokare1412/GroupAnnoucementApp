@@ -78,15 +78,16 @@ public class GroupAdminService : IGroupAdminService
         }
     }
 
-    public async Task<OperationResult> CreateGroupAsync(string name, string description)
+    public async Task<OperationResult> CreateGroupAsync(string name, string description, string number)
     {
         string cleanName = (name ?? string.Empty).Trim();
         string cleanDescription = (description ?? string.Empty).Trim();
+        string cleanNumber = (number ?? string.Empty).Trim();
 
         string? problem = CheckCanModify();
         if (problem == null)
         {
-            problem = ValidateText(cleanName, cleanDescription);
+            problem = ValidateText(cleanName, cleanDescription) ?? ValidateNumber(cleanNumber);
         }
         if (problem != null)
         {
@@ -104,7 +105,7 @@ public class GroupAdminService : IGroupAdminService
             // Read the current groups first: needed for the duplicate and limit checks.
             List<AnnouncementGroup> existing = await WithTimeoutAsync(_groupRepository.GetAllAsync());
 
-            problem = CheckDuplicateName(existing, cleanName, null);
+            problem = CheckDuplicateName(existing, cleanName, null) ?? CheckDuplicateNumber(existing, cleanNumber, null);
             if (problem == null)
             {
                 problem = CheckLimit(existing);
@@ -117,6 +118,7 @@ public class GroupAdminService : IGroupAdminService
             AnnouncementGroup group = new AnnouncementGroup();
             group.Name = cleanName;
             group.Description = cleanDescription;
+            group.Number = cleanNumber;
             group.IsActive = true;
             group.CreatedBy = uid;
 
@@ -135,10 +137,11 @@ public class GroupAdminService : IGroupAdminService
         }
     }
 
-    public async Task<OperationResult> UpdateGroupAsync(string id, string name, string description)
+    public async Task<OperationResult> UpdateGroupAsync(string id, string name, string description, string number)
     {
         string cleanName = (name ?? string.Empty).Trim();
         string cleanDescription = (description ?? string.Empty).Trim();
+        string cleanNumber = (number ?? string.Empty).Trim();
 
         string? problem = CheckCanModify();
         if (problem == null && string.IsNullOrEmpty(id))
@@ -147,7 +150,7 @@ public class GroupAdminService : IGroupAdminService
         }
         if (problem == null)
         {
-            problem = ValidateText(cleanName, cleanDescription);
+            problem = ValidateText(cleanName, cleanDescription) ?? ValidateNumber(cleanNumber);
         }
         if (problem != null)
         {
@@ -163,13 +166,13 @@ public class GroupAdminService : IGroupAdminService
                 return OperationResult.Fail("This group no longer exists.");
             }
 
-            problem = CheckDuplicateName(existing, cleanName, id);
+            problem = CheckDuplicateName(existing, cleanName, id) ?? CheckDuplicateNumber(existing, cleanNumber, id);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
             }
 
-            await WithTimeoutAsync(_groupRepository.UpdateDetailsAsync(id, cleanName, cleanDescription));
+            await WithTimeoutAsync(_groupRepository.UpdateDetailsAsync(id, cleanName, cleanDescription, cleanNumber));
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -262,6 +265,56 @@ public class GroupAdminService : IGroupAdminService
         if (description.Length > GroupLimits.MaxDescriptionLength)
         {
             return "The description can be at most " + GroupLimits.MaxDescriptionLength + " characters.";
+        }
+
+        return null;
+    }
+
+    // The group number is required and must be a positive whole number.
+    private static string? ValidateNumber(string number)
+    {
+        if (number.Length == 0)
+        {
+            return "Please enter a group number.";
+        }
+
+        if (number.Length > GroupLimits.MaxNumberLength)
+        {
+            return "The group number can have at most " + GroupLimits.MaxNumberLength + " digits.";
+        }
+
+        for (int i = 0; i < number.Length; i++)
+        {
+            if (number[i] < '0' || number[i] > '9')
+            {
+                return "The group number must be a whole number, like 4821.";
+            }
+        }
+
+        // No leading zero, and not zero itself (so 7 and 07 can never be two different groups).
+        if (number[0] == '0')
+        {
+            return "The group number must be a positive number without a leading zero.";
+        }
+
+        return null;
+    }
+
+    // Numbers must be unique across ALL groups, ignoring upper/lower case.
+    private static string? CheckDuplicateNumber(List<AnnouncementGroup> existing, string number, string? excludeId)
+    {
+        for (int i = 0; i < existing.Count; i++)
+        {
+            AnnouncementGroup other = existing[i];
+            if (excludeId != null && other.Id == excludeId)
+            {
+                continue;
+            }
+
+            if (string.Equals(other.Number.Trim(), number, StringComparison.OrdinalIgnoreCase))
+            {
+                return "Another group already uses the number " + number + ".";
+            }
         }
 
         return null;

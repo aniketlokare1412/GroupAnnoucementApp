@@ -64,12 +64,13 @@ public class GroupRepository : IGroupRepository
         return groups;
     }
 
-    public Task UpdateDetailsAsync(string id, string name, string description)
+    public Task UpdateDetailsAsync(string id, string name, string description, string number)
     {
         IDocumentReference document = _firestore.GetDocument(GroupsCollection + "/" + id);
         return document.UpdateDataAsync(
             ("name", (object?)name),
-            ("description", (object?)description));
+            ("description", (object?)description),
+            ("number", (object?)number));
     }
 
     public Task SetActiveAsync(string id, bool isActive)

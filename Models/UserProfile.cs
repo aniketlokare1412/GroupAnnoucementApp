@@ -26,6 +26,10 @@ public sealed class UserProfile : IFirestoreObject
     [FirestoreProperty("isActive")]
     public bool IsActive { get; set; } = false;
 
+    // True after an admin makes this person an admin: they must choose a password at their next login.
+    [FirestoreProperty("needsPassword")]
+    public bool NeedsPassword { get; set; } = false;
+
     // Written by the Firestore server, never by the device clock.
     [FirestoreServerTimestamp("createdAt")]
     public DateTimeOffset CreatedAt { get; set; }

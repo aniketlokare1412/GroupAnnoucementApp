@@ -11,4 +11,8 @@ public static class GroupLimits
     public const int MaxNameLength = 60;
 
     public const int MaxDescriptionLength = 300;
+
+    // The group number is a positive whole number (1, 2, 3 ...). The only limit is that it fits
+    // in 18 digits. ALSO enforced in firestore.rules.
+    public const int MaxNumberLength = 18;
 }

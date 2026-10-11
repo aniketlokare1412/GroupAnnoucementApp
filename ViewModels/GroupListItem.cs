@@ -71,7 +71,7 @@ public sealed class GroupListItem
         GroupListItem item = new GroupListItem();
         item.Id = group.Id;
         item.Name = group.Name;
-        item.Description = group.Description;
+        item.Description = GroupText.WithNumber(group);
         item.IsActive = group.IsActive;
         item.Initials = InitialsHelper.From(group.Name);
         return item;
@@ -87,7 +87,7 @@ public sealed class GroupListItem
         GroupListItem item = new GroupListItem();
         item.Id = group.Id;
         item.Name = group.Name;
-        item.Description = group.Description;
+        item.Description = GroupText.WithNumber(group);
         item.IsActive = group.IsActive;
         item.Initials = InitialsHelper.From(group.Name);
         item.OpenCommand = new AsyncRelayCommand(() => onOpen(item));

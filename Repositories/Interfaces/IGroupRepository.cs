@@ -20,7 +20,7 @@ public interface IGroupRepository
     Task<List<AnnouncementGroup>> GetActiveAsync();
 
     // Changes name and description in one write.
-    Task UpdateDetailsAsync(string id, string name, string description);
+    Task UpdateDetailsAsync(string id, string name, string description, string number);
 
     Task SetActiveAsync(string id, bool isActive);
 }

@@ -10,6 +10,9 @@ public static class Routes
 
     public const string CompleteProfile = "//completeprofile";
 
+    // New admins choose their password here before they see the admin tabs.
+    public const string SetPassword = "//setpassword";
+
     // ---- Admin tab bar: Home, Groups, Users ----
     public const string AdminHome = "//adminshell/adminhome";
     public const string AdminGroups = "//adminshell/admingroups";

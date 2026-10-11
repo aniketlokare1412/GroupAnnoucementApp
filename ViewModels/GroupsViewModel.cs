@@ -308,6 +308,11 @@ public partial class GroupsViewModel : BaseViewModel
             return true;
         }
 
+        if (ContainsText(group.Number, term))
+        {
+            return true;
+        }
+
         if (ContainsText(group.Description, term))
         {
             return true;

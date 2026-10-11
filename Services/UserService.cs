@@ -43,6 +43,32 @@ public class UserService : IUserService
         return OperationResult.Success();
     }
 
+    public async Task<OperationResult> SetAdminPasswordAsync(string newPassword)
+    {
+        string? uid = _authService.GetCurrentUserId();
+        if (uid == null)
+        {
+            return OperationResult.Fail("You are signed out. Please sign in again.");
+        }
+
+        OperationResult changed = await _authService.UpdatePasswordAsync(newPassword);
+        if (!changed.IsSuccess)
+        {
+            return changed;
+        }
+
+        try
+        {
+            await _userRepository.SetNeedsPasswordAsync(uid, false);
+            return OperationResult.Success();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("CLEAR NEEDS PASSWORD ERROR: " + ex);
+            return OperationResult.Fail("Your password was saved, but we could not finish. Please log in again with your password.");
+        }
+    }
+
     public async Task<OperationResult<UserProfile?>> GetProfileAsync(string uid)
     {
         try

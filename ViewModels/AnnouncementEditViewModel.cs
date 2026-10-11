@@ -111,6 +111,94 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     public bool HasNoSelection => !HasSelection;
 
+    // One optional image or document for a NEW announcement (not offered when editing).
+    private AttachmentPick? _attachment;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasAttachment))]
+    [NotifyPropertyChangedFor(nameof(AttachmentSummary))]
+    private string _attachmentName = string.Empty;
+
+    [ObservableProperty]
+    private bool _canAttach = true;
+
+    public bool HasAttachment => AttachmentName.Length > 0;
+
+    public string AttachmentSummary => HasAttachment ? AttachmentName : "Add an image or document (optional)";
+
+    [RelayCommand]
+    private async Task PickAttachmentAsync()
+    {
+        if (IsBusy)
+        {
+            return;
+        }
+
+        try
+        {
+            PickOptions options = new PickOptions();
+            options.PickerTitle = "Choose an image or document";
+            options.FileTypes = AttachmentLimits.PickerTypes;
+
+            FileResult? file = await FilePicker.Default.PickAsync(options);
+            if (file == null)
+            {
+                return;
+            }
+
+            using Stream stream = await file.OpenReadAsync();
+            using MemoryStream buffer = new MemoryStream();
+            await stream.CopyToAsync(buffer);
+
+            string contentType = string.IsNullOrEmpty(file.ContentType) ? AttachmentLimits.GuessContentType(file.FileName) : file.ContentType;
+            byte[] bytes = buffer.ToArray();
+            string fileName = file.FileName;
+            bool isImage = contentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase);
+
+            if (bytes.Length > AttachmentLimits.MaxBytes)
+            {
+                if (!isImage)
+                {
+                    ErrorMessage = "Documents can be up to " + AttachmentLimits.MaxKilobytes + " KB. This file is " + (bytes.Length / 1024) + " KB.";
+                    return;
+                }
+
+                // Photos are shrunk to fit.
+                byte[]? smaller = await Task.Run(() => ImageShrinker.Shrink(bytes, AttachmentLimits.MaxBytes));
+                if (smaller == null)
+                {
+                    ErrorMessage = "This image is too large to attach. Please choose a smaller one.";
+                    return;
+                }
+
+                bytes = smaller;
+                contentType = "image/jpeg";
+                fileName = Path.GetFileNameWithoutExtension(fileName) + ".jpg";
+            }
+
+            AttachmentPick pick = new AttachmentPick();
+            pick.FileName = fileName;
+            pick.ContentType = contentType;
+            pick.Bytes = bytes;
+
+            _attachment = pick;
+            AttachmentName = pick.FileName;
+            ErrorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("PICK ATTACHMENT ERROR: " + ex);
+            ErrorMessage = "We could not read that file. Please try another one.";
+        }
+    }
+
+    [RelayCommand]
+    private void ClearAttachment()
+    {
+        _attachment = null;
+        AttachmentName = string.Empty;
+    }
+
     // Loading the group list: the pill area shows grey placeholder pills.
     public bool ShowPickerSkeleton => ShowLoading && IsPickerVisible;
 
@@ -189,6 +277,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
         if (IsEditing)
         {
+            CanAttach = false;
             await LoadForEditAsync();
         }
         else if (IsSingleGroup)
@@ -372,7 +461,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                     return;
                 }
 
-                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds);
+                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment);
                 if (!result.IsSuccess)
                 {
                     ErrorMessage = result.ErrorMessage;
@@ -544,7 +633,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         Groups.Clear();
         for (int i = 0; i < _allItems.Count; i++)
         {
-            if (term.Length == 0 || _allItems[i].Name.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0)
+            if (term.Length == 0 || _allItems[i].Name.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0 || _allItems[i].Number.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0)
             {
                 Groups.Add(_allItems[i]);
             }

@@ -12,6 +12,10 @@ public sealed class AnnouncementGroup : IFirestoreObject
     [FirestoreProperty("name")]
     public string Name { get; set; } = string.Empty;
 
+    // The number members type to join this group. Set by the admin; unique across groups.
+    [FirestoreProperty("number")]
+    public string Number { get; set; } = string.Empty;
+
     [FirestoreProperty("description")]
     public string Description { get; set; } = string.Empty;
 

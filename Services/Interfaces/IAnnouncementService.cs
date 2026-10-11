@@ -17,7 +17,7 @@ public interface IAnnouncementService
 
     // Posts one copy of the announcement to every selected (active) group.
     // Success can still contain failed groups: check PublishResult.FailedGroupIds.
-    Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds);
+    Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds, AttachmentPick? attachment = null);
 
     Task<OperationResult> UpdateAsync(string groupId, string announcementId, string title, string message);
 
