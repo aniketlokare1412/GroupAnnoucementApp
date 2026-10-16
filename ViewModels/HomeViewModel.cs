@@ -20,6 +20,8 @@ public partial class HomeViewModel : BaseViewModel
     private readonly IAttachmentService _attachments;
     private readonly IPanicService _panicService;
     private readonly IDialogService _dialogs;
+    private readonly IOutageService _outageService;
+    private Dictionary<string, int>? _previousPanicCounts;
     private readonly ISessionService _session;
     private readonly IGroupAdminService _groupAdminService;
     private readonly IUserAdminService _userAdminService;
@@ -108,8 +110,10 @@ public partial class HomeViewModel : BaseViewModel
         IAnnouncementService announcementService,
         IAttachmentService attachments,
         IPanicService panicService,
-        IDialogService dialogs)
+        IDialogService dialogs,
+        IOutageService outageService)
     {
+        _outageService = outageService;
         _panicService = panicService;
         _dialogs = dialogs;
         _attachments = attachments;
@@ -147,11 +151,27 @@ public partial class HomeViewModel : BaseViewModel
             tasks.Add(_announcementService.GetForGroupAsync(groups[i].Id));
         }
 
-        await Task.WhenAll(tasks);
+        List<Task<OperationResult<Outage?>>> outageTasks = new List<Task<OperationResult<Outage?>>>();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            outageTasks.Add(_outageService.GetAsync(groups[i].Id));
+        }
 
+        await Task.WhenAll(tasks);
+        await Task.WhenAll(outageTasks);
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
         List<MemberAnnouncementItem> items = new List<MemberAnnouncementItem>();
         for (int i = 0; i < groups.Count; i++)
         {
+            // A planned outage (or its cancellation) is shown instead of the regular message while it is on.
+            OperationResult<Outage?> outageResult = outageTasks[i].Result;
+            if (outageResult.IsSuccess && outageResult.Value != null && OutageText.IsShownAt(outageResult.Value, now))
+            {
+                items.Add(MemberAnnouncementItem.FromOutage(groups[i], outageResult.Value, now));
+                continue;
+            }
+
             OperationResult<List<Announcement>> result = tasks[i].Result;
             if (result.IsSuccess && result.Value != null && result.Value.Count > 0)
             {
@@ -256,6 +276,23 @@ public partial class HomeViewModel : BaseViewModel
             }
 
             Dictionary<string, int> panicCounts = await _panicService.GetLatestCountsAsync(groupIds);
+
+            // One beep when any group's panic count has gone up since the last check.
+            if (_previousPanicCounts != null)
+            {
+                foreach (KeyValuePair<string, int> pair in panicCounts)
+                {
+                    int before;
+                    _previousPanicCounts.TryGetValue(pair.Key, out before);
+                    if (pair.Value > before)
+                    {
+                        AlertFeedback.Beep();
+                        break;
+                    }
+                }
+            }
+
+            _previousPanicCounts = panicCounts;
 
             AdminGroups.Clear();
             int shown = ordered.Count;
@@ -374,6 +411,12 @@ public partial class HomeViewModel : BaseViewModel
     private Task NewGroupAsync()
     {
         return _navigation.GoToAsync(Routes.GroupEdit);
+    }
+
+    [RelayCommand]
+    private Task NewOutageAsync()
+    {
+        return _navigation.GoToAsync(Routes.OutageEdit);
     }
 
     [RelayCommand]

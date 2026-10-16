@@ -83,6 +83,25 @@ public sealed class MemberAnnouncementItem : ObservableObject
         get { return "Announcement in " + GroupName + ": " + Title + ". " + DateText; }
     }
 
+    // A planned outage, or its cancellation: shown like an announcement, without panic button, timer or status.
+    public static MemberAnnouncementItem FromOutage(AnnouncementGroup group, Outage outage, DateTimeOffset now)
+    {
+        bool cancelled = outage.Status == OutageText.Cancelled;
+        DateTimeOffset start = DateTimeOffset.FromUnixTimeMilliseconds(outage.StartMs);
+        DateTimeOffset end = DateTimeOffset.FromUnixTimeMilliseconds(outage.EndMs);
+        DateTimeOffset published = DateTimeOffset.FromUnixTimeMilliseconds(outage.PublishAtMs);
+
+        MemberAnnouncementItem item = new MemberAnnouncementItem();
+        item.GroupNumberText = "Group number: " + (string.IsNullOrWhiteSpace(group.Number) ? "-" : group.Number);
+        item.GroupName = group.Name;
+        item.Title = cancelled ? "Outage cancelled" : "Planned outage";
+        item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
+        item.CreatedAt = published;
+        item.DateText = published.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
+            + "\n" + published.ToLocalTime().ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture);
+        return item;
+    }
+
     public static MemberAnnouncementItem From(AnnouncementGroup group, Announcement announcement, IAttachmentService? attachments = null)
     {
         MemberAnnouncementItem item = new MemberAnnouncementItem();

@@ -116,6 +116,22 @@ public sealed class AnnouncementExtras : ObservableObject
         }
     }
 
+    // More than 5 presses: this announcement shows the extra "single phase" message.
+    public bool ShowSubMessage
+    {
+        get { return _panicCount > MessageTemplates.PanicSubMessageThreshold; }
+    }
+
+    public string SubMessageTitle
+    {
+        get { return MessageTemplates.SinglePhaseTitle; }
+    }
+
+    public string SubMessageBody
+    {
+        get { return MessageTemplates.SinglePhaseBody; }
+    }
+
     public bool HasPanic
     {
         get { return _panicCount > 0; }
@@ -206,15 +222,14 @@ public sealed class AnnouncementExtras : ObservableObject
     // Loads what the card needs from Firestore: a member's own report, or an admin's count.
     public async Task LoadAsync()
     {
-        if (_isAdmin)
+        // Everyone counts the presses (members may read the anonymous press records).
+        OperationResult<int> count = await _panics.CountAsync(_groupId, _announcementId);
+        if (count.IsSuccess)
         {
-            OperationResult<int> count = await _panics.CountAsync(_groupId, _announcementId);
-            if (count.IsSuccess)
-            {
-                _panicCount = count.Value;
-            }
+            _panicCount = count.Value;
         }
-        else
+
+        if (!_isAdmin)
         {
             OperationResult<bool> pressed = await _panics.HasPressedAsync(_groupId, _announcementId);
             if (pressed.IsSuccess)
@@ -313,6 +328,8 @@ public sealed class AnnouncementExtras : ObservableObject
         }
 
         _hasPressed = true;
+        _panicCount++;
+        AlertFeedback.Buzz();
         OnPropertyChanged(string.Empty);
         _toasts.Show("Your report was sent");
     }

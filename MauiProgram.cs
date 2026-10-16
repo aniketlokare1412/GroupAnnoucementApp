@@ -81,6 +81,7 @@ public static class MauiProgram
         services.AddSingleton<IAdminRequestRepository, AdminRequestRepository>();
         services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
         services.AddSingleton<IPanicRepository, PanicRepository>();
+        services.AddSingleton<IOutageRepository, OutageRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
@@ -94,6 +95,7 @@ public static class MauiProgram
         services.AddSingleton<IAdminRequestService, AdminRequestService>();
         services.AddSingleton<IAttachmentService, AttachmentService>();
         services.AddSingleton<IPanicService, PanicService>();
+        services.AddSingleton<IOutageService, OutageService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)
@@ -114,6 +116,7 @@ public static class MauiProgram
         services.AddTransient<AnnouncementEditViewModel>();
         services.AddTransient<AdminRequestsViewModel>();
         services.AddTransient<SetPasswordViewModel>();
+        services.AddTransient<OutageEditViewModel>();
     }
 
     private static void RegisterViews(IServiceCollection services)
@@ -135,5 +138,6 @@ public static class MauiProgram
         services.AddTransient<AnnouncementEditPage>();
         services.AddTransient<AdminRequestsPage>();
         services.AddTransient<SetPasswordPage>();
+        services.AddTransient<OutageEditPage>();
     }
 }

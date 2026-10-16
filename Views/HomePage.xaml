@@ -111,6 +111,15 @@
                                         SemanticProperties.Hint="Write an announcement for one or more groups" />
                                     <Label Style="{StaticResource QuickActionLabel}" Text="New post" />
                                 </VerticalStackLayout>
+                                <VerticalStackLayout Spacing="4" WidthRequest="64">
+                                    <Button
+                                        Style="{StaticResource IconButtonLarge}"
+                                        Text="{x:Static h:Icons.PowerOff}"
+                                        Command="{Binding NewOutageCommand}"
+                                        SemanticProperties.Description="Plan an outage"
+                                        SemanticProperties.Hint="Schedule a planned outage message for one or more groups" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="Outage" />
+                                </VerticalStackLayout>
                             </HorizontalStackLayout>
                         </VerticalStackLayout>
 
@@ -229,6 +238,12 @@
                                                             <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
                                                             <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
                                                         </Grid>
+                                                    </Border>
+                                                    <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
+                                                        <VerticalStackLayout Spacing="4">
+                                                            <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
+                                                            <Label Style="{StaticResource NoticeBannerText}" Text="{Binding Extras.SubMessageBody}" />
+                                                        </VerticalStackLayout>
                                                     </Border>
                                                     <HorizontalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowTimer}">
                                                         <Label Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Schedule}" />

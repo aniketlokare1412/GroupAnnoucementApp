@@ -102,10 +102,14 @@ public static class MessageTemplates
         }
     };
 
-    // The last choice in the title list: the admin writes everything.
-    public const string CustomTitle = "Custom announcement";
+    // More than this many panic presses on one announcement shows the "single phase" message under it.
+    public const int PanicSubMessageThreshold = 5;
 
-    // The titles for the drop-down: every template, then the custom choice.
+    public const string SinglePhaseTitle = "सिंगल फेज";
+
+    public const string SinglePhaseBody = "आपल्या परिसरातील ट्रान्सफॉर्मर सिंगल फेज झाल्याचे सूचना आम्हाला मिळाली आहे. आम्ही येऊन लवकरच आपला पूर्ववत करू";
+
+    // The titles for the drop-down: the ready-made messages only.
     public static List<string> DropDownTitles()
     {
         List<string> titles = new List<string>();
@@ -114,7 +118,6 @@ public static class MessageTemplates
             titles.Add(All[i].Title);
         }
 
-        titles.Add(CustomTitle);
         return titles;
     }
 

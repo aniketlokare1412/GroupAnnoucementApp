@@ -32,6 +32,9 @@ public static class Routes
     // Admin: people who asked to become administrators. Opened from Home.
     public const string AdminRequests = "adminrequests";
 
+    // Admin: schedule a planned outage. Opened from Home.
+    public const string OutageEdit = "outageedit";
+
     // Admin: members of one group (groupmembers?groupId=...) and the add-members picker.
     public const string GroupMembers = "groupmembers";
 

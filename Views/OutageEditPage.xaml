@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
+    x:Class="GroupAnnouncementApp.Views.OutageEditPage"
+    x:DataType="vm:OutageEditViewModel"
+    Title="Plan an outage">
+
+    <!-- Admin: date, from and to time, when members start seeing the message, and the groups. -->
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Outage date" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <DatePicker Date="{Binding OutageDate}" Format="dd/MM/yyyy" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Outage date" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                    <VerticalStackLayout Grid.Column="0" Spacing="6">
+                        <Label Style="{StaticResource FieldLabel}" Text="From" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <TimePicker Time="{Binding FromTime}" Format="HH:mm" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Outage starts at" />
+                        </Border>
+                    </VerticalStackLayout>
+                    <VerticalStackLayout Grid.Column="1" Spacing="6">
+                        <Label Style="{StaticResource FieldLabel}" Text="To" />
+                        <Border Style="{StaticResource FieldBorder}">
+                            <TimePicker Time="{Binding ToTime}" Format="HH:mm" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Outage ends at" />
+                        </Border>
+                    </VerticalStackLayout>
+                </Grid>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Members see the message" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <Label Grid.Column="0" Style="{StaticResource BodyText}" Text="Publish now" VerticalOptions="Center" />
+                        <Switch Grid.Column="1" IsToggled="{Binding PublishNow}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Publish now" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12" IsVisible="{Binding ShowPublishLater}">
+                        <Border Grid.Column="0" Style="{StaticResource FieldBorder}">
+                            <DatePicker Date="{Binding PublishDate}" Format="dd/MM/yyyy" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Publish date" />
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource FieldBorder}">
+                            <TimePicker Time="{Binding PublishTime}" Format="HH:mm" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Description="Publish time" />
+                        </Border>
+                    </Grid>
+                    <Label Style="{StaticResource Caption}" Text="Members see it until the outage is over, then the regular message returns." />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="10">
+                    <Label Style="{StaticResource FieldLabel}" Text="Groups" />
+
+                    <Border Style="{StaticResource SearchBorder}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                            <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                            <Entry
+                                Grid.Column="1"
+                                Style="{StaticResource SearchEntry}"
+                                Placeholder="Search groups"
+                                ReturnType="Search"
+                                Text="{Binding SearchText}"
+                                SemanticProperties.Description="Search groups" />
+                        </Grid>
+                    </Border>
+
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <Label Grid.Column="0" Style="{StaticResource Caption}" Text="{Binding SelectedCountText}" VerticalOptions="Center" />
+                        <Button Grid.Column="1" Style="{StaticResource LinkButton}" Text="Select all" Command="{Binding SelectAllCommand}" IsEnabled="{Binding IsNotBusy}" />
+                        <Button Grid.Column="2" Style="{StaticResource LinkButton}" Text="Clear" Command="{Binding ClearSelectionCommand}" IsEnabled="{Binding IsNotBusy}" />
+                    </Grid>
+
+                    <Grid MinimumHeightRequest="60">
+                        <FlexLayout
+                                Wrap="Wrap"
+                                Direction="Row"
+                                JustifyContent="Start"
+                                AlignItems="Start"
+                                AlignContent="Start"
+                                IsEnabled="{Binding IsNotBusy}"
+                                BindableLayout.ItemsSource="{Binding Groups}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:SelectableGroupItem">
+                                        <Grid
+                                            Margin="0,0,8,8"
+                                            SemanticProperties.Description="{Binding CardLabel}"
+                                            SemanticProperties.Hint="Double tap to select or unselect">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                            </Grid.GestureRecognizers>
+
+                                            <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSelected}">
+                                                <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                                    <Label Style="{StaticResource PillAdd}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Add}" />
+                                                    <Label Style="{StaticResource GroupPillText}" Text="{Binding PillText}" MaximumWidthRequest="220" />
+                                                </HorizontalStackLayout>
+                                            </Border>
+
+                                            <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSelected}">
+                                                <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                                    <Label Style="{StaticResource PillCheck}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Check}" />
+                                                    <Label Style="{StaticResource GroupPillTextOn}" Text="{Binding PillText}" MaximumWidthRequest="220" />
+                                                </HorizontalStackLayout>
+                                            </Border>
+                                        </Grid>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </FlexLayout>
+                        <controls:SkeletonList Kind="Pills" IsVisible="{Binding ShowLoading}" VerticalOptions="Start" />
+                        <Label
+                            Style="{StaticResource Caption}"
+                            Text="No active groups."
+                            IsVisible="{Binding HasNoGroups}" />
+                    </Grid>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="0">
+            <BoxView Style="{StaticResource Hairline}" />
+            <VerticalStackLayout Padding="16,8,16,12" Spacing="8">
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
+                <Button
+                    Style="{StaticResource PillPrimary}"
+                    Text="Schedule outage"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    HorizontalOptions="Fill" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+
+    </Grid>
+</ContentPage>
