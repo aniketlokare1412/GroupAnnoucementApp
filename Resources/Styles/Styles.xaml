@@ -26,7 +26,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold"/>
-        <Setter Property="FontSize" Value="15"/>
+        <Setter Property="FontSize" Value="16"/>
         <Setter Property="BorderWidth" Value="0"/>
         <Setter Property="CornerRadius" Value="24"/>
         <Setter Property="Padding" Value="20,12"/>
@@ -70,7 +70,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -91,7 +91,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
@@ -113,7 +113,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="MinimumHeightRequest" Value="40"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
@@ -157,7 +157,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -181,7 +181,7 @@
 
     <Style TargetType="Label" x:Key="SubHeadline">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="25" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
@@ -191,7 +191,7 @@
         <Setter Property="TitleColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -229,7 +229,7 @@
         <Setter Property="BackgroundColor" Value="Transparent"/>
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -256,7 +256,7 @@
         <Setter Property="CancelButtonColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="16" />
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -279,7 +279,7 @@
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="VisualStateManager.VisualStateGroups">
             <VisualStateGroupList>
                 <VisualStateGroup x:Name="CommonStates">
@@ -359,7 +359,7 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent"/>
         <Setter Property="FontFamily" Value="OpenSansRegular"/>
-        <Setter Property="FontSize" Value="14"/>
+        <Setter Property="FontSize" Value="15"/>
         <Setter Property="MinimumHeightRequest" Value="44"/>
         <Setter Property="MinimumWidthRequest" Value="44"/>
         <Setter Property="VisualStateManager.VisualStateGroups">
@@ -440,26 +440,26 @@
     <Style TargetType="Label" x:Key="PageTitle">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="25" />
     </Style>
     <Style TargetType="Label" x:Key="SectionTitle">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="17" />
     </Style>
     <Style TargetType="Label" x:Key="CardTitle">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontSize" Value="16" />
     </Style>
     <Style TargetType="Label" x:Key="Caption">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     </Style>
     <Style TargetType="Label" x:Key="ErrorText">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
     </Style>
 
@@ -487,7 +487,7 @@
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
@@ -514,7 +514,7 @@
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
@@ -542,7 +542,7 @@
         <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource BorderLight}, Dark={StaticResource BorderDark}}" />
         <Setter Property="BorderWidth" Value="1" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
@@ -569,7 +569,7 @@
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerTintLight}, Dark={StaticResource DangerTintDark}}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
@@ -596,7 +596,7 @@
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="18" />
         <Setter Property="Padding" Value="14,0" />
         <Setter Property="MinimumHeightRequest" Value="36" />
@@ -632,7 +632,7 @@
     <Style TargetType="Label" x:Key="BadgeSuccessText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnSuccessDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
     <Style TargetType="Border" x:Key="BadgeWarning">
@@ -647,7 +647,7 @@
     <Style TargetType="Label" x:Key="BadgeWarningText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
     <Style TargetType="Border" x:Key="BadgeDanger">
@@ -662,7 +662,7 @@
     <Style TargetType="Label" x:Key="BadgeDangerText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnDangerLight}, Dark={StaticResource OnDangerDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
     <Style TargetType="Border" x:Key="BadgeBrand">
@@ -677,7 +677,7 @@
     <Style TargetType="Label" x:Key="BadgeBrandText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
     <Style TargetType="Border" x:Key="BadgeNeutral">
@@ -692,7 +692,7 @@
     <Style TargetType="Label" x:Key="BadgeNeutralText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="12" />
     </Style>
 
 
@@ -707,7 +707,7 @@
     <Style TargetType="Label" x:Key="ErrorBannerText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnDangerLight}, Dark={StaticResource OnDangerDark}}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
     </Style>
 
     <!-- Brand mark (rounded square with initials) and avatar circle -->
@@ -723,7 +723,7 @@
     <Style TargetType="Label" x:Key="BrandMarkText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontSize" Value="27" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
@@ -739,7 +739,7 @@
     <Style TargetType="Label" x:Key="AvatarText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontSize" Value="27" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
@@ -753,7 +753,7 @@
     <!-- Decorative glyph. On every use set AutomationProperties.IsInAccessibleTree="False" inline (not inside a Style): the control around it carries the label. -->
     <Style TargetType="Label" x:Key="Icon">
         <Setter Property="FontFamily" Value="MaterialIconsRound" />
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="19" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="VerticalOptions" Value="Center" />
@@ -769,7 +769,7 @@
          ALWAYS set SemanticProperties.Description on every use. -->
     <Style TargetType="Button" x:Key="IconButton">
         <Setter Property="FontFamily" Value="MaterialIconsRound" />
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="19" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
         <Setter Property="BorderWidth" Value="0" />
@@ -810,7 +810,7 @@
 
     <!-- Large round buttons for the quick-action row. -->
     <Style TargetType="Button" x:Key="IconButtonLarge" BasedOn="{StaticResource IconButton}">
-        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontSize" Value="23" />
         <Setter Property="CornerRadius" Value="23" />
         <Setter Property="WidthRequest" Value="46" />
         <Setter Property="HeightRequest" Value="46" />
@@ -827,7 +827,7 @@
     <!-- Initials button in the page header; opens Account. -->
     <Style TargetType="Button" x:Key="AvatarButton">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
         <Setter Property="BorderWidth" Value="0" />
@@ -843,7 +843,7 @@
     <!-- Small text link ("See all"). -->
     <Style TargetType="Button" x:Key="LinkButton">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="BorderWidth" Value="0" />
@@ -887,7 +887,7 @@
 
     <Style TargetType="Label" x:Key="InitialsText">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
         <Setter Property="HorizontalOptions" Value="Center" />
         <Setter Property="VerticalOptions" Value="Center" />
@@ -900,25 +900,25 @@
     <!-- Home header and count tiles -->
     <Style TargetType="Label" x:Key="Greeting">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     </Style>
 
     <Style TargetType="Label" x:Key="HeroName">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontSize" Value="23" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
     </Style>
 
     <Style TargetType="Label" x:Key="StatNumber">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="25" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
     </Style>
 
     <Style TargetType="Label" x:Key="SectionLabel">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
@@ -940,7 +940,7 @@
 
     <Style TargetType="Label" x:Key="ToastText">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource BackgroundDark}}" />
         <Setter Property="HorizontalTextAlignment" Value="Center" />
     </Style>
@@ -952,7 +952,7 @@
     <!-- Message text inside an announcement card. -->
     <Style TargetType="Label" x:Key="BodyText">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="LineHeight" Value="1.3" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
     </Style>
@@ -968,13 +968,13 @@
     <Style TargetType="Label" x:Key="NoticeBannerText">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
     </Style>
 
     <!-- Small check glyph inside the "Joined" chip. -->
     <Style TargetType="Label" x:Key="ChipIcon">
         <Setter Property="FontFamily" Value="MaterialIconsRound" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnSuccessDark}}" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
@@ -987,7 +987,7 @@
         <Setter Property="HorizontalOptions" Value="Center" />
     </Style>
     <Style TargetType="Label" x:Key="EmptyIcon" BasedOn="{StaticResource Icon}">
-        <Setter Property="FontSize" Value="26" />
+        <Setter Property="FontSize" Value="27" />
     </Style>
 
     <!-- ================================================================== -->
@@ -1009,7 +1009,7 @@
         <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}" />
     </Style>
     <Style TargetType="Label" x:Key="SelectCheck" BasedOn="{StaticResource Icon}">
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="17" />
     </Style>
 
     <!-- Thin line that separates a card's content from its action row. -->
@@ -1025,7 +1025,7 @@
     <!-- Small label above a plain form field. -->
     <Style TargetType="Label" x:Key="FieldLabel">
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
-        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
     </Style>
 
@@ -1038,13 +1038,13 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="BackgroundColor" Value="Transparent" />
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="17" />
         <Setter Property="PlaceholderColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
         <Setter Property="MinimumHeightRequest" Value="48" />
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
     <Style TargetType="Label" x:Key="SearchIcon" BasedOn="{StaticResource IconMuted}">
-        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontSize" Value="23" />
     </Style>
 
     <!-- Group pills (composer): off = soft grey, on = pale teal with a check. -->
@@ -1062,7 +1062,7 @@
     </Style>
     <Style TargetType="Label" x:Key="GroupPillText">
         <Setter Property="FontFamily" Value="OpenSansRegular" />
-        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
         <Setter Property="VerticalOptions" Value="Center" />
         <Setter Property="MaxLines" Value="1" />
@@ -1072,10 +1072,10 @@
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
     </Style>
     <Style TargetType="Label" x:Key="PillAdd" BasedOn="{StaticResource IconMuted}">
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
     </Style>
     <Style TargetType="Label" x:Key="PillCheck" BasedOn="{StaticResource Icon}">
-        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontSize" Value="15" />
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
     </Style>
 
@@ -1086,6 +1086,56 @@
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="StrokeShape" Value="RoundRectangle 6" />
         <Setter Property="HorizontalOptions" Value="Start" />
+    </Style>
+
+
+    <!-- ================================================================== -->
+    <!--  Announcement card: bold title, red status dot, red panic button    -->
+    <!-- ================================================================== -->
+    <Style TargetType="Label" x:Key="AnnouncementTitle">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource TextLight}, Dark={StaticResource TextDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="19" />
+    </Style>
+
+    <!-- Small red dot that flickers while the work is going on (see Controls/BlinkingDot). -->
+    <Style TargetType="Border" x:Key="StatusDot">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+        <Setter Property="Stroke" Value="Transparent" />
+        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 5" />
+        <Setter Property="WidthRequest" Value="10" />
+        <Setter Property="HeightRequest" Value="10" />
+        <Setter Property="VerticalOptions" Value="Center" />
+    </Style>
+
+    <!-- The panic button: solid red when it can be pressed, a faded red outline while it is locked or already used. -->
+    <Style TargetType="Button" x:Key="PanicButton">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnDangerFillLight}, Dark={StaticResource OnDangerFillDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+        <Setter Property="BorderWidth" Value="0" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="Padding" Value="16,0" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="HeightRequest" Value="48" />
+        <Setter Property="HorizontalOptions" Value="Fill" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="BackgroundColor" Value="Transparent" />
+                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+                            <Setter Property="BorderColor" Value="{AppThemeBinding Light={StaticResource DangerTintLight}, Dark={StaticResource DangerTintDark}}" />
+                            <Setter Property="BorderWidth" Value="1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
     </Style>
 
 </ResourceDictionary>

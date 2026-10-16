@@ -111,6 +111,124 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     public bool HasNoSelection => !HasSelection;
 
+    // ---- Ready-made announcements ----
+    // New posts start from a title in the drop-down. Its message is fixed (not editable); the last choice
+    // ("Custom announcement") lets the admin write everything. Editing a post stays free text.
+    public List<string> TemplateTitles { get; } = MessageTemplates.DropDownTitles();
+
+    public List<string> TimeOptions { get; } = ResolutionOptions.Labels();
+
+    private bool _lastWasTemplate;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustom))]
+    [NotifyPropertyChangedFor(nameof(IsTemplate))]
+    [NotifyPropertyChangedFor(nameof(ShowTitleEntry))]
+    [NotifyPropertyChangedFor(nameof(IsMessageReadOnly))]
+    private int _templateIndex = -1;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowCustomTime))]
+    private int _timeIndex;
+
+    [ObservableProperty]
+    private string _customTime = string.Empty;
+
+    // False while editing an existing announcement.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsCustom))]
+    [NotifyPropertyChangedFor(nameof(IsTemplate))]
+    [NotifyPropertyChangedFor(nameof(ShowTitleEntry))]
+    [NotifyPropertyChangedFor(nameof(IsMessageReadOnly))]
+    [NotifyPropertyChangedFor(nameof(ShowCustomTime))]
+    private bool _isNewPost = true;
+
+    public bool IsCustom => IsNewPost && TemplateIndex == MessageTemplates.All.Count;
+
+    public bool IsTemplate => IsNewPost && TemplateIndex >= 0 && TemplateIndex < MessageTemplates.All.Count;
+
+    public bool ShowTitleEntry => !IsNewPost || IsCustom;
+
+    public bool IsMessageReadOnly => IsNewPost && !IsCustom;
+
+    public bool ShowCustomTime => IsNewPost && TimeIndex == ResolutionOptions.CustomIndex;
+
+    partial void OnTemplateIndexChanged(int value)
+    {
+        ApplyTemplate();
+    }
+
+    partial void OnTimeIndexChanged(int value)
+    {
+        ApplyTemplate();
+    }
+
+    partial void OnCustomTimeChanged(string value)
+    {
+        ApplyTemplate();
+    }
+
+    // Fills title and message from the chosen template (and the chosen resolution time).
+    private void ApplyTemplate()
+    {
+        if (!IsNewPost)
+        {
+            return;
+        }
+
+        if (IsTemplate)
+        {
+            MessageTemplate template = MessageTemplates.All[TemplateIndex];
+            int minutes;
+            ReadResolutionMinutes(out minutes);
+            Title = template.Title;
+            Message = MessageTemplates.BuildBody(template, minutes);
+        }
+        else if (IsCustom && _lastWasTemplate)
+        {
+            // Switching to a custom announcement starts empty.
+            Title = string.Empty;
+            Message = string.Empty;
+        }
+
+        _lastWasTemplate = IsTemplate;
+    }
+
+    // The chosen resolution time in minutes (0 = not set). Returns false when the custom time is not valid.
+    private bool ReadResolutionMinutes(out int minutes)
+    {
+        minutes = 0;
+        if (TimeIndex == ResolutionOptions.CustomIndex)
+        {
+            return ResolutionOptions.TryParseHoursMinutes(CustomTime, out minutes);
+        }
+
+        minutes = ResolutionOptions.MinutesAt(TimeIndex);
+        return true;
+    }
+
+    // Null when everything is fine, otherwise the message to show.
+    private string? ValidateNewPostChoices(out int minutes)
+    {
+        minutes = 0;
+        if (TemplateIndex < 0)
+        {
+            return "Choose a title first.";
+        }
+
+        if (!ReadResolutionMinutes(out minutes))
+        {
+            return "Enter the resolution time as HH:MM, for example 01:15 (at most 7 days).";
+        }
+
+        if (IsTemplate && MessageTemplates.All[TemplateIndex].TimeKind != TemplateTime.None && minutes == 0)
+        {
+            return "Choose the resolution time for this message.";
+        }
+
+        return null;
+    }
+
     // One optional image or document for a NEW announcement (not offered when editing).
     private AttachmentPick? _attachment;
 
@@ -278,6 +396,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         if (IsEditing)
         {
             CanAttach = false;
+            IsNewPost = false;
             await LoadForEditAsync();
         }
         else if (IsSingleGroup)
@@ -421,6 +540,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
         // Decided inside the try block, acted on after it (so the button is free again first).
         bool leavePage = false;
+        int resolveMinutes = 0;
         string? toastText = null;
 
         try
@@ -439,6 +559,13 @@ public partial class AnnouncementEditViewModel : BaseViewModel
             }
             else
             {
+                string? choiceProblem = ValidateNewPostChoices(out resolveMinutes);
+                if (choiceProblem != null)
+                {
+                    ErrorMessage = choiceProblem;
+                    return;
+                }
+
                 List<string> groupIds = new List<string>();
                 if (IsSingleGroup)
                 {
@@ -461,7 +588,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                     return;
                 }
 
-                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment);
+                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment, resolveMinutes);
                 if (!result.IsSuccess)
                 {
                     ErrorMessage = result.ErrorMessage;

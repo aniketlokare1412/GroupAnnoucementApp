@@ -18,6 +18,8 @@ public partial class GroupsViewModel : BaseViewModel
     private readonly IToastService _toasts;
 
     private List<AnnouncementGroup> _allGroups = new List<AnnouncementGroup>();
+    private readonly IPanicService _panicService;
+    private Dictionary<string, int> _panicCounts = new Dictionary<string, int>();
     private bool _hasLoaded;
 
     public ObservableCollection<GroupListItem> Groups { get; } = new ObservableCollection<GroupListItem>();
@@ -51,8 +53,10 @@ public partial class GroupsViewModel : BaseViewModel
         ISessionService session,
         IGroupAdminService groupService,
         IDialogService dialogs,
-        IToastService toasts)
+        IToastService toasts,
+        IPanicService panicService)
     {
+        _panicService = panicService;
         _navigation = navigation;
         _session = session;
         _groupService = groupService;
@@ -95,6 +99,15 @@ public partial class GroupsViewModel : BaseViewModel
             }
 
             _allGroups = result.Value ?? new List<AnnouncementGroup>();
+
+            // Admin: how many people pressed the panic button on each group's latest announcement.
+            List<string> groupIds = new List<string>();
+            for (int i = 0; i < _allGroups.Count; i++)
+            {
+                groupIds.Add(_allGroups[i].Id);
+            }
+
+            _panicCounts = await _panicService.GetLatestCountsAsync(groupIds);
             _hasLoaded = true;
             ApplyFilter();
         }
@@ -262,7 +275,7 @@ public partial class GroupsViewModel : BaseViewModel
 
             if (Matches(group, term))
             {
-                Groups.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync));
+                Groups.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0));
             }
         }
 

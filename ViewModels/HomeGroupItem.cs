@@ -33,12 +33,12 @@ public sealed class HomeGroupItem
         get { return "Announcements for " + Name; }
     }
 
-    public static HomeGroupItem FromGroup(AnnouncementGroup group, Func<HomeGroupItem, Task> onOpen)
+    public static HomeGroupItem FromGroup(AnnouncementGroup group, Func<HomeGroupItem, Task> onOpen, int panicCount = 0)
     {
         HomeGroupItem item = new HomeGroupItem();
         item.Id = group.Id;
         item.Name = group.Name;
-        item.Description = GroupText.WithNumber(group);
+        item.Description = GroupText.WithNumber(group, panicCount);
         item.IsActive = group.IsActive;
         item.Initials = InitialsHelper.From(group.Name);
         item.OpenCommand = new AsyncRelayCommand(() => onOpen(item));

@@ -12,6 +12,7 @@ public class AnnouncementService : IAnnouncementService
     private readonly IAuthService _authService;
     private readonly IAnnouncementRepository _announcementRepository;
     private readonly IAttachmentService _attachments;
+    private readonly IPanicRepository _panics;
     private readonly IGroupRepository _groupRepository;
 
     public AnnouncementService(
@@ -19,8 +20,10 @@ public class AnnouncementService : IAnnouncementService
         IAuthService authService,
         IAnnouncementRepository announcementRepository,
         IGroupRepository groupRepository,
-        IAttachmentService attachments)
+        IAttachmentService attachments,
+        IPanicRepository panics)
     {
+        _panics = panics;
         _attachments = attachments;
         _session = session;
         _authService = authService;
@@ -112,7 +115,7 @@ public class AnnouncementService : IAnnouncementService
         }
     }
 
-    public async Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds, AttachmentPick? attachment = null)
+    public async Task<OperationResult<PublishResult>> PublishAsync(string title, string message, List<string> groupIds, AttachmentPick? attachment = null, int resolveMinutes = 0)
     {
         string? uid = GetAdminUid();
         if (uid == null)
@@ -192,6 +195,9 @@ public class AnnouncementService : IAnnouncementService
 
                 try
                 {
+                    announcement.Status = AnnouncementStatus.Active;
+                    announcement.ResolveMinutes = resolveMinutes < 0 ? 0 : resolveMinutes;
+
                     // Each group gets its own copy of the file, so replacing one group's
                     // announcement never removes a file another group still shows.
                     if (attachment != null)
@@ -333,6 +339,25 @@ public class AnnouncementService : IAnnouncementService
 
     // Returns a failure when the announcement is missing, already deleted, or posted by
     // another admin. Returns null when the signed-in admin may change it.
+    public async Task<OperationResult> MarkCompletedAsync(string groupId, string announcementId)
+    {
+        if (_session.CurrentProfile == null || !_session.IsAdmin)
+        {
+            return OperationResult.Fail("Only administrators can mark work as completed.");
+        }
+
+        try
+        {
+            await ServiceHelper.WithTimeoutAsync(_announcementRepository.SetStatusAsync(groupId, announcementId, AnnouncementStatus.Completed, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            return OperationResult.Success();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("MARK COMPLETED ERROR: " + ex);
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not mark it as completed. Please try again."));
+        }
+    }
+
     // Only the newest announcement of a group is kept: older ones are deleted for good.
     // This is best effort. If it fails, the list still shows only the latest one.
     private async Task DeleteOlderAsync(string groupId, string keepId)
@@ -344,6 +369,7 @@ public class AnnouncementService : IAnnouncementService
             {
                 if (all[i].Id != keepId)
                 {
+                    await _panics.DeleteAllAsync(groupId, all[i].Id);
                     if (!string.IsNullOrEmpty(all[i].AttachmentKind))
                     {
                         await _attachments.DeleteAsync(groupId, all[i].Id);

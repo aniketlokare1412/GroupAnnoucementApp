@@ -82,12 +82,13 @@ public sealed class GroupListItem
         Func<GroupListItem, Task> onOpen,
         Func<GroupListItem, Task> onMembers,
         Func<GroupListItem, Task> onEdit,
-        Func<GroupListItem, Task> onToggleActive)
+        Func<GroupListItem, Task> onToggleActive,
+        int panicCount = 0)
     {
         GroupListItem item = new GroupListItem();
         item.Id = group.Id;
         item.Name = group.Name;
-        item.Description = GroupText.WithNumber(group);
+        item.Description = GroupText.WithNumber(group, panicCount);
         item.IsActive = group.IsActive;
         item.Initials = InitialsHelper.From(group.Name);
         item.OpenCommand = new AsyncRelayCommand(() => onOpen(item));

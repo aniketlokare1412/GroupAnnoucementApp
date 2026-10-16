@@ -184,44 +184,87 @@
                             <VerticalStackLayout Spacing="10" BindableLayout.ItemsSource="{Binding MemberAnnouncements}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:MemberAnnouncementItem">
-                                        <Border Style="{StaticResource Card}" SemanticProperties.Description="{Binding CardLabel}">
-                                            <VerticalStackLayout Spacing="10">
-                                                <VerticalStackLayout Spacing="2">
-                                                    <Label Style="{StaticResource Caption}" Text="{Binding GroupNumberText}" />
-                                                    <Label
-                                                        Style="{StaticResource CardTitle}"
-                                                        Text="{Binding GroupName}"
-                                                        LineBreakMode="TailTruncation"
-                                                        MaxLines="1" />
-                                                </VerticalStackLayout>
-                                                <BoxView Style="{StaticResource Hairline}" />
-                                                <Label Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                                    <Label Grid.Column="0" Style="{StaticResource BodyText}" Text="{Binding Message}" />
-                                                    <Label Grid.Column="1" Style="{StaticResource Caption}" Text="{Binding DateText}" VerticalOptions="Start" />
-                                                </Grid>
-                                                <Image
-                                                    Source="{Binding Image}"
-                                                    IsVisible="{Binding HasImage}"
-                                                    Aspect="AspectFit"
-                                                    MaximumHeightRequest="240"
-                                                    HorizontalOptions="Fill"
-                                                    SemanticProperties.Description="Attached image" />
-                                                <Border
-                                                    Style="{StaticResource RowCard}"
-                                                    IsVisible="{Binding HasFile}"
-                                                    SemanticProperties.Description="{Binding FileLabel}"
-                                                    SemanticProperties.Hint="Opens the file">
-                                                    <Border.GestureRecognizers>
-                                                        <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
-                                                    </Border.GestureRecognizers>
-                                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                                        <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
-                                                        <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
+                                            <Border Style="{StaticResource Card}" SemanticProperties.Description="{Binding CardLabel}">
+                                                <VerticalStackLayout Spacing="12">
+
+                                                    <!-- Header: group on the left, date and time on the right -->
+                                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                            <Label Style="{StaticResource Caption}" Text="{Binding GroupNumberText}" />
+                                                            <Label Style="{StaticResource CardTitle}" Text="{Binding GroupName}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                        </VerticalStackLayout>
+                                                        <Label Grid.Column="1" Style="{StaticResource Caption}" Text="{Binding DateText}" HorizontalTextAlignment="End" VerticalOptions="Start" />
                                                     </Grid>
-                                                </Border>
-                                            </VerticalStackLayout>
-                                        </Border>
+                                                    <BoxView Style="{StaticResource Hairline}" />
+
+                                                    <HorizontalStackLayout Spacing="8">
+                                                        <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
+                                                            <HorizontalStackLayout Spacing="8">
+                                                                <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />
+                                                                <Label Style="{StaticResource BadgeDangerText}" Text="Work in progress" />
+                                                            </HorizontalStackLayout>
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding Extras.IsCompleted}" Padding="10,4">
+                                                            <Label Style="{StaticResource BadgeSuccessText}" Text="{Binding Extras.CompletedText}" />
+                                                        </Border>
+                                                    </HorizontalStackLayout>
+                                                    <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" />
+                                                    <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                                    <Image
+                                                        Source="{Binding Image}"
+                                                        IsVisible="{Binding HasImage}"
+                                                        Aspect="AspectFit"
+                                                        MaximumHeightRequest="240"
+                                                        HorizontalOptions="Fill"
+                                                        SemanticProperties.Description="Attached image" />
+                                                    <Border
+                                                        Style="{StaticResource RowCard}"
+                                                        IsVisible="{Binding HasFile}"
+                                                        SemanticProperties.Description="{Binding FileLabel}"
+                                                        SemanticProperties.Hint="Opens the file">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
+                                                        </Border.GestureRecognizers>
+                                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                            <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
+                                                            <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
+                                                        </Grid>
+                                                    </Border>
+                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowTimer}">
+                                                        <Label Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Schedule}" />
+                                                        <Label Style="{StaticResource BodyText}" Text="Time left" VerticalOptions="Center" />
+                                                        <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Extras.TimeLeftText}" VerticalOptions="Center" SemanticProperties.Description="Time left" />
+                                                    </HorizontalStackLayout>
+                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowTimeUp}">
+                                                        <Label Style="{StaticResource ErrorText}" FontFamily="OpenSansSemibold" Text="Time is up" VerticalOptions="Center" />
+                                                    </HorizontalStackLayout>
+                                                    <Label Style="{StaticResource Caption}" Text="{Binding Extras.ResolutionText}" IsVisible="{Binding Extras.HasResolution}" />
+
+                                                    <!-- Members: the panic button -->
+                                                    <Button
+                                                        Style="{StaticResource PanicButton}"
+                                                        Text="{Binding Extras.PanicText}"
+                                                        Command="{Binding Extras.PressPanicCommand}"
+                                                        IsEnabled="{Binding Extras.CanPressPanic}"
+                                                        IsVisible="{Binding Extras.ShowPanic}"
+                                                        SemanticProperties.Hint="Reports that the problem is still not solved. Works once, when the time is up or the work is completed" />
+
+                                                    <!-- Admins: the panic count (highlighted when someone pressed) and Mark completed -->
+                                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding Extras.ShowAdminTools}">
+                                                        <Border Grid.Column="0" Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.HasPanic}" Padding="12,6">
+                                                            <Label Style="{StaticResource BadgeDangerText}" FontSize="17" Text="{Binding Extras.PanicCountText}" />
+                                                        </Border>
+                                                        <Label Grid.Column="0" Style="{StaticResource Caption}" Text="{Binding Extras.PanicCountText}" IsVisible="{Binding Extras.HasNoPanic}" VerticalOptions="Center" />
+                                                        <Button
+                                                            Grid.Column="1"
+                                                            Style="{StaticResource PillTonal}"
+                                                            Text="Mark completed"
+                                                            Command="{Binding Extras.CompleteCommand}"
+                                                            IsVisible="{Binding Extras.CanMarkCompleted}"
+                                                            SemanticProperties.Hint="Marks the work as completed and lets members report problems" />
+                                                    </Grid>
+                                                </VerticalStackLayout>
+                                            </Border>
                                     </DataTemplate>
                                 </BindableLayout.ItemTemplate>
                             </VerticalStackLayout>
