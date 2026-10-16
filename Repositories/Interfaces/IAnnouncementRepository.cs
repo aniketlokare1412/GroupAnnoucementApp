@@ -22,6 +22,9 @@ public interface IAnnouncementRepository
 
     Task SetActiveAsync(string groupId, string id, bool isActive);
 
+    // Sets the status ("Active" or "Completed") and the completion time.
+    Task SetStatusAsync(string groupId, string id, string status, long completedAtMs);
+
     // Removes the document for good (used to drop older announcements when a new one is posted).
     Task DeleteAsync(string groupId, string id);
 }

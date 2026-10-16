@@ -48,6 +48,9 @@ public sealed class AnnouncementListItem : ObservableObject
     public bool HasFile { get; private set; }
     public ICommand? OpenFileCommand { get; private set; }
 
+    // Status, resolution time, panic button and admin tools. Set by the view model that builds the card.
+    public AnnouncementExtras? Extras { get; set; }
+
     private string _fileGroupId = string.Empty;
     private string _fileAnnouncementId = string.Empty;
 

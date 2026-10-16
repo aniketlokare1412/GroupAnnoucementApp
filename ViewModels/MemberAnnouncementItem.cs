@@ -31,6 +31,9 @@ public sealed class MemberAnnouncementItem : ObservableObject
     public bool HasFile { get; private set; }
     public ICommand? OpenFileCommand { get; private set; }
 
+    // Status, resolution time, panic button and admin tools. Set by the view model that builds the card.
+    public AnnouncementExtras? Extras { get; set; }
+
     private string _fileGroupId = string.Empty;
     private string _fileAnnouncementId = string.Empty;
 
@@ -91,7 +94,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
         item.ConfigureAttachment(group.Id, announcement.Id, announcement, attachments);
         item.DateText = announcement.CreatedAt == default
             ? "Just now"
-            : announcement.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, hh:mm tt");
+            : announcement.CreatedAt.ToLocalTime().ToString("dd MMM yyyy") + "\n" + announcement.CreatedAt.ToLocalTime().ToString("hh:mm tt");
         return item;
     }
 }

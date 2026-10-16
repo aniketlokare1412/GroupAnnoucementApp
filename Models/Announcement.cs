@@ -26,6 +26,18 @@ public sealed class Announcement : IFirestoreObject
     public string Message { get; set; } = string.Empty;
 
     // Soft delete: false means deleted. Fail closed, like groups: a missing field counts as deleted.
+    // "Active" or "Completed". Older announcements have no status (treated as Active).
+    [FirestoreProperty("status")]
+    public string Status { get; set; } = string.Empty;
+
+    // Minutes after posting when the work should be done. 0 = no time set.
+    [FirestoreProperty("resolveMinutes")]
+    public int ResolveMinutes { get; set; }
+
+    // When an admin marked the work completed (Unix milliseconds). 0 = not completed.
+    [FirestoreProperty("completedAtMs")]
+    public long CompletedAtMs { get; set; }
+
     // One optional attachment (an image or a document); the file itself is a separate document under
     // this announcement (see AttachmentDocument). Empty strings when there is none.
     [FirestoreProperty("attachmentName")]

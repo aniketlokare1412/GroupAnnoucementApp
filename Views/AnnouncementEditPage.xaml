@@ -17,16 +17,45 @@
         <Grid Grid.Row="0" RowDefinitions="Auto,*,Auto" RowSpacing="14" Padding="16,12,16,8">
 
             <!-- 1. Title -->
-            <VerticalStackLayout Grid.Row="0" Spacing="6">
-                <Grid ColumnDefinitions="*,Auto">
+            <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto,Auto,Auto">
+
+                <!-- Labels -->
+                <Grid Grid.Row="0" Grid.Column="0" ColumnDefinitions="*,Auto">
                     <Label Grid.Column="0" Style="{StaticResource FieldLabel}" Text="Title" />
                     <Label
                         Grid.Column="1"
                         Style="{StaticResource Caption}"
                         Text="{Binding TitleCountText}"
+                        IsVisible="{Binding ShowTitleEntry}"
                         AutomationProperties.IsInAccessibleTree="False" />
                 </Grid>
-                <Border Style="{StaticResource FieldBorder}">
+                <Label
+                    Grid.Row="0"
+                    Grid.Column="1"
+                    Style="{StaticResource FieldLabel}"
+                    Text="Resolution time"
+                    IsVisible="{Binding IsNewPost}" />
+
+                <!-- New post: choose a ready-made title (the last choice is a custom announcement) -->
+                <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource FieldBorder}" IsVisible="{Binding IsNewPost}" Margin="0,6,0,0">
+                    <Picker
+                        Title="Choose a title"
+                        ItemsSource="{Binding TemplateTitles}"
+                        SelectedIndex="{Binding TemplateIndex}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Announcement title" />
+                </Border>
+                <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource FieldBorder}" IsVisible="{Binding IsNewPost}" WidthRequest="140" Margin="0,6,0,0">
+                    <Picker
+                        Title="Not set"
+                        ItemsSource="{Binding TimeOptions}"
+                        SelectedIndex="{Binding TimeIndex}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Resolution time" />
+                </Border>
+
+                <!-- Custom announcement (or editing): the title is typed -->
+                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource FieldBorder}" IsVisible="{Binding ShowTitleEntry}" Margin="0,6,0,0">
                     <Entry
                         Placeholder="Announcement title"
                         ReturnType="Next"
@@ -35,7 +64,17 @@
                         IsEnabled="{Binding IsNotBusy}"
                         SemanticProperties.Description="Announcement title" />
                 </Border>
-            </VerticalStackLayout>
+
+                <!-- Custom resolution time -->
+                <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Style="{StaticResource FieldBorder}" IsVisible="{Binding ShowCustomTime}" Margin="0,6,0,0">
+                    <Entry
+                        Placeholder="Resolution time as HH:MM, e.g. 01:15"
+                        ReturnType="Done"
+                        Text="{Binding CustomTime}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Custom resolution time, hours and minutes" />
+                </Border>
+            </Grid>
 
             <!-- 2. Message: fills whatever height is left -->
             <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto" RowSpacing="6">
@@ -49,7 +88,8 @@
                 </Grid>
                 <Border Grid.Row="1" Style="{StaticResource FieldBorder}" Padding="10,6" MinimumHeightRequest="96">
                     <Editor
-                        Placeholder="Write your announcement"
+                        Placeholder="Choose a title to see the message"
+                        IsReadOnly="{Binding IsMessageReadOnly}"
                         Text="{Binding Message}"
                         MaxLength="{Binding MaxMessageLength}"
                         AutoSize="Disabled"

@@ -18,6 +18,8 @@ public partial class HomeViewModel : BaseViewModel
     private readonly IAdminRequestService _adminRequests;
     private readonly IAnnouncementService _announcementService;
     private readonly IAttachmentService _attachments;
+    private readonly IPanicService _panicService;
+    private readonly IDialogService _dialogs;
     private readonly ISessionService _session;
     private readonly IGroupAdminService _groupAdminService;
     private readonly IUserAdminService _userAdminService;
@@ -104,8 +106,12 @@ public partial class HomeViewModel : BaseViewModel
         IToastService toasts,
         IAdminRequestService adminRequests,
         IAnnouncementService announcementService,
-        IAttachmentService attachments)
+        IAttachmentService attachments,
+        IPanicService panicService,
+        IDialogService dialogs)
     {
+        _panicService = panicService;
+        _dialogs = dialogs;
         _attachments = attachments;
         _adminRequests = adminRequests;
         _announcementService = announcementService;
@@ -149,7 +155,9 @@ public partial class HomeViewModel : BaseViewModel
             OperationResult<List<Announcement>> result = tasks[i].Result;
             if (result.IsSuccess && result.Value != null && result.Value.Count > 0)
             {
-                items.Add(MemberAnnouncementItem.From(groups[i], result.Value[0], _attachments));
+                MemberAnnouncementItem card = MemberAnnouncementItem.From(groups[i], result.Value[0], _attachments);
+                card.Extras = new AnnouncementExtras(groups[i].Id, result.Value[0], false, _announcementService, _panicService, _dialogs, _toasts);
+                items.Add(card);
             }
         }
 
@@ -167,6 +175,7 @@ public partial class HomeViewModel : BaseViewModel
         for (int i = 0; i < MemberAnnouncements.Count; i++)
         {
             _ = MemberAnnouncements[i].LoadImageAsync(_attachments);
+            _ = MemberAnnouncements[i].Extras?.LoadAsync();
         }
     }
 
@@ -239,11 +248,20 @@ public partial class HomeViewModel : BaseViewModel
             // Active groups first (the service already sorted by name; OrderBy keeps that order).
             List<AnnouncementGroup> ordered = groups.OrderByDescending(g => g.IsActive).ToList();
 
+            // How many people pressed the panic button on each group's latest announcement.
+            List<string> groupIds = new List<string>();
+            for (int i = 0; i < ordered.Count; i++)
+            {
+                groupIds.Add(ordered[i].Id);
+            }
+
+            Dictionary<string, int> panicCounts = await _panicService.GetLatestCountsAsync(groupIds);
+
             AdminGroups.Clear();
             int shown = ordered.Count;
             for (int i = 0; i < shown; i++)
             {
-                AdminGroups.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync));
+                AdminGroups.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0));
             }
 
             HasNoAdminGroups = groups.Count == 0;

@@ -89,6 +89,9 @@
 	  <MauiXaml Update="App.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
+	  <MauiXaml Update="Controls\BlinkingDot.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Controls\JoinGroupSection.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>

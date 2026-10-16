@@ -80,6 +80,7 @@ public static class MauiProgram
         services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
         services.AddSingleton<IAdminRequestRepository, AdminRequestRepository>();
         services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
+        services.AddSingleton<IPanicRepository, PanicRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
@@ -92,6 +93,7 @@ public static class MauiProgram
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
         services.AddSingleton<IAdminRequestService, AdminRequestService>();
         services.AddSingleton<IAttachmentService, AttachmentService>();
+        services.AddSingleton<IPanicService, PanicService>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)

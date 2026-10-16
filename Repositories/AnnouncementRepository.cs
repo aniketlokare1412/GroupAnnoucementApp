@@ -69,6 +69,14 @@ public class AnnouncementRepository : IAnnouncementRepository
         return document.UpdateDataAsync(("isActive", (object?)isActive));
     }
 
+    public Task SetStatusAsync(string groupId, string id, string status, long completedAtMs)
+    {
+        IDocumentReference document = _firestore.GetDocument(DocumentPath(groupId, id));
+        return document.UpdateDataAsync(
+            ("status", (object?)status),
+            ("completedAtMs", (object?)completedAtMs));
+    }
+
     public Task DeleteAsync(string groupId, string id)
     {
         IDocumentReference document = _firestore.GetDocument(DocumentPath(groupId, id));
