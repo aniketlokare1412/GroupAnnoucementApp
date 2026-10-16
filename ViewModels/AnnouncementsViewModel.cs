@@ -19,6 +19,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
     private readonly IAnnouncementService _announcementService;
     private readonly IAttachmentService _attachments;
     private readonly IPanicService _panicService;
+    private readonly IOutageService _outageService;
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
     private readonly IToastService _toasts;
@@ -78,8 +79,10 @@ public partial class AnnouncementsViewModel : BaseViewModel
         IDialogService dialogs,
         IToastService toasts,
         IAttachmentService attachments,
-        IPanicService panicService)
+        IPanicService panicService,
+        IOutageService outageService)
     {
+        _outageService = outageService;
         _panicService = panicService;
         _attachments = attachments;
         _navigation = navigation;
@@ -125,6 +128,8 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         try
         {
+            await LoadOutageAsync();
+
             OperationResult<List<Announcement>> result = await _announcementService.GetForGroupAsync(GroupId);
             if (!result.IsSuccess)
             {
@@ -181,6 +186,61 @@ public partial class AnnouncementsViewModel : BaseViewModel
     }
 
     // Shows the next batch of already-loaded announcements (no network call).
+    // Admin: the planned outage of this group (or its cancellation) is shown above the announcements.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasOutage))]
+    private OutageCardItem? _outage;
+
+    public bool HasOutage => Outage != null;
+
+    private async Task LoadOutageAsync()
+    {
+        if (!IsAdminView || string.IsNullOrEmpty(GroupId))
+        {
+            Outage = null;
+            return;
+        }
+
+        OperationResult<Outage?> result = await _outageService.GetAsync(GroupId);
+        long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        if (result.IsSuccess && result.Value != null && result.Value.EndMs > nowMs)
+        {
+            Outage = OutageCardItem.From(result.Value, CancelOutageAsync);
+        }
+        else
+        {
+            Outage = null;
+        }
+    }
+
+    private async Task CancelOutageAsync()
+    {
+        if (IsBusy || string.IsNullOrEmpty(GroupId))
+        {
+            return;
+        }
+
+        bool confirmed = await _dialogs.ConfirmAsync(
+            "Cancel outage",
+            "Cancel this planned outage? Members will see an outage-cancelled message instead.",
+            "Cancel outage",
+            "Keep it");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        OperationResult result = await _outageService.CancelAsync(GroupId);
+        if (!result.IsSuccess)
+        {
+            _toasts.Show(result.ErrorMessage ?? "We could not cancel the outage.");
+            return;
+        }
+
+        _toasts.Show("Outage cancelled");
+        await LoadOutageAsync();
+    }
+
     [RelayCommand]
     private void LoadMore()
     {
