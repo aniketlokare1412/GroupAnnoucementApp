@@ -102,14 +102,10 @@ public class GroupAdminService : IGroupAdminService
 
         try
         {
-            // Read the current groups first: needed for the duplicate and limit checks.
+            // Read the current groups first: needed for the duplicate checks.
             List<AnnouncementGroup> existing = await WithTimeoutAsync(_groupRepository.GetAllAsync());
 
             problem = CheckDuplicateName(existing, cleanName, null) ?? CheckDuplicateNumber(existing, cleanNumber, null);
-            if (problem == null)
-            {
-                problem = CheckLimit(existing);
-            }
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -206,16 +202,6 @@ public class GroupAdminService : IGroupAdminService
             if (group == null)
             {
                 return OperationResult.Fail("This group no longer exists.");
-            }
-
-            // Only activating a currently inactive group can push us over the limit.
-            if (isActive && !group.IsActive)
-            {
-                problem = CheckLimit(existing);
-                if (problem != null)
-                {
-                    return OperationResult.Fail(problem);
-                }
             }
 
             await WithTimeoutAsync(_groupRepository.SetActiveAsync(id, isActive));
@@ -336,25 +322,6 @@ public class GroupAdminService : IGroupAdminService
             {
                 return "A group named \"" + other.Name + "\" already exists.";
             }
-        }
-
-        return null;
-    }
-
-    private static string? CheckLimit(List<AnnouncementGroup> existing)
-    {
-        int active = 0;
-        for (int i = 0; i < existing.Count; i++)
-        {
-            if (existing[i].IsActive)
-            {
-                active++;
-            }
-        }
-
-        if (active >= GroupLimits.MaxActiveGroups)
-        {
-            return "You already have " + GroupLimits.MaxActiveGroups + " active groups, which is the maximum. Deactivate a group first.";
         }
 
         return null;

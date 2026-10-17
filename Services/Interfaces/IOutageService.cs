@@ -12,6 +12,9 @@ public interface IOutageService
     // Admin: cancels a scheduled outage that is not over yet.
     Task<OperationResult> CancelAsync(string groupId);
 
+    // Admin: deletes a CANCELLED outage message, so members see the regular announcement again.
+    Task<OperationResult> DeleteAsync(string groupId);
+
     // The group's outage (null when there is none). Members and admins.
     Task<OperationResult<Outage?>> GetAsync(string groupId);
 }

@@ -92,6 +92,41 @@ public class OutageService : IOutageService
         }
     }
 
+    public async Task<OperationResult> DeleteAsync(string groupId)
+    {
+        if (!_session.IsAdmin)
+        {
+            return OperationResult.Fail("Only administrators can delete an outage message.");
+        }
+
+        if (string.IsNullOrEmpty(groupId))
+        {
+            return OperationResult.Fail("Unknown group.");
+        }
+
+        try
+        {
+            Outage? existing = await ServiceHelper.WithTimeoutAsync(_outageRepository.GetAsync(groupId));
+            if (existing == null)
+            {
+                return OperationResult.Fail("There is no outage message to delete.");
+            }
+
+            if (existing.Status != OutageText.Cancelled)
+            {
+                return OperationResult.Fail("Cancel the outage first, then delete the message.");
+            }
+
+            await ServiceHelper.WithTimeoutAsync(_outageRepository.DeleteAsync(groupId));
+            return OperationResult.Success();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("DELETE OUTAGE ERROR: " + ex);
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not delete the outage message. Please try again."));
+        }
+    }
+
     public async Task<OperationResult<Outage?>> GetAsync(string groupId)
     {
         try

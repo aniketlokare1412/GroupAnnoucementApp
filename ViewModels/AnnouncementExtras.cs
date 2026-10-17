@@ -70,6 +70,25 @@ public sealed class AnnouncementExtras : ObservableObject
         get { return !_isCompleted; }
     }
 
+    // The stripe on the left of the card: green = completed, amber = time is up, red = work in progress.
+    public Color AccentColor
+    {
+        get
+        {
+            if (_isCompleted)
+            {
+                return Color.FromArgb("#16A34A");
+            }
+
+            if (ShowTimeUp)
+            {
+                return Color.FromArgb("#F59E0B");
+            }
+
+            return Color.FromArgb("#DC2626");
+        }
+    }
+
     // "Completed at 11:20 AM, 13 Oct" (the time the admin tapped Mark completed).
     public string CompletedText
     {
@@ -178,6 +197,23 @@ public sealed class AnnouncementExtras : ObservableObject
     public bool ShowPanic
     {
         get { return !_isAdmin; }
+    }
+
+    // The panic button is only drawn once it is open (or already used, then it says "Reported").
+    // While it is locked, a small caption explains when it opens instead.
+    public bool ShowPanicButton
+    {
+        get { return !_isAdmin && (IsUnlocked || _hasPressed); }
+    }
+
+    public bool ShowPanicHint
+    {
+        get { return !_isAdmin && !IsUnlocked && !_hasPressed; }
+    }
+
+    public string PanicHintText
+    {
+        get { return "Problem report opens when the time is up or the work is completed."; }
     }
 
     public bool CanPressPanic
