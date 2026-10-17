@@ -18,13 +18,21 @@
             <VerticalStackLayout Grid.Row="0" Padding="16,12,16,6" Spacing="8">
 
                 <!-- Title + the page actions. "New group" is the one text button. -->
-                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="0" VerticalOptions="Center">
-                        <Label Style="{StaticResource HeroName}" Text="Groups" />
+                        <Label Style="{StaticResource HeroName}" Text="{Binding HeaderTitle}" />
                         <Label Style="{StaticResource Caption}" Text="{Binding SummaryText}" />
                     </VerticalStackLayout>
                     <Button
                         Grid.Column="1"
+                        Style="{StaticResource IconButton}"
+                        Text="{x:Static h:Icons.AccountTree}"
+                        Command="{Binding OpenStructureCommand}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Structure"
+                        SemanticProperties.Hint="Shows super communities, communities and groups as one tree" />
+                    <Button
+                        Grid.Column="2"
                         Style="{StaticResource IconButton}"
                         Text="{x:Static h:Icons.Campaign}"
                         Command="{Binding NewAnnouncementCommand}"
@@ -32,13 +40,50 @@
                         SemanticProperties.Description="New post"
                         SemanticProperties.Hint="Write an announcement for one or more groups" />
                     <Button
-                        Grid.Column="2"
+                        Grid.Column="3"
                         Style="{StaticResource PillPrimary}"
-                        Text="New group"
+                        Text="{Binding NewButtonText}"
                         Command="{Binding AddGroupCommand}"
                         IsEnabled="{Binding IsNotBusy}"
                         VerticalOptions="Center" />
                 </Grid>
+
+                <!-- Switcher: Groups / Communities / Super communities (not a fourth tab) -->
+                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Start" JustifyContent="Start">
+                    <Grid Margin="0,0,8,0" SemanticProperties.Description="Groups" SemanticProperties.Hint="Show groups">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="0" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsMode}">
+                            <Label Style="{StaticResource GroupPillText}" Text="Groups" />
+                        </Border>
+                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsGroupsMode}">
+                            <Label Style="{StaticResource GroupPillTextOn}" Text="Groups" />
+                        </Border>
+                    </Grid>
+                    <Grid Margin="0,0,8,0" SemanticProperties.Description="Communities" SemanticProperties.Hint="Show communities">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="1" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotCommunitiesMode}">
+                            <Label Style="{StaticResource GroupPillText}" Text="Communities" />
+                        </Border>
+                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsCommunitiesMode}">
+                            <Label Style="{StaticResource GroupPillTextOn}" Text="Communities" />
+                        </Border>
+                    </Grid>
+                    <Grid SemanticProperties.Description="Super communities" SemanticProperties.Hint="Show super communities">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="2" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSuperMode}">
+                            <Label Style="{StaticResource GroupPillText}" Text="Super communities" />
+                        </Border>
+                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSuperMode}">
+                            <Label Style="{StaticResource GroupPillTextOn}" Text="Super communities" />
+                        </Border>
+                    </Grid>
+                </FlexLayout>
 
                 <Border Style="{StaticResource SearchBorder}">
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -46,7 +91,7 @@
                         <Entry
                             Grid.Column="1"
                             Style="{StaticResource SearchEntry}"
-                            Placeholder="Search by name or description"
+                            Placeholder="{Binding SearchPlaceholder}"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
                             SemanticProperties.Description="Search groups" />
@@ -61,7 +106,7 @@
 
             <Grid Grid.Row="1">
 
-                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
+                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}" IsVisible="{Binding IsGroupsMode}">
                     <CollectionView
                         ItemsSource="{Binding Groups}"
                         SelectionMode="None"
@@ -112,6 +157,16 @@
                                                     IsVisible="{Binding HasDescription}"
                                                     LineBreakMode="TailTruncation"
                                                     MaxLines="1" />
+                                                <!-- Small chips: what is inside / where it belongs -->
+                                                <HorizontalStackLayout Spacing="4" Margin="0,2,0,0" IsVisible="{Binding HasChips}" BindableLayout.ItemsSource="{Binding Chips}">
+                                                    <BindableLayout.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <Border Style="{StaticResource BadgeNeutral}" AutomationProperties.IsInAccessibleTree="False">
+                                                                <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding .}" MaximumWidthRequest="110" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </BindableLayout.ItemTemplate>
+                                                </HorizontalStackLayout>
                                             </VerticalStackLayout>
                                         </Grid>
 
@@ -128,6 +183,102 @@
                                                 Command="{Binding EditCommand}"
                                                 SemanticProperties.Description="{Binding EditLabel}" />
                                         </HorizontalStackLayout>
+
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+
+                        <CollectionView.Footer>
+                            <Grid HeightRequest="12" />
+                        </CollectionView.Footer>
+
+                        <CollectionView.EmptyView>
+                            <VerticalStackLayout
+                                x:DataType="vm:GroupsViewModel"
+                                IsVisible="{Binding HasNoGroups}"
+                                Spacing="8"
+                                Padding="0,40,0,0"
+                                HorizontalOptions="Center">
+                                <Border Style="{StaticResource EmptyIconTile}">
+                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                </Border>
+                                <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="{Binding EmptyHint}"
+                                    HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </CollectionView.EmptyView>
+                    </CollectionView>
+                </RefreshView>
+
+                <!-- Communities / Super communities list (same card style as groups) -->
+                <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}" IsVisible="{Binding IsNotGroupsMode}">
+                    <CollectionView
+                        ItemsSource="{Binding Communities}"
+                        SelectionMode="None"
+                        Margin="16,0">
+                        <CollectionView.ItemsLayout>
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
+                        </CollectionView.ItemsLayout>
+
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="vm:CommunityListItem">
+                                <Border Style="{StaticResource RowCard}">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+
+                                        <Grid
+                                            Grid.Column="0"
+                                            ColumnDefinitions="Auto,*"
+                                            ColumnSpacing="10"
+                                            SemanticProperties.Description="{Binding Name}"
+                                            SemanticProperties.Hint="Opens the editor">
+                                            <Grid.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding EditCommand}" />
+                                            </Grid.GestureRecognizers>
+
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
+                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            </Border>
+
+                                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                                <Label
+                                                    Style="{StaticResource CardTitle}"
+                                                    Text="{Binding Name}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                                <Label
+                                                    Style="{StaticResource Caption}"
+                                                    Text="{Binding Subtitle}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                                <Label
+                                                    Style="{StaticResource Caption}"
+                                                    Text="{Binding Description}"
+                                                    IsVisible="{Binding HasDescription}"
+                                                    LineBreakMode="TailTruncation"
+                                                    MaxLines="1" />
+                                                <!-- Small chips: what is inside / where it belongs -->
+                                                <HorizontalStackLayout Spacing="4" Margin="0,2,0,0" IsVisible="{Binding HasChips}" BindableLayout.ItemsSource="{Binding Chips}">
+                                                    <BindableLayout.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <Border Style="{StaticResource BadgeNeutral}" AutomationProperties.IsInAccessibleTree="False">
+                                                                <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding .}" MaximumWidthRequest="110" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </BindableLayout.ItemTemplate>
+                                                </HorizontalStackLayout>
+                                            </VerticalStackLayout>
+                                        </Grid>
+
+                                        <Button
+                                            Grid.Column="1"
+                                            Style="{StaticResource IconButton}"
+                                            Text="{x:Static h:Icons.Edit}"
+                                            Command="{Binding EditCommand}"
+                                            VerticalOptions="Center"
+                                            SemanticProperties.Description="{Binding EditLabel}" />
 
                                     </Grid>
                                 </Border>

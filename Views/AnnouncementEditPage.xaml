@@ -169,6 +169,28 @@
                         </Grid>
                     </Border>
 
+                    <!-- Shortcut: tap a community to tick all of its active groups -->
+                    <VerticalStackLayout Spacing="4" IsVisible="{Binding HasQuickPicks}">
+                        <Label Style="{StaticResource Caption}" Text="Select a whole community" />
+                        <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
+                            <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding QuickPicks}" IsEnabled="{Binding IsNotBusy}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:QuickPickItem">
+                                        <Border
+                                            Style="{StaticResource BadgeBrand}"
+                                            SemanticProperties.Description="{Binding Label}"
+                                            SemanticProperties.Hint="Double tap to tick all of them">
+                                            <Border.GestureRecognizers>
+                                                <TapGestureRecognizer Command="{Binding SelectCommand}" />
+                                            </Border.GestureRecognizers>
+                                            <Label Style="{StaticResource BadgeBrandText}" Text="{Binding PillText}" MaximumWidthRequest="240" LineBreakMode="TailTruncation" MaxLines="1" />
+                                        </Border>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </HorizontalStackLayout>
+                        </ScrollView>
+                    </VerticalStackLayout>
+
                     <Grid ColumnDefinitions="*,Auto,Auto">
                         <Border Grid.Column="0" Style="{StaticResource BadgeNeutral}" IsVisible="{Binding HasNoSelection}">
                             <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding SelectedCountText}" />

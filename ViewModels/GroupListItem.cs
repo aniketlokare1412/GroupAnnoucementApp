@@ -15,6 +15,19 @@ public sealed class GroupListItem
     public string Initials { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
 
+    // Small chips: the communities this group is in (the first few, then "+N more").
+    public List<string> Chips { get; private set; } = new List<string>();
+
+    public bool HasChips
+    {
+        get { return Chips.Count > 0; }
+    }
+
+    public void SetChips(List<string> chips)
+    {
+        Chips = chips;
+    }
+
     // Tap on the card and the bell: this group's announcements.
     public ICommand? OpenCommand { get; private set; }
     public ICommand? MembersCommand { get; private set; }

@@ -91,6 +91,12 @@
                                                 IsVisible="{Binding HasDescription}"
                                                 LineBreakMode="TailTruncation"
                                                 MaxLines="1" />
+                                            <Label
+                                                Style="{StaticResource Caption}"
+                                                Text="{Binding ContextText}"
+                                                IsVisible="{Binding HasContext}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="2" />
                                         </VerticalStackLayout>
 
                                         <Button

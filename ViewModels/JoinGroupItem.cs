@@ -15,6 +15,14 @@ public sealed class JoinGroupItem
     public string Initials { get; private set; } = string.Empty;
     public bool IsMember { get; private set; }
 
+    // "Part of: Community 1 (Super community 1)". Empty when the group is in no community.
+    public string ContextText { get; private set; } = string.Empty;
+
+    public bool HasContext
+    {
+        get { return !string.IsNullOrWhiteSpace(ContextText); }
+    }
+
     // Tap on the card: join (not a member) or open announcements (member).
     public ICommand? PrimaryCommand { get; private set; }
 
@@ -51,7 +59,8 @@ public sealed class JoinGroupItem
     public static JoinGroupItem FromJoinable(
         JoinableGroup joinable,
         Func<JoinGroupItem, Task> onJoin,
-        Func<JoinGroupItem, Task> onOpen)
+        Func<JoinGroupItem, Task> onOpen,
+        string contextText = "")
     {
         JoinGroupItem item = new JoinGroupItem();
         item.Id = joinable.Group.Id;
@@ -59,6 +68,7 @@ public sealed class JoinGroupItem
         item.Description = GroupText.WithNumber(joinable.Group);
         item.Initials = InitialsHelper.From(joinable.Group.Name);
         item.IsMember = joinable.IsMember;
+        item.ContextText = contextText;
         item.JoinCommand = new AsyncRelayCommand(() => onJoin(item));
 
         if (item.IsMember)

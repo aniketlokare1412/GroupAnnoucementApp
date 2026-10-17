@@ -29,6 +29,13 @@ public static class Routes
     // Used for both "new group" and "edit group" (groupedit?groupId=...).
     public const string GroupEdit = "groupedit";
 
+    // Used for all four community screens: new / edit community and new / edit super community
+    // (communityedit?kind=community|super&communityId=...). No communityId = create.
+    public const string CommunityEdit = "communityedit";
+
+    // Admin: read-only tree of super communities, communities and groups. Opened from the Groups tab header.
+    public const string Structure = "structure";
+
     // Admin: people who asked to become administrators. Opened from Home.
     public const string AdminRequests = "adminrequests";
 

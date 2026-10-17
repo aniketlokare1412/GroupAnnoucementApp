@@ -11,6 +11,8 @@ namespace GroupAnnouncementApp.ViewModels;
 // One announcement card on the member Home page (the latest one of a joined group).
 public sealed class MemberAnnouncementItem : ObservableObject
 {
+    // The group this card belongs to (used to place the card under its community headings).
+    public string GroupId { get; private set; } = string.Empty;
     public string GroupNumberText { get; private set; } = string.Empty;
     public string GroupName { get; private set; } = string.Empty;
     public string GroupInitials { get; private set; } = string.Empty;
@@ -129,6 +131,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
 
     private void ApplyGroup(AnnouncementGroup group)
     {
+        GroupId = group.Id;
         GroupNumberText = "No. " + (string.IsNullOrWhiteSpace(group.Number) ? "-" : group.Number);
         GroupName = group.Name;
         GroupInitials = InitialsHelper.From(group.Name);

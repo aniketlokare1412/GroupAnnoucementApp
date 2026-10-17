@@ -16,6 +16,10 @@ public partial class GroupsViewModel : BaseViewModel
     private readonly IGroupAdminService _groupService;
     private readonly IDialogService _dialogs;
     private readonly IToastService _toasts;
+    private readonly ICommunityAdminService _communityService;
+
+    private List<Community> _allCommunities = new List<Community>();
+    private List<SuperCommunity> _allSupers = new List<SuperCommunity>();
 
     private List<AnnouncementGroup> _allGroups = new List<AnnouncementGroup>();
     private readonly IPanicService _panicService;
@@ -23,6 +27,44 @@ public partial class GroupsViewModel : BaseViewModel
     private bool _hasLoaded;
 
     public ObservableCollection<GroupListItem> Groups { get; } = new ObservableCollection<GroupListItem>();
+
+    // The cards shown while the switcher is on Communities or Super communities.
+    public ObservableCollection<CommunityListItem> Communities { get; } = new ObservableCollection<CommunityListItem>();
+
+    // The switcher at the top: 0 = Groups, 1 = Communities, 2 = Super communities.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsGroupsMode))]
+    [NotifyPropertyChangedFor(nameof(IsNotGroupsMode))]
+    [NotifyPropertyChangedFor(nameof(IsCommunitiesMode))]
+    [NotifyPropertyChangedFor(nameof(IsNotCommunitiesMode))]
+    [NotifyPropertyChangedFor(nameof(IsSuperMode))]
+    [NotifyPropertyChangedFor(nameof(IsNotSuperMode))]
+    [NotifyPropertyChangedFor(nameof(HeaderTitle))]
+    [NotifyPropertyChangedFor(nameof(NewButtonText))]
+    [NotifyPropertyChangedFor(nameof(SearchPlaceholder))]
+    private int _mode;
+
+    public bool IsGroupsMode { get { return Mode == 0; } }
+    public bool IsNotGroupsMode { get { return Mode != 0; } }
+    public bool IsCommunitiesMode { get { return Mode == 1; } }
+    public bool IsNotCommunitiesMode { get { return Mode != 1; } }
+    public bool IsSuperMode { get { return Mode == 2; } }
+    public bool IsNotSuperMode { get { return Mode != 2; } }
+
+    public string HeaderTitle
+    {
+        get { return Mode == 1 ? "Communities" : Mode == 2 ? "Super communities" : "Groups"; }
+    }
+
+    public string NewButtonText
+    {
+        get { return Mode == 1 ? "New community" : Mode == 2 ? "New super" : "New group"; }
+    }
+
+    public string SearchPlaceholder
+    {
+        get { return Mode == 0 ? "Search by name or description" : "Search by name, number or description"; }
+    }
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -54,14 +96,40 @@ public partial class GroupsViewModel : BaseViewModel
         IGroupAdminService groupService,
         IDialogService dialogs,
         IToastService toasts,
-        IPanicService panicService)
+        IPanicService panicService,
+        ICommunityAdminService communityService)
     {
+        _communityService = communityService;
         _panicService = panicService;
         _navigation = navigation;
         _session = session;
         _groupService = groupService;
         _dialogs = dialogs;
         _toasts = toasts;
+    }
+
+    // Runs automatically whenever the switcher changes. The search starts fresh in each view.
+    partial void OnModeChanged(int value)
+    {
+        ErrorMessage = null;
+        if (SearchText.Length > 0)
+        {
+            SearchText = string.Empty;
+        }
+        else
+        {
+            ApplyFilter();
+        }
+    }
+
+    [RelayCommand]
+    private void SelectMode(string mode)
+    {
+        int parsed;
+        if (int.TryParse(mode, out parsed) && parsed >= 0 && parsed <= 2)
+        {
+            Mode = parsed;
+        }
     }
 
     // Runs automatically whenever the search text changes.
@@ -108,6 +176,7 @@ public partial class GroupsViewModel : BaseViewModel
             }
 
             _panicCounts = await _panicService.GetLatestCountsAsync(groupIds);
+            await LoadCommunityDataAsync();
             _hasLoaded = true;
             ApplyFilter();
         }
@@ -132,11 +201,73 @@ public partial class GroupsViewModel : BaseViewModel
         }
     }
 
-    // The one main action on this screen.
+    // Loads communities and super communities. A failure here must never break the Groups view,
+    // so the error is only shown while the switcher is on a community view.
+    private async Task LoadCommunityDataAsync()
+    {
+        OperationResult<List<Community>> communities = await _communityService.GetAllCommunitiesAsync();
+        OperationResult<List<SuperCommunity>> supers = await _communityService.GetAllSuperCommunitiesAsync();
+
+        if (communities.IsSuccess && communities.Value != null)
+        {
+            _allCommunities = communities.Value;
+        }
+
+        if (supers.IsSuccess && supers.Value != null)
+        {
+            _allSupers = supers.Value;
+        }
+
+        if (Mode != 0)
+        {
+            if (!communities.IsSuccess)
+            {
+                ErrorMessage = communities.ErrorMessage;
+            }
+            else if (!supers.IsSuccess)
+            {
+                ErrorMessage = supers.ErrorMessage;
+            }
+        }
+    }
+
+    // The Structure screen: the whole hierarchy as one tree.
+    [RelayCommand]
+    private Task OpenStructureAsync()
+    {
+        return _navigation.GoToAsync(Routes.Structure);
+    }
+
+    // The one main action on this screen. What it creates depends on the switcher.
     [RelayCommand]
     private Task AddGroupAsync()
     {
+        if (Mode == 1)
+        {
+            return _navigation.GoToAsync(Routes.CommunityEdit + "?kind=" + CommunityEditViewModel.KindCommunity);
+        }
+
+        if (Mode == 2)
+        {
+            return _navigation.GoToAsync(Routes.CommunityEdit + "?kind=" + CommunityEditViewModel.KindSuper);
+        }
+
         return _navigation.GoToAsync(Routes.GroupEdit);
+    }
+
+    private async Task EditCommunityAsync(CommunityListItem item)
+    {
+        try
+        {
+            string kind = Mode == 2 ? CommunityEditViewModel.KindSuper : CommunityEditViewModel.KindCommunity;
+            string route = Routes.CommunityEdit + "?kind=" + kind + "&communityId=" + Uri.EscapeDataString(item.Id);
+            await _navigation.GoToAsync(route);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("EDIT COMMUNITY ERROR: " + ex);
+            ErrorMessage = "Something went wrong. Please try again.";
+        }
     }
 
     // Admin: write one announcement and post it to one or more groups.
@@ -260,7 +391,174 @@ public partial class GroupsViewModel : BaseViewModel
 
     private void ApplyFilter()
     {
+        if (Mode == 0)
+        {
+            ApplyGroupFilter();
+        }
+        else
+        {
+            ApplyCommunityFilter();
+        }
+    }
+
+    // Builds the Communities or Super communities cards for the current search.
+    private void ApplyCommunityFilter()
+    {
         string term = (SearchText ?? string.Empty).Trim();
+        bool superMode = Mode == 2;
+
+        Dictionary<string, string> superNames = new Dictionary<string, string>();
+        for (int i = 0; i < _allSupers.Count; i++)
+        {
+            superNames[_allSupers[i].Id] = _allSupers[i].Name;
+        }
+
+        Dictionary<string, string> groupNameById = new Dictionary<string, string>();
+        for (int i = 0; i < _allGroups.Count; i++)
+        {
+            groupNameById[_allGroups[i].Id] = _allGroups[i].Name;
+        }
+
+        Communities.Clear();
+        int total;
+
+        if (superMode)
+        {
+            total = _allSupers.Count;
+            for (int i = 0; i < _allSupers.Count; i++)
+            {
+                SuperCommunity item = _allSupers[i];
+                if (!(Matches(item.Name, term) || Matches(item.Number, term) || Matches(item.Description, term)))
+                {
+                    continue;
+                }
+
+                int count = 0;
+                for (int c = 0; c < _allCommunities.Count; c++)
+                {
+                    if (_allCommunities[c].SuperCommunityId == item.Id)
+                    {
+                        count++;
+                    }
+                }
+
+                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 community" : count + " communities");
+
+                List<string> insideNames = new List<string>();
+                for (int c = 0; c < _allCommunities.Count; c++)
+                {
+                    if (_allCommunities[c].SuperCommunityId == item.Id)
+                    {
+                        insideNames.Add(_allCommunities[c].Name);
+                    }
+                }
+
+                Communities.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(insideNames, 3)));
+            }
+        }
+        else
+        {
+            total = _allCommunities.Count;
+            for (int i = 0; i < _allCommunities.Count; i++)
+            {
+                Community item = _allCommunities[i];
+                if (!(Matches(item.Name, term) || Matches(item.Number, term) || Matches(item.Description, term)))
+                {
+                    continue;
+                }
+
+                int count = item.GroupIds == null ? 0 : item.GroupIds.Count;
+                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 group" : count + " groups");
+
+                string? superName;
+                if (!string.IsNullOrEmpty(item.SuperCommunityId) && superNames.TryGetValue(item.SuperCommunityId, out superName))
+                {
+                    subtitle = subtitle + " - " + superName;
+                }
+
+                // The names of the groups inside (ids of groups that no longer exist are skipped).
+                List<string> groupNames = new List<string>();
+                if (item.GroupIds != null)
+                {
+                    for (int g = 0; g < item.GroupIds.Count; g++)
+                    {
+                        string? groupName;
+                        if (groupNameById.TryGetValue(item.GroupIds[g], out groupName))
+                        {
+                            groupNames.Add(groupName);
+                        }
+                    }
+                }
+
+                Communities.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(groupNames, 3)));
+            }
+        }
+
+        string noun = superMode ? "super communities" : "communities";
+        HasNoGroups = _hasLoaded && Communities.Count == 0;
+
+        if (!_hasLoaded)
+        {
+            SummaryText = string.Empty;
+            return;
+        }
+
+        if (term.Length > 0)
+        {
+            SummaryText = Communities.Count + " of " + total + " " + noun;
+        }
+        else if (total == 1)
+        {
+            SummaryText = superMode ? "1 super community" : "1 community";
+        }
+        else
+        {
+            SummaryText = total + " " + noun;
+        }
+
+        if (total == 0)
+        {
+            EmptyTitle = superMode ? "No super communities yet" : "No communities yet";
+            EmptyHint = superMode ? "Tap New super to create the first one." : "Tap New community to create the first one.";
+        }
+        else
+        {
+            EmptyTitle = superMode ? "No super communities found" : "No communities found";
+            EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
+        }
+    }
+
+    private static bool Matches(string? text, string term)
+    {
+        return term.Length == 0 || ContainsText(text, term);
+    }
+
+    private void ApplyGroupFilter()
+    {
+        string term = (SearchText ?? string.Empty).Trim();
+
+        // For each group: the names of the communities it is in.
+        Dictionary<string, List<string>> communitiesOfGroup = new Dictionary<string, List<string>>();
+        for (int c = 0; c < _allCommunities.Count; c++)
+        {
+            if (_allCommunities[c].GroupIds == null)
+            {
+                continue;
+            }
+
+            for (int g = 0; g < _allCommunities[c].GroupIds.Count; g++)
+            {
+                string groupId = _allCommunities[c].GroupIds[g];
+                List<string>? names;
+                if (!communitiesOfGroup.TryGetValue(groupId, out names))
+                {
+                    names = new List<string>();
+                    communitiesOfGroup[groupId] = names;
+                }
+
+                names.Add(_allCommunities[c].Name);
+            }
+        }
 
         Groups.Clear();
         int activeCount = 0;
@@ -275,7 +573,14 @@ public partial class GroupsViewModel : BaseViewModel
 
             if (Matches(group, term))
             {
-                Groups.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0));
+                GroupListItem card = GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0);
+                List<string>? inCommunities;
+                if (communitiesOfGroup.TryGetValue(group.Id, out inCommunities))
+                {
+                    card.SetChips(ChipText.Build(inCommunities, 3));
+                }
+
+                Groups.Add(card);
             }
         }
 
