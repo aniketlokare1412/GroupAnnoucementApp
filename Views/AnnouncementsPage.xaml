@@ -10,15 +10,15 @@
     Title="Announcements">
 
     <!-- Announcements of one group. Members see a feed of cards and a leave icon.
-         Admins see the same cards plus edit / delete icons and the one text button, "New post". -->
+         Admins see the same cards plus a delete icon and the one text button, "New post". -->
     <Grid>
 
         <Grid RowDefinitions="Auto,Auto,*,Auto">
 
             <!-- Header: group initials, name, count, and the page action -->
             <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="16,10,16,6">
-                <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
-                    <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                <Border Grid.Column="0" Style="{StaticResource InitialsTile}" BackgroundColor="{Binding TileBackground}">
+                    <Label Style="{StaticResource InitialsText}" TextColor="{Binding TileForeground}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                 </Border>
 
                 <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
@@ -53,27 +53,41 @@
                     SemanticProperties.Hint="You will stop seeing this group's announcements" />
             </Grid>
 
-            <VerticalStackLayout Grid.Row="1" Spacing="6" Margin="16,0,16,6">
+            <VerticalStackLayout Grid.Row="1" Spacing="8" Margin="16,0,16,8">
                 <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
                     <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
                 </Border>
 
-                <!-- Admin: the planned outage (or its cancellation), next to the regular messages -->
-                <Border Style="{StaticResource Card}" IsVisible="{Binding HasOutage}">
-                    <VerticalStackLayout Spacing="8">
-                        <Border Style="{StaticResource BadgeDanger}" Padding="10,4">
-                            <Label Style="{StaticResource BadgeDangerText}" Text="{Binding Outage.Title}" />
-                        </Border>
-                        <Label Style="{StaticResource BodyText}" Text="{Binding Outage.Message}" />
-                        <Label Style="{StaticResource Caption}" Text="{Binding Outage.WindowText}" />
-                        <Button
-                            Style="{StaticResource PillTonal}"
-                            Text="Cancel outage"
-                            Command="{Binding Outage.CancelCommand}"
-                            IsVisible="{Binding Outage.CanCancel}"
-                            HorizontalOptions="Start"
-                            SemanticProperties.Hint="Members will see an outage-cancelled message instead" />
-                    </VerticalStackLayout>
+                <!-- Admin: the planned outage (or its cancellation), next to the regular messages.
+                     Amber stripe while planned, green once cancelled. A cancelled one can be deleted. -->
+                <Border Style="{StaticResource AccentCard}" IsVisible="{Binding HasOutage}">
+                    <Grid ColumnDefinitions="6,*">
+                        <BoxView Grid.Column="0" Color="{Binding Outage.AccentColor}" />
+                        <VerticalStackLayout Grid.Column="1" Padding="14,12,14,14" Spacing="8">
+                            <Border Style="{StaticResource BadgeWarning}" Padding="10,4">
+                                <HorizontalStackLayout Spacing="6">
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="13" Text="&#x26A1;" />
+                                    <Label Style="{StaticResource BadgeWarningText}" Text="{Binding Outage.Title}" />
+                                </HorizontalStackLayout>
+                            </Border>
+                            <Label Style="{StaticResource BodyText}" Text="{Binding Outage.Message}" />
+                            <Label Style="{StaticResource Caption}" Text="{Binding Outage.WindowText}" />
+                            <HorizontalStackLayout Spacing="8">
+                                <Button
+                                    Style="{StaticResource PillTonal}"
+                                    Text="Cancel outage"
+                                    Command="{Binding Outage.CancelCommand}"
+                                    IsVisible="{Binding Outage.CanCancel}"
+                                    SemanticProperties.Hint="Members will see an outage-cancelled message instead" />
+                                <Button
+                                    Style="{StaticResource PillDanger}"
+                                    Text="Delete message"
+                                    Command="{Binding Outage.DeleteCommand}"
+                                    IsVisible="{Binding Outage.CanDelete}"
+                                    SemanticProperties.Hint="Removes the cancelled-outage message so members see the regular message" />
+                            </HorizontalStackLayout>
+                        </VerticalStackLayout>
+                    </Grid>
                 </Border>
             </VerticalStackLayout>
 
@@ -86,120 +100,135 @@
                         SelectionMode="None"
                         Margin="16,0">
                         <CollectionView.ItemsLayout>
-                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+                            <LinearItemsLayout Orientation="Vertical" ItemSpacing="14" />
                         </CollectionView.ItemsLayout>
 
                         <CollectionView.ItemTemplate>
                             <DataTemplate x:DataType="vm:AnnouncementListItem">
-                                <Border Style="{StaticResource Card}" Opacity="{Binding CardOpacity}">
-                                    <VerticalStackLayout Spacing="4">
+                                <!-- Card: coloured status stripe | chips, status, content, actions, footer -->
+                                <Border Style="{StaticResource AccentCard}" Opacity="{Binding CardOpacity}">
+                                    <Grid ColumnDefinitions="6,*">
+                                        <BoxView Grid.Column="0" Color="{Binding Extras.AccentColor}" />
 
-                                        <!-- Chips: New, Edited, Deleted -->
-                                        <HorizontalStackLayout Spacing="6" IsVisible="{Binding HasBadges}">
-                                            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsNew}">
-                                                <Label Style="{StaticResource BadgeBrandText}" Text="New" />
-                                            </Border>
-                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsEdited}">
-                                                <Label Style="{StaticResource BadgeNeutralText}" Text="Edited" />
-                                            </Border>
-                                            <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeleted}">
-                                                <Label Style="{StaticResource BadgeDangerText}" Text="Deleted" />
-                                            </Border>
-                                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsByOtherAdmin}">
-                                                <Label Style="{StaticResource BadgeNeutralText}" Text="Another admin" />
-                                            </Border>
-                                        </HorizontalStackLayout>
+                                        <VerticalStackLayout Grid.Column="1" Padding="14,12,14,12" Spacing="10">
 
-                                        <Label Style="{StaticResource CardTitle}" Text="{Binding Title}" />
-                                        <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
-                                        <Image
-                                            Source="{Binding Image}"
-                                            IsVisible="{Binding HasImage}"
-                                            Aspect="AspectFit"
-                                            MaximumHeightRequest="240"
-                                            HorizontalOptions="Fill"
-                                            SemanticProperties.Description="Attached image" />
-                                        <Border
-                                            Style="{StaticResource RowCard}"
-                                            IsVisible="{Binding HasFile}"
-                                            SemanticProperties.Description="{Binding FileLabel}"
-                                            SemanticProperties.Hint="Opens the file">
-                                            <Border.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
-                                            </Border.GestureRecognizers>
-                                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                                <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
-                                                <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
-                                            </Grid>
-                                        </Border>
-                                        <HorizontalStackLayout Spacing="8">
-                                            <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
-                                                <HorizontalStackLayout Spacing="8">
-                                                    <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />
-                                                    <Label Style="{StaticResource BadgeDangerText}" Text="Work in progress" />
-                                                </HorizontalStackLayout>
-                                            </Border>
-                                            <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding Extras.IsCompleted}" Padding="10,4">
-                                                <Label Style="{StaticResource BadgeSuccessText}" Text="{Binding Extras.CompletedText}" />
-                                            </Border>
-                                        </HorizontalStackLayout>
-                                        <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
-                                            <VerticalStackLayout Spacing="4">
-                                                <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
-                                                <Label Style="{StaticResource NoticeBannerText}" Text="{Binding Extras.SubMessageBody}" />
-                                            </VerticalStackLayout>
-                                        </Border>
-                                        <HorizontalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowTimer}">
-                                            <Label Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Schedule}" />
-                                            <Label Style="{StaticResource BodyText}" Text="Time left" VerticalOptions="Center" />
-                                            <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Extras.TimeLeftText}" VerticalOptions="Center" SemanticProperties.Description="Time left" />
-                                        </HorizontalStackLayout>
-                                        <HorizontalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowTimeUp}">
-                                            <Label Style="{StaticResource ErrorText}" FontFamily="OpenSansSemibold" Text="Time is up" VerticalOptions="Center" />
-                                        </HorizontalStackLayout>
-                                        <Label Style="{StaticResource Caption}" Text="{Binding Extras.ResolutionText}" IsVisible="{Binding Extras.HasResolution}" />
-
-                                        <!-- Members: the panic button -->
-                                        <Button
-                                            Style="{StaticResource PanicButton}"
-                                            Text="{Binding Extras.PanicText}"
-                                            Command="{Binding Extras.PressPanicCommand}"
-                                            IsEnabled="{Binding Extras.CanPressPanic}"
-                                            IsVisible="{Binding Extras.ShowPanic}"
-                                            SemanticProperties.Hint="Reports that the problem is still not solved. Works once, when the time is up or the work is completed" />
-
-                                        <!-- Admins: the panic count (highlighted when someone pressed) and Mark completed -->
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" IsVisible="{Binding Extras.ShowAdminTools}">
-                                            <Border Grid.Column="0" Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.HasPanic}" Padding="12,6">
-                                                <Label Style="{StaticResource BadgeDangerText}" FontSize="17" Text="{Binding Extras.PanicCountText}" />
-                                            </Border>
-                                            <Label Grid.Column="0" Style="{StaticResource Caption}" Text="{Binding Extras.PanicCountText}" IsVisible="{Binding Extras.HasNoPanic}" VerticalOptions="Center" />
-                                            <Button
-                                                Grid.Column="1"
-                                                Style="{StaticResource PillTonal}"
-                                                Text="Mark completed"
-                                                Command="{Binding Extras.CompleteCommand}"
-                                                IsVisible="{Binding Extras.CanMarkCompleted}"
-                                                SemanticProperties.Hint="Marks the work as completed and lets members report problems" />
-                                        </Grid>
-
-                                        <!-- Footer: date, and (admin, own posts) edit / delete icons -->
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
-                                            <Label
-                                                Grid.Column="0"
-                                                Style="{StaticResource Caption}"
-                                                Text="{Binding DateText}"
-                                                VerticalOptions="Center" />
-                                            <HorizontalStackLayout Grid.Column="1" Spacing="4" IsVisible="{Binding CanManage}">
-                                                <Button
-                                                    Style="{StaticResource IconButtonDanger}"
-                                                    Text="{x:Static h:Icons.Delete}"
-                                                    Command="{Binding DeleteCommand}"
-                                                    SemanticProperties.Description="{Binding DeleteLabel}" />
+                                            <!-- Chips: New, Edited, Deleted, Another admin -->
+                                            <HorizontalStackLayout Spacing="6" IsVisible="{Binding HasBadges}">
+                                                <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsNew}">
+                                                    <Label Style="{StaticResource BadgeBrandText}" Text="New" />
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsEdited}">
+                                                    <Label Style="{StaticResource BadgeNeutralText}" Text="Edited" />
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeleted}">
+                                                    <Label Style="{StaticResource BadgeDangerText}" Text="Deleted" />
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsByOtherAdmin}">
+                                                    <Label Style="{StaticResource BadgeNeutralText}" Text="Another admin" />
+                                                </Border>
                                             </HorizontalStackLayout>
-                                        </Grid>
 
-                                    </VerticalStackLayout>
+                                            <!-- Status row: state and countdown on one line -->
+                                            <HorizontalStackLayout Spacing="8">
+                                                <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
+                                                    <HorizontalStackLayout Spacing="8">
+                                                        <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />
+                                                        <Label Style="{StaticResource BadgeDangerText}" Text="Work in progress" />
+                                                    </HorizontalStackLayout>
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding Extras.IsCompleted}" Padding="10,4">
+                                                    <Label Style="{StaticResource BadgeSuccessText}" Text="{Binding Extras.CompletedText}" />
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimer}" Padding="10,4">
+                                                    <HorizontalStackLayout Spacing="6">
+                                                        <Label Style="{StaticResource EmojiIcon}" FontSize="13" Text="&#x23F1;&#xFE0F;" />
+                                                        <Label Style="{StaticResource BadgeWarningText}" Text="{Binding Extras.TimeLeftText}" SemanticProperties.Description="Time left" />
+                                                    </HorizontalStackLayout>
+                                                </Border>
+                                                <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimeUp}" Padding="10,4">
+                                                    <Label Style="{StaticResource BadgeWarningText}" Text="Time is up" />
+                                                </Border>
+                                            </HorizontalStackLayout>
+
+                                            <!-- Content -->
+                                            <VerticalStackLayout Spacing="4">
+                                                <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" />
+                                                <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                            </VerticalStackLayout>
+                                            <Image
+                                                Source="{Binding Image}"
+                                                IsVisible="{Binding HasImage}"
+                                                Aspect="AspectFit"
+                                                MaximumHeightRequest="240"
+                                                HorizontalOptions="Fill"
+                                                SemanticProperties.Description="Attached image" />
+                                            <Border
+                                                Style="{StaticResource RowCard}"
+                                                IsVisible="{Binding HasFile}"
+                                                SemanticProperties.Description="{Binding FileLabel}"
+                                                SemanticProperties.Hint="Opens the file">
+                                                <Border.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
+                                                </Border.GestureRecognizers>
+                                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                    <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
+                                                    <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
+                                                </Grid>
+                                            </Border>
+
+                                            <!-- Notice, expected time, and the one member action -->
+                                            <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
+                                                <VerticalStackLayout Spacing="4">
+                                                    <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
+                                                    <Label Style="{StaticResource NoticeBannerText}" Text="{Binding Extras.SubMessageBody}" />
+                                                </VerticalStackLayout>
+                                            </Border>
+                                            <Label Style="{StaticResource Caption}" Text="{Binding Extras.ResolutionText}" IsVisible="{Binding Extras.HasResolution}" />
+                                            <Button
+                                                Style="{StaticResource PanicButton}"
+                                                Text="{Binding Extras.PanicText}"
+                                                Command="{Binding Extras.PressPanicCommand}"
+                                                IsEnabled="{Binding Extras.CanPressPanic}"
+                                                IsVisible="{Binding Extras.ShowPanicButton}"
+                                                SemanticProperties.Hint="Reports that the problem is still not solved. Works once" />
+                                            <Label Style="{StaticResource Caption}" Text="{Binding Extras.PanicHintText}" IsVisible="{Binding Extras.ShowPanicHint}" />
+
+                                            <!-- Admin tools, separated by a line: panic count and Mark completed -->
+                                            <VerticalStackLayout Spacing="8" IsVisible="{Binding Extras.ShowAdminTools}">
+                                                <BoxView Style="{StaticResource Hairline}" />
+                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                                                    <Border Grid.Column="0" Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.HasPanic}" Padding="12,6">
+                                                        <Label Style="{StaticResource BadgeDangerText}" FontSize="15" Text="{Binding Extras.PanicCountText}" />
+                                                    </Border>
+                                                    <Label Grid.Column="0" Style="{StaticResource Caption}" Text="{Binding Extras.PanicCountText}" IsVisible="{Binding Extras.HasNoPanic}" VerticalOptions="Center" />
+                                                    <Button
+                                                        Grid.Column="1"
+                                                        Style="{StaticResource PillTonal}"
+                                                        Text="Mark completed"
+                                                        Command="{Binding Extras.CompleteCommand}"
+                                                        IsVisible="{Binding Extras.CanMarkCompleted}"
+                                                        SemanticProperties.Hint="Marks the work as completed and lets members report problems" />
+                                                </Grid>
+                                            </VerticalStackLayout>
+
+                                            <!-- Footer: date, and (admin, own posts) the delete icon -->
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="4">
+                                                <Label
+                                                    Grid.Column="0"
+                                                    Style="{StaticResource Caption}"
+                                                    Text="{Binding DateText}"
+                                                    VerticalOptions="Center" />
+                                                <HorizontalStackLayout Grid.Column="1" Spacing="4" IsVisible="{Binding CanManage}">
+                                                    <Button
+                                                        Style="{StaticResource IconButtonDanger}"
+                                                        Text="{x:Static h:Icons.Delete}"
+                                                        Command="{Binding DeleteCommand}"
+                                                        SemanticProperties.Description="{Binding DeleteLabel}" />
+                                                </HorizontalStackLayout>
+                                            </Grid>
+
+                                        </VerticalStackLayout>
+                                    </Grid>
                                 </Border>
                             </DataTemplate>
                         </CollectionView.ItemTemplate>
@@ -216,7 +245,7 @@
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Campaign}" />
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="26" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F4E2;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="No announcements yet" HorizontalOptions="Center" />
                                 <Label

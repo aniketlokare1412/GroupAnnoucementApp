@@ -14,6 +14,13 @@ public sealed class OutageCardItem
     public bool CanCancel { get; private set; }
     public ICommand? CancelCommand { get; private set; }
 
+    // A cancelled outage message can be deleted, so members see the regular announcement again.
+    public bool CanDelete { get; private set; }
+    public ICommand? DeleteCommand { get; private set; }
+
+    // Stripe colour on the card: amber while planned, green once cancelled (power stays on).
+    public Color AccentColor { get; private set; } = Color.FromArgb("#F59E0B");
+
     public static OutageCardItem From(Outage outage, Func<Task> onCancel)
     {
         bool cancelled = outage.Status == OutageText.Cancelled;
@@ -25,6 +32,7 @@ public sealed class OutageCardItem
         OutageCardItem item = new OutageCardItem();
         item.Title = cancelled ? "Outage cancelled" : "Planned outage";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
+        item.AccentColor = Color.FromArgb(cancelled ? "#16A34A" : "#F59E0B");
 
         string from = publishAt.ToLocalTime().ToString("dd MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture);
         string until = end.ToLocalTime().ToString("dd MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture);
@@ -33,7 +41,14 @@ public sealed class OutageCardItem
             : "Members see this until " + until;
 
         item.CanCancel = !cancelled;
+        item.CanDelete = cancelled;
         item.CancelCommand = new AsyncRelayCommand(onCancel);
         return item;
+    }
+
+    // Called by the view model that owns the card (see AnnouncementsViewModel.Extras.cs).
+    public void AttachDelete(Func<Task> onDelete)
+    {
+        DeleteCommand = new AsyncRelayCommand(onDelete);
     }
 }

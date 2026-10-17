@@ -12,11 +12,10 @@ public interface IGroupAdminService
 
     Task<OperationResult<AnnouncementGroup?>> GetGroupAsync(string id);
 
-    // Validates, blocks duplicate names (case-insensitive) and enforces GroupLimits.MaxActiveGroups.
+    // Validates and blocks duplicate names and numbers (case-insensitive). There is no limit on the number of groups.
     Task<OperationResult> CreateGroupAsync(string name, string description, string number);
 
     Task<OperationResult> UpdateGroupAsync(string id, string name, string description, string number);
 
-    // Activating a group also checks GroupLimits.MaxActiveGroups.
     Task<OperationResult> SetActiveAsync(string id, bool isActive);
 }

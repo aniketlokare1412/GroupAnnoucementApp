@@ -11,4 +11,7 @@ public interface IOutageRepository
     Task<Outage?> GetAsync(string groupId);
 
     Task CancelAsync(string groupId, long cancelledAtMs);
+
+    // Removes the outage document for good (used to clear a cancelled outage message).
+    Task DeleteAsync(string groupId);
 }

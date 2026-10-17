@@ -34,6 +34,12 @@ public class OutageRepository : IOutageRepository
             ("cancelledAtMs", (object?)cancelledAtMs));
     }
 
+    public Task DeleteAsync(string groupId)
+    {
+        IDocumentReference document = _firestore.GetDocument(PathFor(groupId));
+        return document.DeleteDocumentAsync();
+    }
+
     private static string PathFor(string groupId)
     {
         return "groups/" + groupId + "/outages/current";

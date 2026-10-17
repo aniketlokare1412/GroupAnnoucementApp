@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- "Power Grid" additions: raised cards with a status stripe, coloured tiles, colour emoji buttons.
+         Loaded after Styles.xaml (see App.xaml). -->
+
+    <!-- Raised card: soft blue-tinted shadow gives the 3D lift. -->
+    <Style TargetType="Border" x:Key="Card3D" BasedOn="{StaticResource Card}">
+        <Setter Property="Padding" Value="14" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 18" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#1E3A8A" Opacity="0.12" Radius="14" Offset="0,5" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Card with a coloured stripe on the left: put a Grid ColumnDefinitions="6,*" inside, BoxView in column 0. -->
+    <Style TargetType="Border" x:Key="AccentCard" BasedOn="{StaticResource Card3D}">
+        <Setter Property="Padding" Value="0" />
+    </Style>
+
+    <!-- Coloured icon tiles (40x40) -->
+    <Style TargetType="Border" x:Key="IconTileBlue" BasedOn="{StaticResource IconTile}">
+        <Setter Property="WidthRequest" Value="40" />
+        <Setter Property="HeightRequest" Value="40" />
+        <Setter Property="StrokeShape" Value="RoundRectangle 14" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileViolet" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileAmber" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileGreen" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SuccessTintLight}, Dark={StaticResource SuccessTintDark}}" />
+    </Style>
+
+    <!-- Colour emoji used as multicolour icons (rendered by the phone's own colour emoji font). -->
+    <Style TargetType="Label" x:Key="EmojiIcon">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="HorizontalOptions" Value="Center" />
+        <Setter Property="VerticalOptions" Value="Center" />
+        <Setter Property="HorizontalTextAlignment" Value="Center" />
+        <Setter Property="VerticalTextAlignment" Value="Center" />
+    </Style>
+
+    <!-- Round quick-action buttons whose text is a colour emoji. -->
+    <Style TargetType="Button" x:Key="EmojiButton" BasedOn="{StaticResource IconButtonLarge}">
+        <Setter Property="FontFamily" Value="OpenSansRegular" />
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="CornerRadius" Value="26" />
+        <Setter Property="WidthRequest" Value="52" />
+        <Setter Property="HeightRequest" Value="52" />
+        <Setter Property="MinimumWidthRequest" Value="52" />
+        <Setter Property="MinimumHeightRequest" Value="52" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#0F172A" Opacity="0.16" Radius="8" Offset="0,3" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Button" x:Key="EmojiButtonBlue" BasedOn="{StaticResource EmojiButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="EmojiButtonBlueSolid" BasedOn="{StaticResource EmojiButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="EmojiButtonViolet" BasedOn="{StaticResource EmojiButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="EmojiButtonAmber" BasedOn="{StaticResource EmojiButton}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+    </Style>
+
+</ResourceDictionary>

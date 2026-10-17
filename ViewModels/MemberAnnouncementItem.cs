@@ -1,9 +1,10 @@
-using GroupAnnouncementApp.Services.Interfaces;
-using CommunityToolkit.Mvvm.ComponentModel;
-using GroupAnnouncementApp.Helpers;
-using CommunityToolkit.Mvvm.Input;
+using System.ComponentModel;
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
+using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
@@ -12,6 +13,9 @@ public sealed class MemberAnnouncementItem : ObservableObject
 {
     public string GroupNumberText { get; private set; } = string.Empty;
     public string GroupName { get; private set; } = string.Empty;
+    public string GroupInitials { get; private set; } = string.Empty;
+    public Color TileBackground { get; private set; } = TileColors.Background(null);
+    public Color TileForeground { get; private set; } = TileColors.Foreground(null);
     public string Title { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
     public string DateText { get; private set; } = string.Empty;
@@ -31,8 +35,48 @@ public sealed class MemberAnnouncementItem : ObservableObject
     public bool HasFile { get; private set; }
     public ICommand? OpenFileCommand { get; private set; }
 
-    // Status, resolution time, panic button and admin tools. Set by the view model that builds the card.
-    public AnnouncementExtras? Extras { get; set; }
+    // Used by an outage card (it has no Extras).
+    private Color _fallbackAccent = Color.FromArgb("#F59E0B");
+
+    private AnnouncementExtras? _extras;
+
+    // Status, resolution time, panic button. Set by the view model that builds the card.
+    public AnnouncementExtras? Extras
+    {
+        get { return _extras; }
+        set
+        {
+            if (_extras != null)
+            {
+                _extras.PropertyChanged -= OnExtrasChanged;
+            }
+
+            _extras = value;
+            if (_extras != null)
+            {
+                _extras.PropertyChanged += OnExtrasChanged;
+            }
+
+            OnPropertyChanged(nameof(AccentColor));
+        }
+    }
+
+    // The status parts of the card are only shown for a real announcement (not for an outage card).
+    public bool HasExtras
+    {
+        get { return _extras != null; }
+    }
+
+    // Stripe colour: red = work in progress, amber = time is up (or planned outage), green = completed / restored.
+    public Color AccentColor
+    {
+        get { return _extras != null ? _extras.AccentColor : _fallbackAccent; }
+    }
+
+    private void OnExtrasChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        OnPropertyChanged(nameof(AccentColor));
+    }
 
     private string _fileGroupId = string.Empty;
     private string _fileAnnouncementId = string.Empty;
@@ -80,7 +124,16 @@ public sealed class MemberAnnouncementItem : ObservableObject
 
     public string CardLabel
     {
-        get { return "Announcement in " + GroupName + ": " + Title + ". " + DateText; }
+        get { return "Announcement in " + GroupName + ": " + Title + ". " + DateText.Replace("\n", " "); }
+    }
+
+    private void ApplyGroup(AnnouncementGroup group)
+    {
+        GroupNumberText = "No. " + (string.IsNullOrWhiteSpace(group.Number) ? "-" : group.Number);
+        GroupName = group.Name;
+        GroupInitials = InitialsHelper.From(group.Name);
+        TileBackground = TileColors.Background(group.Name);
+        TileForeground = TileColors.Foreground(group.Name);
     }
 
     // A planned outage, or its cancellation: shown like an announcement, without panic button, timer or status.
@@ -92,10 +145,10 @@ public sealed class MemberAnnouncementItem : ObservableObject
         DateTimeOffset published = DateTimeOffset.FromUnixTimeMilliseconds(outage.PublishAtMs);
 
         MemberAnnouncementItem item = new MemberAnnouncementItem();
-        item.GroupNumberText = "Group number: " + (string.IsNullOrWhiteSpace(group.Number) ? "-" : group.Number);
-        item.GroupName = group.Name;
+        item.ApplyGroup(group);
         item.Title = cancelled ? "Outage cancelled" : "Planned outage";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
+        item._fallbackAccent = Color.FromArgb(cancelled ? "#16A34A" : "#F59E0B");
         item.CreatedAt = published;
         item.DateText = published.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
             + "\n" + published.ToLocalTime().ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture);
@@ -105,8 +158,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
     public static MemberAnnouncementItem From(AnnouncementGroup group, Announcement announcement, IAttachmentService? attachments = null)
     {
         MemberAnnouncementItem item = new MemberAnnouncementItem();
-        item.GroupNumberText = "Group number: " + (string.IsNullOrWhiteSpace(group.Number) ? "-" : group.Number);
-        item.GroupName = group.Name;
+        item.ApplyGroup(group);
         item.Title = announcement.Title;
         item.Message = announcement.Message;
         item.CreatedAt = announcement.CreatedAt;

@@ -14,6 +14,10 @@ public sealed class HomeGroupItem
     public string Initials { get; private set; } = string.Empty;
     public bool IsActive { get; private set; }
 
+    // Each group has its own tile colour.
+    public Color TileBackground { get; private set; } = TileColors.Background(null);
+    public Color TileForeground { get; private set; } = TileColors.Foreground(null);
+
     // Tapping the row (or its bell) opens this group's announcements.
     public ICommand? OpenCommand { get; private set; }
 
@@ -41,6 +45,8 @@ public sealed class HomeGroupItem
         item.Description = GroupText.WithNumber(group, panicCount);
         item.IsActive = group.IsActive;
         item.Initials = InitialsHelper.From(group.Name);
+        item.TileBackground = TileColors.Background(group.Name);
+        item.TileForeground = TileColors.Foreground(group.Name);
         item.OpenCommand = new AsyncRelayCommand(() => onOpen(item));
         return item;
     }

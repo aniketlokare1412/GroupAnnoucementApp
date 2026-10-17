@@ -30,7 +30,7 @@ public partial class GroupsViewModel : BaseViewModel
     [ObservableProperty]
     private bool _hasNoGroups;
 
-    // "5 groups  -  3 of 10 active", or "2 of 5 groups" while searching.
+    // "5 groups  -  3 active", or "2 of 5 groups" while searching.
     [ObservableProperty]
     private string _summaryText = string.Empty;
 
@@ -207,7 +207,7 @@ public partial class GroupsViewModel : BaseViewModel
             if (newValue)
             {
                 title = "Activate group";
-                message = "Activate \"" + item.Name + "\"? It will count towards the limit of " + GroupLimits.MaxActiveGroups + " active groups.";
+                message = "Activate \"" + item.Name + "\"? Members will be able to see it again.";
                 accept = "Activate";
             }
             else
@@ -294,7 +294,7 @@ public partial class GroupsViewModel : BaseViewModel
         else
         {
             string total = _allGroups.Count == 1 ? "1 group" : _allGroups.Count + " groups";
-            SummaryText = total + "  -  " + activeCount + " of " + GroupLimits.MaxActiveGroups + " active";
+            SummaryText = total + "  -  " + activeCount + " active";
         }
 
         if (_allGroups.Count == 0)
