@@ -27,6 +27,11 @@ public partial class HomeViewModel : BaseViewModel
     private readonly IUserAdminService _userAdminService;
     private readonly IMembershipService _membershipService;
     private readonly IToastService _toasts;
+    private readonly ICommunityService _communityService;
+
+    // The community structure: admin counts and the member headings above the announcements.
+    private CommunityDirectory? _directory;
+    private DateTime _directoryLoadedUtc = DateTime.MinValue;
 
     private List<AnnouncementGroup> _memberGroups = new List<AnnouncementGroup>();
     private bool _hasLoaded;
@@ -37,6 +42,9 @@ public partial class HomeViewModel : BaseViewModel
 
     [ObservableProperty]
     private bool _hasNoMemberAnnouncements;
+
+    // Member: the same cards as MemberAnnouncements, split under community / super community headings.
+    public ObservableCollection<MemberHomeSection> MemberSections { get; } = new ObservableCollection<MemberHomeSection>();
 
     public ObservableCollection<HomeGroupItem> AdminGroups { get; } = new ObservableCollection<HomeGroupItem>();
     public ObservableCollection<HomeGroupItem> MyGroups { get; } = new ObservableCollection<HomeGroupItem>();
@@ -64,6 +72,12 @@ public partial class HomeViewModel : BaseViewModel
 
     [ObservableProperty]
     private string _usersCountText = "-";
+
+    [ObservableProperty]
+    private string _communitiesCountText = "-";
+
+    [ObservableProperty]
+    private string _superCommunitiesCountText = "-";
 
     [ObservableProperty]
     private bool _hasNoAdminGroups;
@@ -111,8 +125,10 @@ public partial class HomeViewModel : BaseViewModel
         IAttachmentService attachments,
         IPanicService panicService,
         IDialogService dialogs,
-        IOutageService outageService)
+        IOutageService outageService,
+        ICommunityService communityService)
     {
+        _communityService = communityService;
         _outageService = outageService;
         _panicService = panicService;
         _dialogs = dialogs;
@@ -190,6 +206,7 @@ public partial class HomeViewModel : BaseViewModel
         }
 
         HasNoMemberAnnouncements = MemberAnnouncements.Count == 0;
+        BuildMemberSections(items);
 
         // Images arrive a moment later, so the cards show up first.
         for (int i = 0; i < MemberAnnouncements.Count; i++)
@@ -322,6 +339,19 @@ public partial class HomeViewModel : BaseViewModel
             _toasts.Show("Could not load the user count.");
         }
 
+        // Not worth a banner when this fails: the rest of Home still works.
+        OperationResult<CommunityDirectory> communitiesResult = await _communityService.GetDirectoryAsync();
+        if (communitiesResult.IsSuccess && communitiesResult.Value != null)
+        {
+            CommunitiesCountText = communitiesResult.Value.Communities.Count.ToString();
+            SuperCommunitiesCountText = communitiesResult.Value.SuperCommunities.Count.ToString();
+        }
+        else
+        {
+            CommunitiesCountText = "-";
+            SuperCommunitiesCountText = "-";
+        }
+
         OperationResult<List<AdminRequest>> requestsResult = await _adminRequests.GetPendingAsync();
         int pending = 0;
         if (requestsResult.IsSuccess && requestsResult.Value != null)
@@ -352,7 +382,123 @@ public partial class HomeViewModel : BaseViewModel
         _hasLoaded = true;
         JoinedText = _memberGroups.Count + " joined";
         ApplyMemberFilter();
+
+        // The headings are nice to have: if this fails, the announcements show without them.
+        // The structure rarely changes, so Home's 20 second refresh reuses it for two minutes.
+        if (_directory == null || (DateTime.UtcNow - _directoryLoadedUtc).TotalMinutes >= 2)
+        {
+            OperationResult<CommunityDirectory> directoryResult = await _communityService.GetDirectoryAsync();
+            if (directoryResult.IsSuccess && directoryResult.Value != null)
+            {
+                _directory = directoryResult.Value;
+                _directoryLoadedUtc = DateTime.UtcNow;
+            }
+        }
+
         await LoadMemberAnnouncementsAsync();
+    }
+
+    // Puts each card under the communities its group is in (a group in two communities shows under
+    // both), grouped by super community. Groups in no community go last under "Other groups".
+    // With no communities around the member's groups there is one block without headings.
+    private void BuildMemberSections(List<MemberAnnouncementItem> items)
+    {
+        MemberSections.Clear();
+
+        Dictionary<string, List<MemberAnnouncementItem>> byCommunity = new Dictionary<string, List<MemberAnnouncementItem>>();
+        List<MemberAnnouncementItem> others = new List<MemberAnnouncementItem>();
+
+        for (int i = 0; i < items.Count; i++)
+        {
+            List<Community> communities = _directory == null ? new List<Community>() : _directory.CommunitiesOfGroup(items[i].GroupId);
+            if (communities.Count == 0)
+            {
+                others.Add(items[i]);
+                continue;
+            }
+
+            for (int j = 0; j < communities.Count; j++)
+            {
+                List<MemberAnnouncementItem>? list;
+                if (!byCommunity.TryGetValue(communities[j].Id, out list))
+                {
+                    list = new List<MemberAnnouncementItem>();
+                    byCommunity[communities[j].Id] = list;
+                }
+
+                list.Add(items[i]);
+            }
+        }
+
+        if (_directory == null || byCommunity.Count == 0)
+        {
+            if (items.Count > 0)
+            {
+                AddSection(string.Empty, string.Empty, items);
+            }
+
+            return;
+        }
+
+        CommunityDirectory directory = _directory;
+        List<Community> used = new List<Community>();
+        for (int i = 0; i < directory.Communities.Count; i++)
+        {
+            if (byCommunity.ContainsKey(directory.Communities[i].Id))
+            {
+                used.Add(directory.Communities[i]);
+            }
+        }
+
+        // Communities inside a super community first (by super community name), the others after.
+        used.Sort((a, b) =>
+        {
+            SuperCommunity? superA = directory.SuperOf(a);
+            SuperCommunity? superB = directory.SuperOf(b);
+            if (superA != null && superB == null)
+            {
+                return -1;
+            }
+
+            if (superA == null && superB != null)
+            {
+                return 1;
+            }
+
+            if (superA != null && superB != null && superA.Id != superB.Id)
+            {
+                return string.Compare(superA.Name, superB.Name, StringComparison.OrdinalIgnoreCase);
+            }
+
+            return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+        });
+
+        string lastSuperName = string.Empty;
+        for (int i = 0; i < used.Count; i++)
+        {
+            SuperCommunity? parent = directory.SuperOf(used[i]);
+            string superName = parent == null ? string.Empty : parent.Name;
+
+            // The super community heading only appears above its first community.
+            string heading = superName != lastSuperName ? superName : string.Empty;
+            lastSuperName = superName;
+
+            AddSection(heading, used[i].Name, byCommunity[used[i].Id]);
+        }
+
+        if (others.Count > 0)
+        {
+            AddSection(string.Empty, "Other groups", others);
+        }
+    }
+
+    private void AddSection(string superTitle, string title, List<MemberAnnouncementItem> cards)
+    {
+        MemberHomeSection section = new MemberHomeSection();
+        section.SuperTitle = superTitle;
+        section.Title = title;
+        section.Cards = cards;
+        MemberSections.Add(section);
     }
 
     private void ApplyMemberFilter()

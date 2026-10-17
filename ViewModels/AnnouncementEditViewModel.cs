@@ -12,6 +12,9 @@ namespace GroupAnnouncementApp.ViewModels;
 //   announcementedit                                   -> new announcement, pick ONE OR MORE groups
 //   announcementedit?groupId=..&groupName=..           -> new announcement for that one group
 //   announcementedit?groupId=..&groupName=..&announcementId=..  -> edit an existing announcement
+// In "pick groups" mode, chips above the group pills tick every ACTIVE group of a community or super
+// community. It is only a shortcut: it never unticks, the admin can still untick single groups, and each
+// group still receives its own copy of the announcement as always.
 // Cancel is the back arrow. After a successful save the page goes back and a toast confirms it.
 [QueryProperty(nameof(GroupId), "groupId")]
 [QueryProperty(nameof(GroupName), "groupName")]
@@ -22,6 +25,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private readonly ISessionService _session;
     private readonly IAnnouncementService _announcementService;
     private readonly IGroupAdminService _groupService;
+    private readonly ICommunityService _communityService;
     private readonly IToastService _toasts;
 
     private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
@@ -30,6 +34,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     // The cards of the "Post to" picker (filtered by the search box).
     public ObservableCollection<SelectableGroupItem> Groups { get; } = new ObservableCollection<SelectableGroupItem>();
+
+    // "Select a whole community" chips above the group pills.
+    public ObservableCollection<QuickPickItem> QuickPicks { get; } = new ObservableCollection<QuickPickItem>();
+
+    [ObservableProperty]
+    private bool _hasQuickPicks;
 
     // Set by Shell from the route.
     [ObservableProperty]
@@ -350,12 +360,14 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         ISessionService session,
         IAnnouncementService announcementService,
         IGroupAdminService groupService,
+        ICommunityService communityService,
         IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _announcementService = announcementService;
         _groupService = groupService;
+        _communityService = communityService;
         _toasts = toasts;
 
         TitleCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxTitleLength);
@@ -487,6 +499,8 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                 }
             }
 
+            await LoadCommunityShortcutsAsync();
+
             _isLoaded = true;
             ApplyFilter();
             UpdateSelectedCount();
@@ -495,6 +509,77 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         {
             IsBusy = false;
             ShowLoading = false;
+        }
+    }
+
+    // Builds the community chips. Never blocks posting: if the communities cannot be loaded,
+    // the group pills still work and the chips are simply not shown.
+    private async Task LoadCommunityShortcutsAsync()
+    {
+        QuickPicks.Clear();
+        HasQuickPicks = false;
+
+        OperationResult<CommunityDirectory> result = await _communityService.GetDirectoryAsync();
+        if (!result.IsSuccess || result.Value == null)
+        {
+            return;
+        }
+
+        CommunityDirectory directory = result.Value;
+
+        // Only active groups are in the picker, and only those can receive an announcement.
+        HashSet<string> activeIds = new HashSet<string>();
+        for (int i = 0; i < _allItems.Count; i++)
+        {
+            activeIds.Add(_allItems[i].Id);
+        }
+
+        // Super communities first (the bigger sets), then communities.
+        for (int i = 0; i < directory.SuperCommunities.Count; i++)
+        {
+            List<string> ids = KeepActive(directory.GroupIdsOfSuper(directory.SuperCommunities[i].Id), activeIds);
+            if (ids.Count > 0)
+            {
+                QuickPicks.Add(QuickPickItem.Create(directory.SuperCommunities[i].Name, true, ids, SelectQuickPick));
+            }
+        }
+
+        for (int i = 0; i < directory.Communities.Count; i++)
+        {
+            List<string> ids = KeepActive(directory.Communities[i].GroupIds, activeIds);
+            if (ids.Count > 0)
+            {
+                QuickPicks.Add(QuickPickItem.Create(directory.Communities[i].Name, false, ids, SelectQuickPick));
+            }
+        }
+
+        HasQuickPicks = QuickPicks.Count > 0;
+    }
+
+    private static List<string> KeepActive(List<string> ids, HashSet<string> activeIds)
+    {
+        List<string> kept = new List<string>();
+        for (int i = 0; i < ids.Count; i++)
+        {
+            if (activeIds.Contains(ids[i]) && !kept.Contains(ids[i]))
+            {
+                kept.Add(ids[i]);
+            }
+        }
+
+        return kept;
+    }
+
+    // Ticks the groups. It never unticks anything.
+    private void SelectQuickPick(QuickPickItem item)
+    {
+        HashSet<string> wanted = new HashSet<string>(item.GroupIds);
+        for (int i = 0; i < _allItems.Count; i++)
+        {
+            if (wanted.Contains(_allItems[i].Id))
+            {
+                _allItems[i].IsSelected = true;
+            }
         }
     }
 

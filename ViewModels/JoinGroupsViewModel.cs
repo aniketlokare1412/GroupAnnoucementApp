@@ -15,6 +15,10 @@ public partial class JoinGroupsViewModel : BaseViewModel
     private readonly IMembershipService _membershipService;
     private readonly IDialogService _dialogs;
     private readonly IToastService _toasts;
+    private readonly ICommunityService _communityService;
+
+    // The community structure, so a found group can say which communities it is part of.
+    private CommunityDirectory? _directory;
 
     private List<JoinableGroup> _allGroups = new List<JoinableGroup>();
     private bool _membershipKnown = true;
@@ -65,8 +69,10 @@ public partial class JoinGroupsViewModel : BaseViewModel
         ISessionService session,
         IMembershipService membershipService,
         IDialogService dialogs,
-        IToastService toasts)
+        IToastService toasts,
+        ICommunityService communityService)
     {
+        _communityService = communityService;
         _navigation = navigation;
         _session = session;
         _membershipService = membershipService;
@@ -119,6 +125,13 @@ public partial class JoinGroupsViewModel : BaseViewModel
             else
             {
                 NoticeMessage = "We could not check which groups you have already joined. You can still search and join groups.";
+            }
+
+            // Nice to have: if the communities cannot be loaded, the group simply shows without them.
+            OperationResult<CommunityDirectory> directoryResult = await _communityService.GetDirectoryAsync();
+            if (directoryResult.IsSuccess && directoryResult.Value != null)
+            {
+                _directory = directoryResult.Value;
             }
 
             _hasLoaded = true;
@@ -232,7 +245,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
         {
             if (IsExactNumber(_allGroups[i].Group, term))
             {
-                Groups.Add(JoinGroupItem.FromJoinable(_allGroups[i], JoinAsync, OpenAsync));
+                Groups.Add(JoinGroupItem.FromJoinable(_allGroups[i], JoinAsync, OpenAsync, BuildContext(_allGroups[i].Group.Id)));
             }
         }
 
@@ -256,6 +269,30 @@ public partial class JoinGroupsViewModel : BaseViewModel
             EmptyTitle = "No group found";
             EmptyHint = "Check the number \"" + term + "\" and try again.";
         }
+    }
+
+    // "Part of: Community 1 (Super community 1), Community 2". Empty when there is nothing to say.
+    private string BuildContext(string groupId)
+    {
+        if (_directory == null)
+        {
+            return string.Empty;
+        }
+
+        List<Community> communities = _directory.CommunitiesOfGroup(groupId);
+        if (communities.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        List<string> parts = new List<string>();
+        for (int i = 0; i < communities.Count; i++)
+        {
+            SuperCommunity? parent = _directory.SuperOf(communities[i]);
+            parts.Add(parent == null ? communities[i].Name : communities[i].Name + " (" + parent.Name + ")");
+        }
+
+        return "Part of: " + string.Join(", ", parts);
     }
 
     // Only an exact group number shows a group. The list of all groups is never displayed.

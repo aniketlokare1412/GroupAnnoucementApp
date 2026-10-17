@@ -10,6 +10,101 @@
     Title="Home"
     Shell.NavBarIsVisible="False">
 
+    <ContentPage.Resources>
+        <!-- One announcement card. Shared so the same card can sit under several community headings. -->
+        <DataTemplate x:Key="MemberCardTemplate" x:DataType="vm:MemberAnnouncementItem">
+                                        <!-- Card: coloured status stripe | header, status, content, one action -->
+                                        <Border Style="{StaticResource AccentCard}" SemanticProperties.Description="{Binding CardLabel}">
+                                            <Grid ColumnDefinitions="6,*">
+                                                <BoxView Grid.Column="0" Color="{Binding AccentColor}" />
+
+                                                <VerticalStackLayout Grid.Column="1" Padding="14,12,14,14" Spacing="10">
+
+                                                    <!-- 1. Header: group tile, name and number on the left, date on the right -->
+                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                                        <Border Grid.Column="0" Style="{StaticResource InitialsTile}" BackgroundColor="{Binding TileBackground}">
+                                                            <Label Style="{StaticResource InitialsText}" TextColor="{Binding TileForeground}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding GroupInitials}" />
+                                                        </Border>
+                                                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                                            <Label Style="{StaticResource CardTitle}" Text="{Binding GroupName}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                            <Label Style="{StaticResource Caption}" Text="{Binding GroupNumberText}" />
+                                                        </VerticalStackLayout>
+                                                        <Label Grid.Column="2" Style="{StaticResource Caption}" Text="{Binding DateText}" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                                    </Grid>
+
+                                                    <!-- 2. Status row: one line with the state and the countdown (real announcements only) -->
+                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
+                                                        <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
+                                                            <HorizontalStackLayout Spacing="8">
+                                                                <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />
+                                                                <Label Style="{StaticResource BadgeDangerText}" Text="Work in progress" />
+                                                            </HorizontalStackLayout>
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding Extras.IsCompleted}" Padding="10,4">
+                                                            <Label Style="{StaticResource BadgeSuccessText}" Text="{Binding Extras.CompletedText}" />
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimer}" Padding="10,4">
+                                                            <HorizontalStackLayout Spacing="6">
+                                                                <Label Style="{StaticResource EmojiIcon}" FontSize="13" Text="&#x23F1;&#xFE0F;" />
+                                                                <Label Style="{StaticResource BadgeWarningText}" Text="{Binding Extras.TimeLeftText}" SemanticProperties.Description="Time left" />
+                                                            </HorizontalStackLayout>
+                                                        </Border>
+                                                        <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimeUp}" Padding="10,4">
+                                                            <Label Style="{StaticResource BadgeWarningText}" Text="Time is up" />
+                                                        </Border>
+                                                    </HorizontalStackLayout>
+
+                                                    <!-- 3. Content -->
+                                                    <VerticalStackLayout Spacing="4">
+                                                        <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" />
+                                                        <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                                    </VerticalStackLayout>
+                                                    <Image
+                                                        Source="{Binding Image}"
+                                                        IsVisible="{Binding HasImage}"
+                                                        Aspect="AspectFit"
+                                                        MaximumHeightRequest="240"
+                                                        HorizontalOptions="Fill"
+                                                        SemanticProperties.Description="Attached image" />
+                                                    <Border
+                                                        Style="{StaticResource RowCard}"
+                                                        IsVisible="{Binding HasFile}"
+                                                        SemanticProperties.Description="{Binding FileLabel}"
+                                                        SemanticProperties.Hint="Opens the file">
+                                                        <Border.GestureRecognizers>
+                                                            <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
+                                                        </Border.GestureRecognizers>
+                                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                                            <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
+                                                            <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
+                                                        </Grid>
+                                                    </Border>
+
+                                                    <!-- 4. Notice, expected time, and the one action (real announcements only) -->
+                                                    <VerticalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
+                                                        <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
+                                                            <VerticalStackLayout Spacing="4">
+                                                                <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
+                                                                <Label Style="{StaticResource NoticeBannerText}" Text="{Binding Extras.SubMessageBody}" />
+                                                            </VerticalStackLayout>
+                                                        </Border>
+                                                        <Label Style="{StaticResource Caption}" Text="{Binding Extras.ResolutionText}" IsVisible="{Binding Extras.HasResolution}" />
+                                                        <Button
+                                                            Style="{StaticResource PanicButton}"
+                                                            Text="{Binding Extras.PanicText}"
+                                                            Command="{Binding Extras.PressPanicCommand}"
+                                                            IsEnabled="{Binding Extras.CanPressPanic}"
+                                                            IsVisible="{Binding Extras.ShowPanicButton}"
+                                                            SemanticProperties.Hint="Reports that the problem is still not solved. Works once" />
+                                                        <Label Style="{StaticResource Caption}" Text="{Binding Extras.PanicHintText}" IsVisible="{Binding Extras.ShowPanicHint}" />
+                                                    </VerticalStackLayout>
+
+                                                </VerticalStackLayout>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+    </ContentPage.Resources>
+
     <Grid>
 
         <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
@@ -45,8 +140,8 @@
                     <VerticalStackLayout Spacing="14" IsVisible="{Binding ShowAdmin}">
 
                         <!-- Counts -->
-                        <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                            <Border Grid.Column="0" Style="{StaticResource Card3D}">
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
+                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card3D}">
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                     <Border Grid.Column="0" Style="{StaticResource IconTileViolet}" VerticalOptions="Center">
                                         <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
@@ -57,7 +152,7 @@
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Column="1" Style="{StaticResource Card3D}">
+                            <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource Card3D}">
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                     <Border Grid.Column="0" Style="{StaticResource IconTileGreen}" VerticalOptions="Center">
                                         <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F464;" />
@@ -65,6 +160,28 @@
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding UsersCountText}" />
                                         <Label Style="{StaticResource Caption}" Text="Users" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card3D}">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F;" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                        <Label Style="{StaticResource StatNumber}" Text="{Binding CommunitiesCountText}" />
+                                        <Label Style="{StaticResource Caption}" Text="Communities" />
+                                    </VerticalStackLayout>
+                                </Grid>
+                            </Border>
+                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card3D}">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                    <Border Grid.Column="0" Style="{StaticResource IconTileAmber}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F310;" />
+                                    </Border>
+                                    <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                        <Label Style="{StaticResource StatNumber}" Text="{Binding SuperCommunitiesCountText}" />
+                                        <Label Style="{StaticResource Caption}" Text="Super communities" LineBreakMode="TailTruncation" MaxLines="1" />
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
@@ -190,98 +307,31 @@
                         <VerticalStackLayout Spacing="10">
                             <Label Style="{StaticResource SectionLabel}" Text="Announcements" />
 
-                            <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding MemberAnnouncements}">
+                            <!-- Cards under community / super community headings (one block, no headings, when the
+                                 member's groups are in no community) -->
+                            <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding MemberSections}">
                                 <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:MemberAnnouncementItem">
-                                        <!-- Card: coloured status stripe | header, status, content, one action -->
-                                        <Border Style="{StaticResource AccentCard}" SemanticProperties.Description="{Binding CardLabel}">
-                                            <Grid ColumnDefinitions="6,*">
-                                                <BoxView Grid.Column="0" Color="{Binding AccentColor}" />
-
-                                                <VerticalStackLayout Grid.Column="1" Padding="14,12,14,14" Spacing="10">
-
-                                                    <!-- 1. Header: group tile, name and number on the left, date on the right -->
-                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                                        <Border Grid.Column="0" Style="{StaticResource InitialsTile}" BackgroundColor="{Binding TileBackground}">
-                                                            <Label Style="{StaticResource InitialsText}" TextColor="{Binding TileForeground}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding GroupInitials}" />
-                                                        </Border>
-                                                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
-                                                            <Label Style="{StaticResource CardTitle}" Text="{Binding GroupName}" LineBreakMode="TailTruncation" MaxLines="1" />
-                                                            <Label Style="{StaticResource Caption}" Text="{Binding GroupNumberText}" />
-                                                        </VerticalStackLayout>
-                                                        <Label Grid.Column="2" Style="{StaticResource Caption}" Text="{Binding DateText}" HorizontalTextAlignment="End" VerticalOptions="Center" />
-                                                    </Grid>
-
-                                                    <!-- 2. Status row: one line with the state and the countdown (real announcements only) -->
-                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
-                                                        <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
-                                                            <HorizontalStackLayout Spacing="8">
-                                                                <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />
-                                                                <Label Style="{StaticResource BadgeDangerText}" Text="Work in progress" />
-                                                            </HorizontalStackLayout>
-                                                        </Border>
-                                                        <Border Style="{StaticResource BadgeSuccess}" IsVisible="{Binding Extras.IsCompleted}" Padding="10,4">
-                                                            <Label Style="{StaticResource BadgeSuccessText}" Text="{Binding Extras.CompletedText}" />
-                                                        </Border>
-                                                        <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimer}" Padding="10,4">
-                                                            <HorizontalStackLayout Spacing="6">
-                                                                <Label Style="{StaticResource EmojiIcon}" FontSize="13" Text="&#x23F1;&#xFE0F;" />
-                                                                <Label Style="{StaticResource BadgeWarningText}" Text="{Binding Extras.TimeLeftText}" SemanticProperties.Description="Time left" />
-                                                            </HorizontalStackLayout>
-                                                        </Border>
-                                                        <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding Extras.ShowTimeUp}" Padding="10,4">
-                                                            <Label Style="{StaticResource BadgeWarningText}" Text="Time is up" />
-                                                        </Border>
-                                                    </HorizontalStackLayout>
-
-                                                    <!-- 3. Content -->
-                                                    <VerticalStackLayout Spacing="4">
-                                                        <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" />
-                                                        <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
-                                                    </VerticalStackLayout>
-                                                    <Image
-                                                        Source="{Binding Image}"
-                                                        IsVisible="{Binding HasImage}"
-                                                        Aspect="AspectFit"
-                                                        MaximumHeightRequest="240"
-                                                        HorizontalOptions="Fill"
-                                                        SemanticProperties.Description="Attached image" />
-                                                    <Border
-                                                        Style="{StaticResource RowCard}"
-                                                        IsVisible="{Binding HasFile}"
-                                                        SemanticProperties.Description="{Binding FileLabel}"
-                                                        SemanticProperties.Hint="Opens the file">
-                                                        <Border.GestureRecognizers>
-                                                            <TapGestureRecognizer Command="{Binding OpenFileCommand}" />
-                                                        </Border.GestureRecognizers>
-                                                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                                            <Label Grid.Column="0" Style="{StaticResource Icon}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.File}" />
-                                                            <Label Grid.Column="1" Style="{StaticResource CardTitle}" Text="{Binding FileName}" VerticalOptions="Center" LineBreakMode="MiddleTruncation" MaxLines="1" />
-                                                        </Grid>
-                                                    </Border>
-
-                                                    <!-- 4. Notice, expected time, and the one action (real announcements only) -->
-                                                    <VerticalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
-                                                        <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
-                                                            <VerticalStackLayout Spacing="4">
-                                                                <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
-                                                                <Label Style="{StaticResource NoticeBannerText}" Text="{Binding Extras.SubMessageBody}" />
-                                                            </VerticalStackLayout>
-                                                        </Border>
-                                                        <Label Style="{StaticResource Caption}" Text="{Binding Extras.ResolutionText}" IsVisible="{Binding Extras.HasResolution}" />
-                                                        <Button
-                                                            Style="{StaticResource PanicButton}"
-                                                            Text="{Binding Extras.PanicText}"
-                                                            Command="{Binding Extras.PressPanicCommand}"
-                                                            IsEnabled="{Binding Extras.CanPressPanic}"
-                                                            IsVisible="{Binding Extras.ShowPanicButton}"
-                                                            SemanticProperties.Hint="Reports that the problem is still not solved. Works once" />
-                                                        <Label Style="{StaticResource Caption}" Text="{Binding Extras.PanicHintText}" IsVisible="{Binding Extras.ShowPanicHint}" />
-                                                    </VerticalStackLayout>
-
-                                                </VerticalStackLayout>
-                                            </Grid>
-                                        </Border>
+                                    <DataTemplate x:DataType="vm:MemberHomeSection">
+                                        <VerticalStackLayout Spacing="8">
+                                            <Label
+                                                Style="{StaticResource SectionLabel}"
+                                                Text="{Binding SuperTitle}"
+                                                IsVisible="{Binding HasSuperTitle}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="1"
+                                                SemanticProperties.HeadingLevel="Level2" />
+                                            <Label
+                                                Style="{StaticResource CardTitle}"
+                                                Text="{Binding Title}"
+                                                IsVisible="{Binding HasTitle}"
+                                                LineBreakMode="TailTruncation"
+                                                MaxLines="1"
+                                                SemanticProperties.HeadingLevel="Level3" />
+                                            <VerticalStackLayout
+                                                Spacing="14"
+                                                BindableLayout.ItemsSource="{Binding Cards}"
+                                                BindableLayout.ItemTemplate="{StaticResource MemberCardTemplate}" />
+                                        </VerticalStackLayout>
                                     </DataTemplate>
                                 </BindableLayout.ItemTemplate>
                             </VerticalStackLayout>

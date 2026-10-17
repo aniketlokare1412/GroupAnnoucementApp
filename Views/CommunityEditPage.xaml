@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    x:Class="GroupAnnouncementApp.Views.CommunityEditPage"
+    x:DataType="vm:CommunityEditViewModel"
+    Title="{Binding TitleText}">
+
+    <!-- Create / edit a community or a super community. Same look as the group edit page. -->
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Number" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Whole number, e.g. 12"
+                            Keyboard="Numeric"
+                            ReturnType="Next"
+                            Text="{Binding Number}"
+                            MaxLength="{Binding MaxNumberLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Number" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Name" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Name"
+                            ReturnType="Next"
+                            Text="{Binding Name}"
+                            MaxLength="{Binding MaxNameLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Name" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Description (optional)" />
+                    <Border Style="{StaticResource FieldBorder}" Padding="10,6">
+                        <Editor
+                            Placeholder="What is this for?"
+                            Text="{Binding Description}"
+                            MaxLength="{Binding MaxDescriptionLength}"
+                            HeightRequest="120"
+                            AutoSize="Disabled"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Description" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Communities only: the one super community it sits under (optional) -->
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding IsCommunity}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Super community (optional)" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Picker
+                            ItemsSource="{Binding SuperChoices}"
+                            SelectedIndex="{Binding SelectedSuperIndex}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Super community" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Groups (for a community) or communities (for a super community) -->
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="{Binding LinkHeading}" />
+                    <Label Style="{StaticResource Caption}" Text="{Binding LinkHint}" />
+
+                    <FlexLayout
+                        Wrap="Wrap"
+                        Direction="Row"
+                        AlignItems="Start"
+                        JustifyContent="Start"
+                        Margin="0,6,0,0"
+                        IsEnabled="{Binding IsNotBusy}"
+                        BindableLayout.ItemsSource="{Binding Options}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:SelectableOptionItem">
+                                <Grid
+                                    Margin="0,0,8,8"
+                                    SemanticProperties.Description="{Binding CardLabel}"
+                                    SemanticProperties.Hint="Double tap to select or unselect">
+                                    <Grid.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Grid.GestureRecognizers>
+
+                                    <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSelected}">
+                                        <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                            <Label Style="{StaticResource PillAdd}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Add}" />
+                                            <Label Style="{StaticResource GroupPillText}" Text="{Binding PillText}" MaximumWidthRequest="260" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+
+                                    <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSelected}">
+                                        <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
+                                            <Label Style="{StaticResource PillCheck}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Check}" />
+                                            <Label Style="{StaticResource GroupPillTextOn}" Text="{Binding PillText}" MaximumWidthRequest="260" />
+                                        </HorizontalStackLayout>
+                                    </Border>
+                                </Grid>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
+
+                    <Label
+                        Style="{StaticResource Caption}"
+                        Text="{Binding NoOptionsText}"
+                        IsVisible="{Binding HasNoOptions}" />
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="0">
+            <BoxView Style="{StaticResource Hairline}" />
+            <VerticalStackLayout Padding="16,8,16,12" Spacing="8">
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
+                <Button
+                    Style="{StaticResource PillPrimary}"
+                    Text="Save"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    HorizontalOptions="Fill" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+
+        <ActivityIndicator
+            Grid.Row="0"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            HorizontalOptions="Center"
+            VerticalOptions="Start"
+            Margin="0,48,0,0" />
+
+    </Grid>
+</ContentPage>

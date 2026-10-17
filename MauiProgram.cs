@@ -76,6 +76,8 @@ public static class MauiProgram
         services.AddSingleton<INavigationService, ShellNavigationService>();
         services.AddSingleton<IUserRepository, UserRepository>();
         services.AddSingleton<IGroupRepository, GroupRepository>();
+        services.AddSingleton<ICommunityRepository, CommunityRepository>();
+        services.AddSingleton<ISuperCommunityRepository, SuperCommunityRepository>();
         services.AddSingleton<IMembershipRepository, MembershipRepository>();
         services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
         services.AddSingleton<IAdminRequestRepository, AdminRequestRepository>();
@@ -89,6 +91,8 @@ public static class MauiProgram
         services.AddSingleton<IToastService, ToastService>();
         services.AddSingleton<IUserAdminService, UserAdminService>();
         services.AddSingleton<IGroupAdminService, GroupAdminService>();
+        services.AddSingleton<ICommunityService, CommunityService>();
+        services.AddSingleton<ICommunityAdminService, CommunityAdminService>();
         services.AddSingleton<IMembershipService, MembershipService>();
         services.AddSingleton<IMembershipAdminService, MembershipAdminService>();
         services.AddSingleton<IAnnouncementService, AnnouncementService>();
@@ -108,6 +112,8 @@ public static class MauiProgram
         services.AddTransient<UsersViewModel>();
         services.AddTransient<GroupsViewModel>();
         services.AddTransient<GroupEditViewModel>();
+        services.AddTransient<CommunityEditViewModel>();
+        services.AddTransient<StructureViewModel>();
         services.AddTransient<GroupMembersViewModel>();
         services.AddTransient<AddMembersViewModel>();
         services.AddTransient<JoinGroupsViewModel>();
@@ -130,6 +136,8 @@ public static class MauiProgram
         services.AddTransient<UsersPage>();
         services.AddTransient<GroupsPage>();
         services.AddTransient<GroupEditPage>();
+        services.AddTransient<CommunityEditPage>();
+        services.AddTransient<StructurePage>();
         services.AddTransient<GroupMembersPage>();
         services.AddTransient<AddMembersPage>();
         services.AddTransient<JoinGroupsPage>();
