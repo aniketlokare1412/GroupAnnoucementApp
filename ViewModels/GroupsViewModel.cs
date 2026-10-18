@@ -9,6 +9,7 @@ namespace GroupAnnouncementApp.ViewModels;
 
 // Admin Groups tab. Every group is a card with icon buttons (announcements, members, edit,
 // activate / deactivate). The old "tap a row, pick from a list" dialog is gone.
+[QueryProperty(nameof(SegmentQuery), "segment")]
 public partial class GroupsViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
@@ -30,6 +31,21 @@ public partial class GroupsViewModel : BaseViewModel
 
     // The cards shown while the switcher is on Communities or Super communities.
     public ObservableCollection<CommunityListItem> Communities { get; } = new ObservableCollection<CommunityListItem>();
+
+    // Set by Shell when Home opens this tab on a view: admingroups?segment=1 (0 groups, 1 communities, 2 super communities).
+    // The setter always applies, so tapping the same Home tile twice still switches the view back.
+    public string? SegmentQuery
+    {
+        get { return null; }
+        set
+        {
+            int parsed;
+            if (int.TryParse(value, out parsed) && parsed >= 0 && parsed <= 2)
+            {
+                Mode = parsed;
+            }
+        }
+    }
 
     // The switcher at the top: 0 = Groups, 1 = Communities, 2 = Super communities.
     [ObservableProperty]
@@ -537,29 +553,6 @@ public partial class GroupsViewModel : BaseViewModel
     {
         string term = (SearchText ?? string.Empty).Trim();
 
-        // For each group: the names of the communities it is in.
-        Dictionary<string, List<string>> communitiesOfGroup = new Dictionary<string, List<string>>();
-        for (int c = 0; c < _allCommunities.Count; c++)
-        {
-            if (_allCommunities[c].GroupIds == null)
-            {
-                continue;
-            }
-
-            for (int g = 0; g < _allCommunities[c].GroupIds.Count; g++)
-            {
-                string groupId = _allCommunities[c].GroupIds[g];
-                List<string>? names;
-                if (!communitiesOfGroup.TryGetValue(groupId, out names))
-                {
-                    names = new List<string>();
-                    communitiesOfGroup[groupId] = names;
-                }
-
-                names.Add(_allCommunities[c].Name);
-            }
-        }
-
         Groups.Clear();
         int activeCount = 0;
         for (int i = 0; i < _allGroups.Count; i++)
@@ -573,14 +566,7 @@ public partial class GroupsViewModel : BaseViewModel
 
             if (Matches(group, term))
             {
-                GroupListItem card = GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0);
-                List<string>? inCommunities;
-                if (communitiesOfGroup.TryGetValue(group.Id, out inCommunities))
-                {
-                    card.SetChips(ChipText.Build(inCommunities, 3));
-                }
-
-                Groups.Add(card);
+                Groups.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0));
             }
         }
 

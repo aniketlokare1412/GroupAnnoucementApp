@@ -34,5 +34,7 @@ public static class Icons
     public const string Schedule = "\ue8b5";      // schedule: clock for the countdown
     public const string File = "\ue24d";          // insert_drive_file: a document attachment
     public const string GroupAdd = "\ue7f0";      // group_add: new group
+    public const string Remove = "\ue15b";       // remove: "some of its groups" tick in the audience picker
+    public const string Workspaces = "\ue1a0";   // workspaces: communities
     public const string AccountTree = "\ue97a";   // account_tree: the Structure (hierarchy) screen
 }

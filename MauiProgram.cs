@@ -92,6 +92,7 @@ public static class MauiProgram
         services.AddSingleton<IUserAdminService, UserAdminService>();
         services.AddSingleton<IGroupAdminService, GroupAdminService>();
         services.AddSingleton<ICommunityService, CommunityService>();
+        services.AddSingleton<IAudiencePickerService, AudiencePickerService>();
         services.AddSingleton<ICommunityAdminService, CommunityAdminService>();
         services.AddSingleton<IMembershipService, MembershipService>();
         services.AddSingleton<IMembershipAdminService, MembershipAdminService>();
@@ -114,6 +115,7 @@ public static class MauiProgram
         services.AddTransient<GroupEditViewModel>();
         services.AddTransient<CommunityEditViewModel>();
         services.AddTransient<StructureViewModel>();
+        services.AddTransient<AudiencePickerViewModel>();
         services.AddTransient<GroupMembersViewModel>();
         services.AddTransient<AddMembersViewModel>();
         services.AddTransient<JoinGroupsViewModel>();
@@ -138,6 +140,7 @@ public static class MauiProgram
         services.AddTransient<GroupEditPage>();
         services.AddTransient<CommunityEditPage>();
         services.AddTransient<StructurePage>();
+        services.AddTransient<AudiencePickerPage>();
         services.AddTransient<GroupMembersPage>();
         services.AddTransient<AddMembersPage>();
         services.AddTransient<JoinGroupsPage>();

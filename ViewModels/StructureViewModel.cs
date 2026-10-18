@@ -205,7 +205,7 @@ public partial class StructureViewModel : BaseViewModel
             string key = "super:" + super.Id;
             StructureNode superNode = StructureNode.Create(
                 StructureKind.Super, super.Id, key, super.Name, super.Number,
-                "Super community  -  " + CommunityText.Count(inside.Count, "community", "communities"), 0, false);
+                CommunityText.Count(inside.Count, "community", "communities"), 0, false);
             Wire(superNode);
 
             for (int c = 0; c < inside.Count; c++)
@@ -295,7 +295,7 @@ public partial class StructureViewModel : BaseViewModel
 
         StructureNode node = StructureNode.Create(
             StructureKind.Community, community.Id, key, community.Name, community.Number,
-            "Community  -  " + CommunityText.Count(members.Count, "group", "groups"), depth, false);
+            CommunityText.Count(members.Count, "group", "groups"), depth, false);
         Wire(node);
         for (int i = 0; i < members.Count; i++)
         {
@@ -307,7 +307,7 @@ public partial class StructureViewModel : BaseViewModel
 
     private StructureNode BuildGroupNode(AnnouncementGroup group, string parentKey, int depth)
     {
-        string caption = "Group  -  " + CommunityText.NumberText(group.Number);
+        string caption = CommunityText.NumberText(group.Number);
         if (!group.IsActive)
         {
             caption = caption + "  -  Inactive";
@@ -315,6 +315,7 @@ public partial class StructureViewModel : BaseViewModel
 
         StructureNode node = StructureNode.Create(
             StructureKind.Group, group.Id, parentKey + "/group:" + group.Id, group.Name, group.Number, caption, depth, !group.IsActive);
+        node.IsUngrouped = parentKey == LooseGroupsKey;
         Wire(node);
         return node;
     }

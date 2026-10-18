@@ -73,6 +73,15 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty]
     private string _usersCountText = "-";
 
+    private const int MaxHomeGroups = 5;
+
+    // True when there are more groups than Home lists: shows the "View all" links.
+    [ObservableProperty]
+    private bool _hasMoreAdminGroups;
+
+    [ObservableProperty]
+    private string _viewAllGroupsText = string.Empty;
+
     [ObservableProperty]
     private string _communitiesCountText = "-";
 
@@ -311,8 +320,11 @@ public partial class HomeViewModel : BaseViewModel
 
             _previousPanicCounts = panicCounts;
 
+            // With a few hundred groups Home shows only the first few; "View all" opens the Groups tab.
             AdminGroups.Clear();
-            int shown = ordered.Count;
+            int shown = Math.Min(ordered.Count, MaxHomeGroups);
+            HasMoreAdminGroups = ordered.Count > shown;
+            ViewAllGroupsText = "View all " + ordered.Count + " groups";
             for (int i = 0; i < shown; i++)
             {
                 AdminGroups.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0));
@@ -361,6 +373,31 @@ public partial class HomeViewModel : BaseViewModel
 
         HasPendingRequests = pending > 0;
         PendingRequestsText = pending == 1 ? "1 person wants to be an admin" : pending + " people want to be admins";
+    }
+
+    // The count tiles and "View all" jump to the Groups tab on the right view (0 groups, 1 communities, 2 super communities).
+    [RelayCommand]
+    private Task OpenGroupsTabAsync()
+    {
+        return _navigation.GoToAsync(Routes.AdminGroups + "?segment=0");
+    }
+
+    [RelayCommand]
+    private Task OpenCommunitiesTabAsync()
+    {
+        return _navigation.GoToAsync(Routes.AdminGroups + "?segment=1");
+    }
+
+    [RelayCommand]
+    private Task OpenSuperCommunitiesTabAsync()
+    {
+        return _navigation.GoToAsync(Routes.AdminGroups + "?segment=2");
+    }
+
+    [RelayCommand]
+    private Task OpenUsersTabAsync()
+    {
+        return _navigation.GoToAsync(Routes.AdminUsers);
     }
 
     [RelayCommand]
