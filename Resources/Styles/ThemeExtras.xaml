@@ -3,7 +3,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
 
-    <!-- "Power Grid" additions: raised cards with a status stripe, coloured tiles, colour emoji buttons.
+    <!-- "C. Lagoon" additions: raised cards with a status stripe, coloured tiles, colour emoji buttons.
          Loaded after Styles.xaml (see App.xaml). -->
 
     <!-- Raised card: soft blue-tinted shadow gives the 3D lift. -->
@@ -12,7 +12,7 @@
         <Setter Property="StrokeShape" Value="RoundRectangle 18" />
         <Setter Property="Shadow">
             <Setter.Value>
-                <Shadow Brush="#1E3A8A" Opacity="0.12" Radius="14" Offset="0,5" />
+                <Shadow Brush="#1E2A6B" Opacity="0.18" Radius="16" Offset="0,6" />
             </Setter.Value>
         </Setter>
     </Style>
@@ -73,6 +73,72 @@
     </Style>
     <Style TargetType="Button" x:Key="EmojiButtonAmber" BasedOn="{StaticResource EmojiButton}">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+    </Style>
+
+    <!-- ===== C. Lagoon feature tiles: a pale tint behind a deeper glyph of the same colour =====
+         Mint = posts / users, cyan = groups, indigo = communities, coral = outage, lime = done, amber = alert.
+         Use a tile style on the Border and the matching IconOn* style on the glyph Label. -->
+    <Style TargetType="Border" x:Key="IconTileTeal" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileCyan" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileIndigo" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileCoral" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerTintLight}, Dark={StaticResource DangerTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="IconTileLime" BasedOn="{StaticResource IconTileBlue}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SuccessTintLight}, Dark={StaticResource SuccessTintDark}}" />
+    </Style>
+
+    <Style TargetType="Label" x:Key="IconOnTeal" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="IconOnCyan" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="IconOnIndigo" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="IconOnCoral" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnDangerLight}, Dark={StaticResource OnDangerDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="IconOnLime" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnSuccessDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="IconOnAmber" BasedOn="{StaticResource Icon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
+    </Style>
+
+    <!-- Initials tiles for lists: cyan for groups, indigo for communities and super communities. -->
+    <Style TargetType="Border" x:Key="InitialsTileCyan" BasedOn="{StaticResource InitialsTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="InitialsTextCyan" BasedOn="{StaticResource InitialsText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="InitialsTileIndigo" BasedOn="{StaticResource InitialsTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="InitialsTextIndigo" BasedOn="{StaticResource InitialsText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
+    </Style>
+
+    <!-- Empty-state tiles -->
+    <Style TargetType="Border" x:Key="EmptyIconTileCyan" BasedOn="{StaticResource EmptyIconTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="EmptyIconCyan" BasedOn="{StaticResource EmptyIcon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="EmptyIconTileIndigo" BasedOn="{StaticResource EmptyIconTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="EmptyIconIndigo" BasedOn="{StaticResource EmptyIcon}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
     </Style>
 
 </ResourceDictionary>

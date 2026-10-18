@@ -114,17 +114,17 @@
 
                                             <!-- Chips: New, Edited, Deleted, Another admin -->
                                             <HorizontalStackLayout Spacing="6" IsVisible="{Binding HasBadges}">
-                                                <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsNew}">
-                                                    <Label Style="{StaticResource BadgeBrandText}" Text="New" />
+                                                <Border Style="{StaticResource BadgeBlue}" IsVisible="{Binding IsNew}">
+                                                    <Label Style="{StaticResource BadgeBlueText}" Text="New" />
                                                 </Border>
-                                                <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsEdited}">
-                                                    <Label Style="{StaticResource BadgeNeutralText}" Text="Edited" />
+                                                <Border Style="{StaticResource BadgeWarning}" IsVisible="{Binding IsEdited}">
+                                                    <Label Style="{StaticResource BadgeWarningText}" Text="Edited" />
                                                 </Border>
                                                 <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeleted}">
                                                     <Label Style="{StaticResource BadgeDangerText}" Text="Deleted" />
                                                 </Border>
-                                                <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsByOtherAdmin}">
-                                                    <Label Style="{StaticResource BadgeNeutralText}" Text="Another admin" />
+                                                <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsByOtherAdmin}">
+                                                    <Label Style="{StaticResource BadgeVioletText}" Text="Another admin" />
                                                 </Border>
                                             </HorizontalStackLayout>
 

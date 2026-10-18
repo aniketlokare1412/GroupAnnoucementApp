@@ -5,82 +5,100 @@
 
     <!-- Note: For Android please see also Platforms\Android\Resources\values\colors.xml -->
 
-    <!-- ============ "Power Grid" theme tokens (Light / Dark pairs) ============
-         Blue = brand and actions. Status carries colour: red = work in progress, amber = planned / time up,
-         green = completed / restored, violet = groups and counts.
+    <!-- ============ "Aurora" multi-colour theme tokens (Light / Dark pairs) ============
+         NEUTRAL ink-blue surfaces (no teal tint), so colour comes from the accents:
+         teal-to-blue gradient = brand and main actions, BLUE = groups (keys still named Violet),
+         VIOLET = communities (keys still named Indigo), PINK = super communities, TEAL = users. Status carries colour: coral = work in progress, amber = planned / time up,
+         lime = completed / restored.
          Pages never use these directly: they use the named styles in Styles.xaml / ThemeExtras.xaml,
          which pick Light or Dark automatically with AppThemeBinding. -->
 
-    <Color x:Key="BackgroundLight">#F4F7FB</Color>
-    <Color x:Key="BackgroundDark">#0B1220</Color>
+    <Color x:Key="BackgroundLight">#F5F6FB</Color>
+    <Color x:Key="BackgroundDark">#0C1020</Color>
     <Color x:Key="SurfaceLight">#FFFFFF</Color>
-    <Color x:Key="SurfaceDark">#131C2E</Color>
-    <Color x:Key="SurfaceAltLight">#EAF0F8</Color>
-    <Color x:Key="SurfaceAltDark">#1C2740</Color>
-    <Color x:Key="BorderLight">#DDE6F1</Color>
-    <Color x:Key="BorderDark">#26334F</Color>
+    <Color x:Key="SurfaceDark">#151B30</Color>
+    <Color x:Key="SurfaceAltLight">#ECEEF7</Color>
+    <Color x:Key="SurfaceAltDark">#1E2542</Color>
+    <Color x:Key="BorderLight">#E1E4F0</Color>
+    <Color x:Key="BorderDark">#2B3358</Color>
 
-    <Color x:Key="TextLight">#0F172A</Color>
-    <Color x:Key="TextDark">#F1F5F9</Color>
-    <Color x:Key="MutedLight">#64748B</Color>
-    <Color x:Key="MutedDark">#94A3B8</Color>
+    <Color x:Key="TextLight">#0F1530</Color>
+    <Color x:Key="TextDark">#F3F5FF</Color>
+    <Color x:Key="MutedLight">#5B6483</Color>
+    <Color x:Key="MutedDark">#9AA3C7</Color>
 
-    <!-- Electric blue: brand and actions -->
-    <Color x:Key="BrandLight">#2563EB</Color>
-    <Color x:Key="BrandDark">#60A5FA</Color>
-    <!-- Deep blue: ONLY for small things (icons, initials). Never as a fill behind text. -->
-    <Color x:Key="BrandDeepLight">#1D4ED8</Color>
-    <Color x:Key="BrandDeepDark">#93C5FD</Color>
+    <!-- Lagoon teal: brand and actions -->
+    <Color x:Key="BrandLight">#0F766E</Color>
+    <Color x:Key="BrandDark">#2DD4BF</Color>
+    <!-- Deep teal: ONLY for small things (icons, initials). Never as a fill behind text. -->
+    <Color x:Key="BrandDeepLight">#115E59</Color>
+    <Color x:Key="BrandDeepDark">#5EEAD4</Color>
     <Color x:Key="OnBrandLight">#FFFFFF</Color>
-    <Color x:Key="OnBrandDark">#0B1220</Color>
-    <Color x:Key="BrandTintLight">#DBEAFE</Color>
-    <Color x:Key="BrandTintDark">#1E3A8A</Color>
-    <Color x:Key="OnBrandTintLight">#1D4ED8</Color>
-    <Color x:Key="OnBrandTintDark">#BFDBFE</Color>
+    <Color x:Key="OnBrandDark">#042F2E</Color>
+    <Color x:Key="BrandTintLight">#CCFBF1</Color>
+    <Color x:Key="BrandTintDark">#17615B</Color>
+    <Color x:Key="OnBrandTintLight">#0F766E</Color>
+    <Color x:Key="OnBrandTintDark">#99F6E4</Color>
 
-    <!-- Violet: groups and counts -->
-    <Color x:Key="VioletLight">#7C3AED</Color>
-    <Color x:Key="VioletDark">#A78BFA</Color>
-    <Color x:Key="VioletTintLight">#EDE9FE</Color>
-    <Color x:Key="VioletTintDark">#3B2670</Color>
-    <Color x:Key="OnVioletTintLight">#5B21B6</Color>
-    <Color x:Key="OnVioletTintDark">#DDD6FE</Color>
+    <!-- Cyan (keys are named Violet): groups and counts -->
+    <Color x:Key="VioletLight">#2563EB</Color>
+    <Color x:Key="VioletDark">#60A5FA</Color>
+    <Color x:Key="VioletTintLight">#DBEAFE</Color>
+    <Color x:Key="VioletTintDark">#2A4CA8</Color>
+    <Color x:Key="OnVioletTintLight">#1D4ED8</Color>
+    <Color x:Key="OnVioletTintDark">#BFDBFE</Color>
 
     <!-- Amber: planned outage, time up -->
     <Color x:Key="AmberLight">#F59E0B</Color>
     <Color x:Key="AmberDark">#FBBF24</Color>
 
-    <!-- Green: completed / restored -->
-    <Color x:Key="GreenLight">#16A34A</Color>
-    <Color x:Key="GreenDark">#4ADE80</Color>
+    <!-- Indigo: communities and super communities -->
+    <Color x:Key="IndigoLight">#7C3AED</Color>
+    <Color x:Key="IndigoDark">#C4B5FD</Color>
+    <Color x:Key="IndigoTintLight">#EDE9FE</Color>
+    <Color x:Key="IndigoTintDark">#4B3290</Color>
+    <Color x:Key="OnIndigoTintLight">#5B21B6</Color>
+    <Color x:Key="OnIndigoTintDark">#DDD6FE</Color>
 
-    <Color x:Key="SuccessTintLight">#D1FAE5</Color>
-    <Color x:Key="SuccessTintDark">#064E3B</Color>
-    <Color x:Key="OnSuccessLight">#065F46</Color>
-    <Color x:Key="OnSuccessDark">#A7F3D0</Color>
+    <!-- Pink / rose: super communities (new) -->
+    <Color x:Key="PinkLight">#DB2777</Color>
+    <Color x:Key="PinkDark">#F9A8D4</Color>
+    <Color x:Key="PinkTintLight">#FCE7F3</Color>
+    <Color x:Key="PinkTintDark">#82285A</Color>
+    <Color x:Key="OnPinkTintLight">#9D174D</Color>
+    <Color x:Key="OnPinkTintDark">#FBCFE8</Color>
+
+    <!-- Lime: completed / restored -->
+    <Color x:Key="GreenLight">#65A30D</Color>
+    <Color x:Key="GreenDark">#A3E635</Color>
+
+    <Color x:Key="SuccessTintLight">#ECFCCB</Color>
+    <Color x:Key="SuccessTintDark">#41661A</Color>
+    <Color x:Key="OnSuccessLight">#3F6212</Color>
+    <Color x:Key="OnSuccessDark">#D9F99D</Color>
 
     <Color x:Key="WarningTintLight">#FEF3C7</Color>
     <Color x:Key="WarningTintDark">#78350F</Color>
     <Color x:Key="OnWarningLight">#92400E</Color>
     <Color x:Key="OnWarningDark">#FDE68A</Color>
 
-    <Color x:Key="DangerLight">#DC2626</Color>
-    <Color x:Key="DangerDark">#F87171</Color>
+    <Color x:Key="DangerLight">#D1402F</Color>
+    <Color x:Key="DangerDark">#FF8A7A</Color>
     <Color x:Key="OnDangerFillLight">#FFFFFF</Color>
-    <Color x:Key="OnDangerFillDark">#450A0A</Color>
-    <Color x:Key="DangerTintLight">#FEE2E2</Color>
-    <Color x:Key="DangerTintDark">#7F1D1D</Color>
-    <Color x:Key="OnDangerLight">#991B1B</Color>
-    <Color x:Key="OnDangerDark">#FECACA</Color>
+    <Color x:Key="OnDangerFillDark">#3B0A06</Color>
+    <Color x:Key="DangerTintLight">#FFE4E0</Color>
+    <Color x:Key="DangerTintDark">#7A271F</Color>
+    <Color x:Key="OnDangerLight">#9F2A1F</Color>
+    <Color x:Key="OnDangerDark">#FFD2CB</Color>
 
-    <!-- ============ Legacy keys, re-pointed to the blue brand so the standard styles keep working ============ -->
+    <!-- ============ Legacy keys, re-pointed to the teal brand so the standard styles keep working ============ -->
 
-    <Color x:Key="Primary">#2563EB</Color>
-    <Color x:Key="PrimaryDark">#60A5FA</Color>
-    <Color x:Key="PrimaryDarkText">#0B1220</Color>
-    <Color x:Key="Secondary">#DBEAFE</Color>
-    <Color x:Key="SecondaryDarkText">#BFDBFE</Color>
-    <Color x:Key="Tertiary">#1E3A8A</Color>
+    <Color x:Key="Primary">#0F766E</Color>
+    <Color x:Key="PrimaryDark">#2DD4BF</Color>
+    <Color x:Key="PrimaryDarkText">#042F2E</Color>
+    <Color x:Key="Secondary">#CCFBF1</Color>
+    <Color x:Key="SecondaryDarkText">#99F6E4</Color>
+    <Color x:Key="Tertiary">#134E4A</Color>
 
     <Color x:Key="White">White</Color>
     <Color x:Key="Black">Black</Color>

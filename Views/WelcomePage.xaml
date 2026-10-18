@@ -68,6 +68,7 @@
             </Border>
 
             <Button
+                Style="{StaticResource GradientButton}"
                 Text="{Binding SubmitText}"
                 Command="{Binding SubmitCommand}"
                 IsEnabled="{Binding IsNotBusy}"

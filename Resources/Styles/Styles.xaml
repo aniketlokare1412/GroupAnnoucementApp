@@ -24,7 +24,6 @@
 
     <Style TargetType="Button">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold"/>
         <Setter Property="FontSize" Value="16"/>
         <Setter Property="BorderWidth" Value="0"/>
@@ -465,8 +464,8 @@
 
     <!-- Containers -->
     <Style TargetType="Border" x:Key="Card">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}" />
-        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource BorderLight}, Dark={StaticResource BorderDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource CardSheenLight}, Dark={StaticResource CardSheenDark}}" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource CardEdgeLight}, Dark={StaticResource CardEdgeDark}}" />
         <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="StrokeShape" Value="RoundRectangle 14" />
         <Setter Property="Padding" Value="12" />
@@ -484,7 +483,7 @@
 
     <Style TargetType="Button" x:Key="PillPrimary">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource BrandGradLight}, Dark={StaticResource BrandGradDark}}" />
         <Setter Property="BorderWidth" Value="0" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
         <Setter Property="FontSize" Value="14" />
@@ -622,8 +621,8 @@
 
     <Style TargetType="Border" x:Key="BadgeSuccess">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SuccessTintLight}, Dark={StaticResource SuccessTintDark}}" />
-        <Setter Property="Stroke" Value="Transparent" />
-        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource GreenLight}, Dark={StaticResource GreenDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="StrokeShape" Value="RoundRectangle 10" />
         <Setter Property="Padding" Value="8,2" />
         <Setter Property="HorizontalOptions" Value="Start" />
@@ -637,8 +636,8 @@
 
     <Style TargetType="Border" x:Key="BadgeWarning">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
-        <Setter Property="Stroke" Value="Transparent" />
-        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource AmberLight}, Dark={StaticResource AmberDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="StrokeShape" Value="RoundRectangle 10" />
         <Setter Property="Padding" Value="8,2" />
         <Setter Property="HorizontalOptions" Value="Start" />
@@ -652,8 +651,8 @@
 
     <Style TargetType="Border" x:Key="BadgeDanger">
         <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource DangerTintLight}, Dark={StaticResource DangerTintDark}}" />
-        <Setter Property="Stroke" Value="Transparent" />
-        <Setter Property="StrokeThickness" Value="0" />
+        <Setter Property="Stroke" Value="{AppThemeBinding Light={StaticResource DangerLight}, Dark={StaticResource DangerDark}}" />
+        <Setter Property="StrokeThickness" Value="1" />
         <Setter Property="StrokeShape" Value="RoundRectangle 10" />
         <Setter Property="Padding" Value="8,2" />
         <Setter Property="HorizontalOptions" Value="Start" />
@@ -712,7 +711,7 @@
 
     <!-- Brand mark (rounded square with initials) and avatar circle -->
     <Style TargetType="Border" x:Key="BrandMark">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource BrandGradLight}, Dark={StaticResource BrandGradDark}}" />
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="StrokeShape" Value="RoundRectangle 22" />
@@ -728,7 +727,7 @@
         <Setter Property="VerticalOptions" Value="Center" />
     </Style>
     <Style TargetType="Border" x:Key="AvatarCircle">
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandTintLight}, Dark={StaticResource BrandTintDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource BrandGradLight}, Dark={StaticResource BrandGradDark}}" />
         <Setter Property="Stroke" Value="Transparent" />
         <Setter Property="StrokeThickness" Value="0" />
         <Setter Property="StrokeShape" Value="RoundRectangle 36" />
@@ -737,7 +736,7 @@
         <Setter Property="HorizontalOptions" Value="Center" />
     </Style>
     <Style TargetType="Label" x:Key="AvatarText">
-        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandTintLight}, Dark={StaticResource OnBrandTintDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
         <Setter Property="FontFamily" Value="OpenSansSemibold" />
         <Setter Property="FontSize" Value="27" />
         <Setter Property="HorizontalOptions" Value="Center" />
@@ -821,7 +820,7 @@
     <!-- The one solid-teal round button on a screen (main action). -->
     <Style TargetType="Button" x:Key="IconButtonLargeSolid" BasedOn="{StaticResource IconButtonLarge}">
         <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
-        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource BrandGradLight}, Dark={StaticResource BrandGradDark}}" />
     </Style>
 
     <!-- Initials button in the page header; opens Account. -->

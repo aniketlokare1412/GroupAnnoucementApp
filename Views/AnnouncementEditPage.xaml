@@ -164,8 +164,8 @@
                         <TapGestureRecognizer Command="{Binding ChooseGroupsCommand}" />
                     </Border.GestureRecognizers>
                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                            <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                        <Border Grid.Column="0" Style="{StaticResource IconTileCyan}" VerticalOptions="Center">
+                            <Label Style="{StaticResource IconOnCyan}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
                         </Border>
                         <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                             <Label Style="{StaticResource CardTitle}" Text="{Binding SelectedCountText}" />

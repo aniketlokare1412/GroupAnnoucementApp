@@ -45,7 +45,7 @@
                                         </Grid>
                                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
                                             <Button
-                                                Style="{StaticResource IconButton}"
+                                                Style="{StaticResource IconButtonLime}"
                                                 Text="{x:Static h:Icons.Check}"
                                                 Command="{Binding ApproveCommand}"
                                                 SemanticProperties.Description="{Binding ApproveLabel}" />
@@ -72,7 +72,7 @@
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F64B;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="No requests" HorizontalOptions="Center" />
                                 <Label

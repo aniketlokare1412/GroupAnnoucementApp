@@ -59,6 +59,7 @@
                     </Border>
 
                     <Button
+                Style="{StaticResource GradientButton}"
                         Text="Save and continue"
                         Command="{Binding SaveCommand}"
                         IsEnabled="{Binding IsNotBusy}"

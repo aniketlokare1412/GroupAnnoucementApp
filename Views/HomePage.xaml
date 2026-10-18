@@ -21,7 +21,9 @@
                                                 <VerticalStackLayout Grid.Column="1" Padding="14,12,14,14" Spacing="10">
 
                                                     <!-- 1. Header: group tile, name and number on the left, date on the right -->
-                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                                                    <Grid>
+                                                        <BoxView Color="{Binding AccentColor}" Opacity="0.14" CornerRadius="12" InputTransparent="True" />
+                                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="8,6">
                                                         <Border Grid.Column="0" Style="{StaticResource InitialsTile}" BackgroundColor="{Binding TileBackground}">
                                                             <Label Style="{StaticResource InitialsText}" TextColor="{Binding TileForeground}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding GroupInitials}" />
                                                         </Border>
@@ -30,6 +32,7 @@
                                                             <Label Style="{StaticResource Caption}" Text="{Binding GroupNumberText}" />
                                                         </VerticalStackLayout>
                                                         <Label Grid.Column="2" Style="{StaticResource Caption}" Text="{Binding DateText}" HorizontalTextAlignment="End" VerticalOptions="Center" />
+                                                    </Grid>
                                                     </Grid>
 
                                                     <!-- Partition: header | content (same line as in the admin card) -->
@@ -116,24 +119,32 @@
             <ScrollView>
                 <VerticalStackLayout Padding="16,14,16,20" Spacing="14">
 
-                    <!-- Header: greeting + avatar (opens Account) -->
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                        <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
-                            <Label Style="{StaticResource Greeting}" Text="{Binding Greeting}" />
-                            <Label
-                                Style="{StaticResource HeroName}"
-                                Text="{Binding FirstName}"
-                                LineBreakMode="TailTruncation"
-                                MaxLines="1" />
-                        </VerticalStackLayout>
-                        <Button
-                            Grid.Column="1"
-                            Style="{StaticResource AvatarButton}"
-                            Text="{Binding Initials}"
-                            Command="{Binding OpenAccountCommand}"
-                            SemanticProperties.Description="Account"
-                            SemanticProperties.Hint="Opens your profile and log out" />
-                    </Grid>
+                    <!-- Header: gradient hero banner with the greeting; the avatar opens Account -->
+                    <Border Style="{StaticResource HeroBanner}">
+                        <Grid>
+                            <!-- Soft glass bubbles for depth -->
+                            <Border BackgroundColor="#1FFFFFFF" Stroke="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 75" WidthRequest="150" HeightRequest="150" HorizontalOptions="End" VerticalOptions="Start" Margin="0,-62,-48,0" InputTransparent="True" />
+                            <Border BackgroundColor="#14FFFFFF" Stroke="Transparent" StrokeThickness="0" StrokeShape="RoundRectangle 45" WidthRequest="90" HeightRequest="90" HorizontalOptions="End" VerticalOptions="End" Margin="0,0,70,-46" InputTransparent="True" />
+
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                <VerticalStackLayout Grid.Column="0" Spacing="2" VerticalOptions="Center">
+                                    <Label Style="{StaticResource HeroGreeting}" Text="{Binding Greeting}" />
+                                    <Label
+                                        Style="{StaticResource HeroTitle}"
+                                        Text="{Binding FirstName}"
+                                        LineBreakMode="TailTruncation"
+                                        MaxLines="1" />
+                                </VerticalStackLayout>
+                                <Button
+                                    Grid.Column="1"
+                                    Style="{StaticResource AvatarOnHero}"
+                                    Text="{Binding Initials}"
+                                    Command="{Binding OpenAccountCommand}"
+                                    SemanticProperties.Description="Account"
+                                    SemanticProperties.Hint="Opens your profile and log out" />
+                            </Grid>
+                        </Grid>
+                    </Border>
 
                     <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
                         <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
@@ -151,8 +162,8 @@
                                     <TapGestureRecognizer Command="{Binding OpenGroupsTabCommand}" />
                                 </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                    <Border Grid.Column="0" Style="{StaticResource GradTileBlue}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding GroupsCountText}" />
@@ -165,8 +176,8 @@
                                     <TapGestureRecognizer Command="{Binding OpenUsersTabCommand}" />
                                 </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Person}" />
+                                    <Border Grid.Column="0" Style="{StaticResource GradTileTeal}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F464;" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding UsersCountText}" />
@@ -179,8 +190,8 @@
                                     <TapGestureRecognizer Command="{Binding OpenCommunitiesTabCommand}" />
                                 </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Workspaces}" />
+                                    <Border Grid.Column="0" Style="{StaticResource GradTileViolet}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F;" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding CommunitiesCountText}" />
@@ -193,8 +204,8 @@
                                     <TapGestureRecognizer Command="{Binding OpenSuperCommunitiesTabCommand}" />
                                 </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.AccountTree}" />
+                                    <Border Grid.Column="0" Style="{StaticResource GradTilePink}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F;" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding SuperCommunitiesCountText}" />
@@ -207,7 +218,7 @@
                         <!-- Admin requests: only shown while someone is waiting -->
                         <Border Style="{StaticResource Card3D}" IsVisible="{Binding HasPendingRequests}">
                             <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                                <Border Grid.Column="0" Style="{StaticResource IconTileAmber}" VerticalOptions="Center">
+                                <Border Grid.Column="0" Style="{StaticResource GradTileAmber}" VerticalOptions="Center">
                                     <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F64B;" />
                                 </Border>
                                 <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
@@ -229,10 +240,8 @@
                             <HorizontalStackLayout Spacing="18">
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
-                                        Style="{StaticResource EmojiButtonBlue}"
-                                        FontFamily="MaterialIconsRound"
-                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
-                                        Text="{x:Static h:Icons.GroupAdd}"
+                                        Style="{StaticResource QuickActionBlue}"
+                                        Text="&#x1F465;"
                                         Command="{Binding NewGroupCommand}"
                                         SemanticProperties.Description="New group"
                                         SemanticProperties.Hint="Create a group" />
@@ -240,10 +249,8 @@
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
-                                        Style="{StaticResource EmojiButtonBlue}"
-                                        FontFamily="MaterialIconsRound"
-                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
-                                        Text="{x:Static h:Icons.Campaign}"
+                                        Style="{StaticResource QuickActionTeal}"
+                                        Text="&#x1F4E2;"
                                         Command="{Binding NewPostCommand}"
                                         SemanticProperties.Description="New post"
                                         SemanticProperties.Hint="Write an announcement for one or more groups" />
@@ -251,10 +258,8 @@
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
-                                        Style="{StaticResource EmojiButtonBlue}"
-                                        FontFamily="MaterialIconsRound"
-                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
-                                        Text="{x:Static h:Icons.PowerOff}"
+                                        Style="{StaticResource QuickActionCoral}"
+                                        Text="&#x26A1;"
                                         Command="{Binding NewOutageCommand}"
                                         SemanticProperties.Description="Plan an outage"
                                         SemanticProperties.Hint="Schedule a planned outage message for one or more groups" />

@@ -82,8 +82,8 @@
                                                         MaxLines="1"
                                                         VerticalOptions="Center" />
                                                     <HorizontalStackLayout FlexLayout.Shrink="0" Margin="6,0,0,0" Spacing="4" VerticalOptions="Center">
-                                                        <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdmin}" AutomationProperties.IsInAccessibleTree="False">
-                                                            <Label Style="{StaticResource BadgeBrandText}" Text="Admin" />
+                                                        <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsAdmin}" AutomationProperties.IsInAccessibleTree="False">
+                                                            <Label Style="{StaticResource BadgeVioletText}" Text="Admin" />
                                                         </Border>
                                                         <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsSelf}" AutomationProperties.IsInAccessibleTree="False">
                                                             <Label Style="{StaticResource BadgeNeutralText}" Text="You" />
@@ -99,7 +99,7 @@
                                         <!-- Icon actions (none on your own card) -->
                                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center" IsVisible="{Binding CanManage}">
                                             <Button
-                                                Style="{StaticResource IconButton}"
+                                                Style="{StaticResource IconButtonViolet}"
                                                 Text="{x:Static h:Icons.AddModerator}"
                                                 Command="{Binding ToggleAdminCommand}"
                                                 IsVisible="{Binding CanMakeAdmin}"
@@ -129,7 +129,7 @@
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.UserCheck}" />
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F464;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                                 <Label

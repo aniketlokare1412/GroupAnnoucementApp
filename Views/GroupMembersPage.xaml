@@ -30,7 +30,7 @@
 
                 <Button
                     Grid.Column="2"
-                    Style="{StaticResource PillPrimary}"
+                    Style="{StaticResource PillBlue}"
                     Text="Add members"
                     Command="{Binding AddMembersCommand}"
                     IsEnabled="{Binding IsNotBusy}"
@@ -80,8 +80,8 @@
                                                 IsVisible="{Binding HasEmail}"
                                                 LineBreakMode="TailTruncation"
                                                 MaxLines="1" />
-                                            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding IsAdministrator}" Margin="0,2,0,0">
-                                                <Label Style="{StaticResource BadgeBrandText}" Text="Administrator" />
+                                            <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsAdministrator}" Margin="0,2,0,0">
+                                                <Label Style="{StaticResource BadgeVioletText}" Text="Administrator" />
                                             </Border>
                                             <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsDeactivated}" Margin="0,2,0,0">
                                                 <Label Style="{StaticResource BadgeNeutralText}" Text="Deactivated user" />
@@ -115,7 +115,7 @@
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="No members yet" HorizontalOptions="Center" />
                                 <Label

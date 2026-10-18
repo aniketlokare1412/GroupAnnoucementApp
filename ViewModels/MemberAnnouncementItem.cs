@@ -151,7 +151,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
         item.ApplyGroup(group);
         item.Title = cancelled ? "Outage cancelled" : "Planned outage";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
-        item._fallbackAccent = Color.FromArgb(cancelled ? "#16A34A" : "#F59E0B");
+        item._fallbackAccent = Color.FromArgb(cancelled ? "#65A30D" : "#F59E0B");
         item.CreatedAt = published;
         item.DateText = published.ToLocalTime().ToString("dd MMM yyyy", System.Globalization.CultureInfo.InvariantCulture)
             + "\n" + published.ToLocalTime().ToString("hh:mm tt", System.Globalization.CultureInfo.InvariantCulture);
