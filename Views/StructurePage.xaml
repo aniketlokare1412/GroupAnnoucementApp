@@ -38,12 +38,12 @@
                     MaxLines="1" />
                 <Button
                     Grid.Column="1"
-                    Style="{StaticResource LinkButton}"
+                    Style="{StaticResource LinkButtonViolet}"
                     Text="Expand all"
                     Command="{Binding ExpandAllCommand}" />
                 <Button
                     Grid.Column="2"
-                    Style="{StaticResource LinkButton}"
+                    Style="{StaticResource LinkButtonViolet}"
                     Text="Collapse all"
                     Command="{Binding CollapseAllCommand}" />
             </Grid>
@@ -51,15 +51,15 @@
             <!-- Colour legend -->
             <HorizontalStackLayout Spacing="12">
                 <HorizontalStackLayout Spacing="4">
-                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource VioletLight}, Dark={StaticResource VioletDark}}" />
+                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource PinkLight}, Dark={StaticResource PinkDark}}" />
                     <Label Style="{StaticResource Caption}" FontSize="11" Text="Super community" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
-                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource IndigoLight}, Dark={StaticResource IndigoDark}}" />
                     <Label Style="{StaticResource Caption}" FontSize="11" Text="Community" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
-                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource GreenLight}, Dark={StaticResource GreenDark}}" />
+                    <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource VioletLight}, Dark={StaticResource VioletDark}}" />
                     <Label Style="{StaticResource Caption}" FontSize="11" Text="Group" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
@@ -98,13 +98,13 @@
                                 <BoxView Grid.Column="0" WidthRequest="4" CornerRadius="2" Margin="0,3" Color="{AppThemeBinding Light={StaticResource BorderLight}, Dark={StaticResource BorderDark}}">
                                     <BoxView.Triggers>
                                         <DataTrigger TargetType="BoxView" Binding="{Binding ColorName}" Value="super">
-                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource VioletLight}, Dark={StaticResource VioletDark}}" />
+                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource PinkLight}, Dark={StaticResource PinkDark}}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="BoxView" Binding="{Binding ColorName}" Value="community">
-                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource BrandLight}, Dark={StaticResource BrandDark}}" />
+                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource IndigoLight}, Dark={StaticResource IndigoDark}}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="BoxView" Binding="{Binding ColorName}" Value="group">
-                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource GreenLight}, Dark={StaticResource GreenDark}}" />
+                                            <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource VioletLight}, Dark={StaticResource VioletDark}}" />
                                         </DataTrigger>
                                         <DataTrigger TargetType="BoxView" Binding="{Binding ColorName}" Value="ungrouped">
                                             <Setter Property="Color" Value="{AppThemeBinding Light={StaticResource AmberLight}, Dark={StaticResource AmberDark}}" />
@@ -170,7 +170,7 @@
                             Padding="0,40,0,0"
                             HorizontalOptions="Center">
                             <Border Style="{StaticResource EmptyIconTile}">
-                                <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.AccountTree}" />
+                                <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F;" />
                             </Border>
                             <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                             <Label

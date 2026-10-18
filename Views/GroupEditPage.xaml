@@ -65,7 +65,7 @@
                     <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
                 </Border>
                 <Button
-                    Style="{StaticResource PillPrimary}"
+                    Style="{StaticResource PillBlue}"
                     Text="Save"
                     Command="{Binding SaveCommand}"
                     IsEnabled="{Binding IsNotBusy}"

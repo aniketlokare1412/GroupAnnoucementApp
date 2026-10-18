@@ -38,8 +38,8 @@
                         <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsSegment}">
                             <Label Style="{StaticResource GroupPillText}" Text="Groups" />
                         </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsGroupsSegment}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Groups" />
+                        <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsSegment}">
+                            <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
                         </Border>
                     </Grid>
 
@@ -50,8 +50,8 @@
                         <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotCommunitiesSegment}">
                             <Label Style="{StaticResource GroupPillText}" Text="Communities" />
                         </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsCommunitiesSegment}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Communities" />
+                        <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsCommunitiesSegment}">
+                            <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
                         </Border>
                     </Grid>
 
@@ -62,8 +62,8 @@
                         <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSuperSegment}">
                             <Label Style="{StaticResource GroupPillText}" Text="Super communities" />
                         </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSuperSegment}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Super communities" />
+                        <Border Style="{StaticResource GroupPillOnPink}" IsVisible="{Binding IsSuperSegment}">
+                            <Label Style="{StaticResource GroupPillTextOnPink}" Text="Super communities" />
                         </Border>
                     </Grid>
 
@@ -78,9 +78,9 @@
                     VerticalOptions="Center"
                     LineBreakMode="TailTruncation"
                     MaxLines="1" />
-                <Button Grid.Column="1" Style="{StaticResource LinkButton}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every row the list shows" />
-                <Button Grid.Column="2" Style="{StaticResource LinkButton}" Text="{Binding SelectedOnlyText}" Command="{Binding ToggleSelectedOnlyCommand}" IsEnabled="{Binding IsNotBusy}" />
-                <Button Grid.Column="3" Style="{StaticResource LinkButton}" Text="Clear" Command="{Binding ClearCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Unticks everything" />
+                <Button Grid.Column="1" Style="{StaticResource LinkButtonBlue}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every row the list shows" />
+                <Button Grid.Column="2" Style="{StaticResource LinkButtonViolet}" Text="{Binding SelectedOnlyText}" Command="{Binding ToggleSelectedOnlyCommand}" IsEnabled="{Binding IsNotBusy}" />
+                <Button Grid.Column="3" Style="{StaticResource LinkButtonDanger}" Text="Clear" Command="{Binding ClearCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Unticks everything" />
             </Grid>
 
             <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
@@ -151,7 +151,7 @@
                         Padding="0,40,0,0"
                         HorizontalOptions="Center">
                         <Border Style="{StaticResource EmptyIconTile}">
-                            <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                            <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
                         </Border>
                         <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                         <Label

@@ -77,7 +77,7 @@ public sealed class AnnouncementExtras : ObservableObject
         {
             if (_isCompleted)
             {
-                return Color.FromArgb("#16A34A");
+                return Color.FromArgb("#65A30D");
             }
 
             if (ShowTimeUp)
@@ -85,7 +85,7 @@ public sealed class AnnouncementExtras : ObservableObject
                 return Color.FromArgb("#F59E0B");
             }
 
-            return Color.FromArgb("#DC2626");
+            return Color.FromArgb("#D1402F");
         }
     }
 

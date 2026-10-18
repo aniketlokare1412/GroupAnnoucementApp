@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- "Aurora" theme, Phase 2. Loaded last (see App.xaml).
+         Colour by area: BLUE = groups, VIOLET = communities and admins, PINK = super communities,
+         TEAL = brand / users / posts, CORAL = outages and problems, AMBER = planned / waiting, LIME = done.
+         Gradients are only used on main action buttons and the selected segment. Small controls are flat tints. -->
+
+    <!-- ===== Main action button (full size). Used where a page had a plain Button before. ===== -->
+    <Style TargetType="Button" x:Key="GradientButton">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnBrandLight}, Dark={StaticResource OnBrandDark}}" />
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource BrandGradLight}, Dark={StaticResource BrandGradDark}}" />
+        <Setter Property="FontFamily" Value="OpenSansSemibold" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="BorderWidth" Value="0" />
+        <Setter Property="CornerRadius" Value="24" />
+        <Setter Property="Padding" Value="20,12" />
+        <Setter Property="MinimumHeightRequest" Value="48" />
+        <Setter Property="MinimumWidthRequest" Value="48" />
+        <Setter Property="VisualStateManager.VisualStateGroups">
+            <VisualStateGroupList>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
+                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceAltLight}, Dark={StaticResource SurfaceAltDark}}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="PointerOver" />
+                </VisualStateGroup>
+            </VisualStateGroupList>
+        </Setter>
+    </Style>
+
+    <!-- ===== Coloured action pills (same size as PillPrimary) ===== -->
+    <Style TargetType="Button" x:Key="PillBlue" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftBlueGradLight}, Dark={StaticResource SoftBlueGradDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillViolet" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftVioletGradLight}, Dark={StaticResource SoftVioletGradDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillPink" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftPinkGradLight}, Dark={StaticResource SoftPinkGradDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillCoral" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftCoralGradLight}, Dark={StaticResource SoftCoralGradDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillTeal" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftTealGradLight}, Dark={StaticResource SoftTealGradDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillAmber" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftAmberGradLight}, Dark={StaticResource SoftAmberGradDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnBrandDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="PillLime" BasedOn="{StaticResource PillPrimary}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftLimeGradLight}, Dark={StaticResource SoftLimeGradDark}}" />
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnBrandDark}}" />
+    </Style>
+
+    <!-- ===== Round icon buttons: flat tint + coloured glyph, no gradient ===== -->
+    <Style TargetType="Button" x:Key="IconButtonTeal" BasedOn="{StaticResource IconButton}" />
+    <Style TargetType="Button" x:Key="IconButtonBlue" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="IconButtonViolet" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="IconButtonPink" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnPinkTintLight}, Dark={StaticResource OnPinkTintDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PinkTintLight}, Dark={StaticResource PinkTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="IconButtonAmber" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="IconButtonLime" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnSuccessLight}, Dark={StaticResource OnSuccessDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SuccessTintLight}, Dark={StaticResource SuccessTintDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="IconButtonNeutral" BasedOn="{StaticResource IconButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource MutedLight}, Dark={StaticResource MutedDark}}" />
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceAltLight}, Dark={StaticResource SurfaceAltDark}}" />
+    </Style>
+
+    <!-- ===== Text links: no fill at all ===== -->
+    <Style TargetType="Button" x:Key="LinkButtonBlue" BasedOn="{StaticResource LinkButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource VioletDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="LinkButtonViolet" BasedOn="{StaticResource LinkButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource IndigoLight}, Dark={StaticResource IndigoDark}}" />
+    </Style>
+    <Style TargetType="Button" x:Key="LinkButtonDanger" BasedOn="{StaticResource LinkButton}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnDangerLight}, Dark={StaticResource DangerDark}}" />
+    </Style>
+
+    <!-- ===== Chips: Blue, Violet, Pink (Brand = teal, Warning = amber, Success = lime, Danger = coral already exist) ===== -->
+    <Style TargetType="Border" x:Key="BadgeBlue" BasedOn="{StaticResource BadgeBrand}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="BadgeBlueText" BasedOn="{StaticResource BadgeBrandText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="BadgeViolet" BasedOn="{StaticResource BadgeBrand}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="BadgeVioletText" BasedOn="{StaticResource BadgeBrandText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="BadgePink" BasedOn="{StaticResource BadgeBrand}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PinkTintLight}, Dark={StaticResource PinkTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="BadgePinkText" BasedOn="{StaticResource BadgeBrandText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnPinkTintLight}, Dark={StaticResource OnPinkTintDark}}" />
+    </Style>
+
+    <!-- ===== Switcher: the selected segment takes the colour of what it shows ===== -->
+    <Style TargetType="Border" x:Key="SegmentChipOnBlue" BasedOn="{StaticResource SegmentChipOn}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftBlueGradLight}, Dark={StaticResource SoftBlueGradDark}}" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#3A6FE0" Opacity="0.16" Radius="6" Offset="0,2" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Border" x:Key="SegmentChipOnViolet" BasedOn="{StaticResource SegmentChipOn}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftVioletGradLight}, Dark={StaticResource SoftVioletGradDark}}" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#7A52E6" Opacity="0.16" Radius="6" Offset="0,2" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Border" x:Key="SegmentChipOnPink" BasedOn="{StaticResource SegmentChipOn}">
+        <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftPinkGradLight}, Dark={StaticResource SoftPinkGradDark}}" />
+        <Setter Property="Shadow">
+            <Setter.Value>
+                <Shadow Brush="#D8458E" Opacity="0.16" Radius="6" Offset="0,2" />
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- ===== Picker chips (Groups / Communities / Super communities) ===== -->
+    <Style TargetType="Border" x:Key="GroupPillOnBlue" BasedOn="{StaticResource GroupPill}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource VioletTintLight}, Dark={StaticResource VioletTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="GroupPillTextOnBlue" BasedOn="{StaticResource GroupPillText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnVioletTintLight}, Dark={StaticResource OnVioletTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="GroupPillOnViolet" BasedOn="{StaticResource GroupPill}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource IndigoTintLight}, Dark={StaticResource IndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="GroupPillTextOnViolet" BasedOn="{StaticResource GroupPillText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnIndigoTintLight}, Dark={StaticResource OnIndigoTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="GroupPillOnPink" BasedOn="{StaticResource GroupPill}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PinkTintLight}, Dark={StaticResource PinkTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="GroupPillTextOnPink" BasedOn="{StaticResource GroupPillText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnPinkTintLight}, Dark={StaticResource OnPinkTintDark}}" />
+    </Style>
+
+    <!-- ===== Initials tiles ===== -->
+    <Style TargetType="Border" x:Key="InitialsTilePink" BasedOn="{StaticResource InitialsTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource PinkTintLight}, Dark={StaticResource PinkTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="InitialsTextPink" BasedOn="{StaticResource InitialsText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnPinkTintLight}, Dark={StaticResource OnPinkTintDark}}" />
+    </Style>
+    <Style TargetType="Border" x:Key="InitialsTileAmber" BasedOn="{StaticResource InitialsTile}">
+        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource WarningTintLight}, Dark={StaticResource WarningTintDark}}" />
+    </Style>
+    <Style TargetType="Label" x:Key="InitialsTextAmber" BasedOn="{StaticResource InitialsText}">
+        <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource OnWarningLight}, Dark={StaticResource OnWarningDark}}" />
+    </Style>
+
+</ResourceDictionary>

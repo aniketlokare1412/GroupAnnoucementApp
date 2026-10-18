@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+
+    <!-- Gradient brushes for the "Aurora" theme. Loaded after Colors.xaml and BEFORE Styles.xaml.
+         Names ending in Light / Dark are chosen per theme with AppThemeBinding in the styles. -->
+
+    <!-- Brand: teal to blue (echoes the app icon). Main action buttons, selected segment, brand mark. -->
+    <LinearGradientBrush x:Key="BrandGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#148F83" Offset="0.0" />
+        <GradientStop Color="#3B7FE4" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="BrandGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4FD9C6" Offset="0.0" />
+        <GradientStop Color="#7DB4FB" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Hero banner at the top of Home: teal, blue, violet. White text sits on it in both themes. -->
+    <LinearGradientBrush x:Key="HeroGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0E8379" Offset="0.0" />
+        <GradientStop Color="#2563EB" Offset="0.55" />
+        <GradientStop Color="#7C3AED" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="HeroGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#0F766E" Offset="0.0" />
+        <GradientStop Color="#1D4ED8" Offset="0.55" />
+        <GradientStop Color="#6D28D9" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Feature tiles: bright top-left to deeper bottom-right, same in both themes. -->
+    <LinearGradientBrush x:Key="TileBlueGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#7DB4FB" Offset="0.0" />
+        <GradientStop Color="#4F86F0" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TileTealGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4FD9C6" Offset="0.0" />
+        <GradientStop Color="#18A08F" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TileVioletGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#B9A6FB" Offset="0.0" />
+        <GradientStop Color="#8B66EE" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TilePinkGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F59AC6" Offset="0.0" />
+        <GradientStop Color="#E0559B" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TileCoralGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FDA66A" Offset="0.0" />
+        <GradientStop Color="#EE6A5B" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TileAmberGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FDDC73" Offset="0.0" />
+        <GradientStop Color="#F7B02E" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="TileLimeGrad" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#CDEE86" Offset="0.0" />
+        <GradientStop Color="#8CC63A" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Cards: a very soft sheen (lighter at the top-left) and a lit edge, for a raised 3D feel. -->
+    <LinearGradientBrush x:Key="CardSheenLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#F6F7FD" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardSheenDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#1C2444" Offset="0.0" />
+        <GradientStop Color="#131A32" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardEdgeLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFFFFF" Offset="0.0" />
+        <GradientStop Color="#DCE0F0" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="CardEdgeDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#3C4880" Offset="0.0" />
+        <GradientStop Color="#232B4D" Offset="1.0" />
+    </LinearGradientBrush>
+
+    <!-- Soft one-colour gradients (small steps, so they look flat-ish, not glossy). Used by the PillXxx buttons and segments. -->
+    <LinearGradientBrush x:Key="SoftBlueGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#4A87EE" Offset="0.0" />
+        <GradientStop Color="#3667D8" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftBlueGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#86B8FB" Offset="0.0" />
+        <GradientStop Color="#689CF3" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftVioletGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#8E6BF0" Offset="0.0" />
+        <GradientStop Color="#7A52E6" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftVioletGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#BCA9FB" Offset="0.0" />
+        <GradientStop Color="#A28BF2" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftPinkGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#E9559E" Offset="0.0" />
+        <GradientStop Color="#D3418A" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftPinkGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F7A9CE" Offset="0.0" />
+        <GradientStop Color="#EE86B6" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftCoralGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#EB6249" Offset="0.0" />
+        <GradientStop Color="#D94C3C" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftCoralGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FFAB9A" Offset="0.0" />
+        <GradientStop Color="#FF8D79" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftAmberGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#F9BC3E" Offset="0.0" />
+        <GradientStop Color="#F5A31A" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftAmberGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#FDDD7A" Offset="0.0" />
+        <GradientStop Color="#FAC848" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftTealGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#17A090" Offset="0.0" />
+        <GradientStop Color="#118779" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftTealGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#62E3D0" Offset="0.0" />
+        <GradientStop Color="#43CCB9" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftLimeGradLight" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#94CF3B" Offset="0.0" />
+        <GradientStop Color="#74B01E" Offset="1.0" />
+    </LinearGradientBrush>
+    <LinearGradientBrush x:Key="SoftLimeGradDark" StartPoint="0,0" EndPoint="1,1">
+        <GradientStop Color="#C6EC78" Offset="0.0" />
+        <GradientStop Color="#AEDD52" Offset="1.0" />
+    </LinearGradientBrush>
+
+</ResourceDictionary>

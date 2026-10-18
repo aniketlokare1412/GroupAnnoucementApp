@@ -32,7 +32,7 @@ public sealed class OutageCardItem
         OutageCardItem item = new OutageCardItem();
         item.Title = cancelled ? "Outage cancelled" : "Planned outage";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
-        item.AccentColor = Color.FromArgb(cancelled ? "#16A34A" : "#F59E0B");
+        item.AccentColor = Color.FromArgb(cancelled ? "#65A30D" : "#F59E0B");
 
         string from = publishAt.ToLocalTime().ToString("dd MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture);
         string until = end.ToLocalTime().ToString("dd MMM, HH:mm", System.Globalization.CultureInfo.InvariantCulture);

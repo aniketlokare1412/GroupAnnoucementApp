@@ -72,8 +72,8 @@
                                     <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
 
                                         <!-- Joined groups get the teal tint; others stay neutral -->
-                                        <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsMember}">
-                                            <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                        <Border Grid.Column="0" Style="{StaticResource InitialsTileCyan}" IsVisible="{Binding IsMember}">
+                                            <Label Style="{StaticResource InitialsTextCyan}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                         </Border>
                                         <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsNotMember}">
                                             <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
@@ -135,7 +135,7 @@
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
                                 <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F50D;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                                 <Label

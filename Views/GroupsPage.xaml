@@ -20,12 +20,12 @@
                 <!-- Title + the page actions. "New group" is the one text button. -->
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="8">
                     <VerticalStackLayout Grid.Column="0" Spacing="0" VerticalOptions="Center">
-                        <Label Style="{StaticResource HeroName}" Text="{Binding HeaderTitle}" />
+                        <Label Style="{StaticResource HeroName}" Text="{Binding HeaderTitle}" LineBreakMode="TailTruncation" MaxLines="1" />
                         <Label Style="{StaticResource Caption}" Text="{Binding SummaryText}" />
                     </VerticalStackLayout>
                     <Button
                         Grid.Column="1"
-                        Style="{StaticResource IconButton}"
+                        Style="{StaticResource IconButtonViolet}"
                         Text="{x:Static h:Icons.AccountTree}"
                         Command="{Binding OpenStructureCommand}"
                         IsEnabled="{Binding IsNotBusy}"
@@ -41,49 +41,61 @@
                         SemanticProperties.Hint="Write an announcement for one or more groups" />
                     <Button
                         Grid.Column="3"
-                        Style="{StaticResource PillPrimary}"
+                        Style="{StaticResource PillBlue}"
                         Text="{Binding NewButtonText}"
                         Command="{Binding AddGroupCommand}"
                         IsEnabled="{Binding IsNotBusy}"
-                        VerticalOptions="Center" />
+                        VerticalOptions="Center">
+                        <Button.Triggers>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsCommunitiesMode}" Value="True">
+                                <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftVioletGradLight}, Dark={StaticResource SoftVioletGradDark}}" />
+                            </DataTrigger>
+                            <DataTrigger TargetType="Button" Binding="{Binding IsSuperMode}" Value="True">
+                                <Setter Property="Background" Value="{AppThemeBinding Light={StaticResource SoftPinkGradLight}, Dark={StaticResource SoftPinkGradDark}}" />
+                            </DataTrigger>
+                        </Button.Triggers>
+                    </Button>
                 </Grid>
 
-                <!-- Switcher: Groups / Communities / Super communities (not a fourth tab) -->
-                <FlexLayout Wrap="Wrap" Direction="Row" AlignItems="Start" JustifyContent="Start">
-                    <Grid Margin="0,0,8,0" SemanticProperties.Description="Groups" SemanticProperties.Hint="Show groups">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="0" />
-                        </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsMode}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Groups" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsGroupsMode}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Groups" />
-                        </Border>
+                <!-- Switcher: Groups / Communities / Super communities (not a fourth tab).
+                     One row of three equal segments, so the labels can never wrap or overlap. -->
+                <Border Style="{StaticResource SegmentTrack}">
+                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="2">
+                        <Grid Grid.Column="0" SemanticProperties.Description="Groups" SemanticProperties.Hint="Show groups">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="0" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotGroupsMode}">
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; Groups" />
+                            </Border>
+                            <Border Style="{StaticResource SegmentChipOnBlue}" IsVisible="{Binding IsGroupsMode}">
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; Groups" />
+                            </Border>
+                        </Grid>
+                        <Grid Grid.Column="1" SemanticProperties.Description="Communities" SemanticProperties.Hint="Show communities">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="1" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotCommunitiesMode}">
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; Communities" />
+                            </Border>
+                            <Border Style="{StaticResource SegmentChipOnViolet}" IsVisible="{Binding IsCommunitiesMode}">
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; Communities" />
+                            </Border>
+                        </Grid>
+                        <Grid Grid.Column="2" SemanticProperties.Description="Super communities" SemanticProperties.Hint="Show super communities">
+                            <Grid.GestureRecognizers>
+                                <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="2" />
+                            </Grid.GestureRecognizers>
+                            <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotSuperMode}">
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Super" />
+                            </Border>
+                            <Border Style="{StaticResource SegmentChipOnPink}" IsVisible="{Binding IsSuperMode}">
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Super" />
+                            </Border>
+                        </Grid>
                     </Grid>
-                    <Grid Margin="0,0,8,0" SemanticProperties.Description="Communities" SemanticProperties.Hint="Show communities">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="1" />
-                        </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotCommunitiesMode}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Communities" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsCommunitiesMode}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Communities" />
-                        </Border>
-                    </Grid>
-                    <Grid SemanticProperties.Description="Super communities" SemanticProperties.Hint="Show super communities">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="2" />
-                        </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSuperMode}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Super communities" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSuperMode}">
-                            <Label Style="{StaticResource GroupPillTextOn}" Text="Super communities" />
-                        </Border>
-                    </Grid>
-                </FlexLayout>
+                </Border>
 
                 <Border Style="{StaticResource SearchBorder}">
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -131,8 +143,8 @@
                                                 <TapGestureRecognizer Command="{Binding OpenCommand}" />
                                             </Grid.GestureRecognizers>
 
-                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsActive}">
-                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTileCyan}" IsVisible="{Binding IsActive}">
+                                                <Label Style="{StaticResource InitialsTextCyan}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                             </Border>
                                             <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsInactive}">
                                                 <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
@@ -163,12 +175,12 @@
                                         <!-- Icon actions: members, edit, activate / deactivate -->
                                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
                                             <Button
-                                                Style="{StaticResource IconButton}"
+                                                Style="{StaticResource IconButtonBlue}"
                                                 Text="{x:Static h:Icons.Group}"
                                                 Command="{Binding MembersCommand}"
                                                 SemanticProperties.Description="{Binding MembersLabel}" />
                                             <Button
-                                                Style="{StaticResource IconButton}"
+                                                Style="{StaticResource IconButtonNeutral}"
                                                 Text="{x:Static h:Icons.Edit}"
                                                 Command="{Binding EditCommand}"
                                                 SemanticProperties.Description="{Binding EditLabel}" />
@@ -190,8 +202,8 @@
                                 Spacing="8"
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
-                                <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                <Border Style="{StaticResource EmptyIconTileCyan}">
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                                 <Label
@@ -228,8 +240,8 @@
                                                 <TapGestureRecognizer Command="{Binding EditCommand}" />
                                             </Grid.GestureRecognizers>
 
-                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
-                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
+                                            <Border Grid.Column="0" Style="{StaticResource InitialsTileIndigo}">
+                                                <Label Style="{StaticResource InitialsTextIndigo}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                             </Border>
 
                                             <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
@@ -264,7 +276,7 @@
 
                                         <Button
                                             Grid.Column="1"
-                                            Style="{StaticResource IconButton}"
+                                            Style="{StaticResource IconButtonViolet}"
                                             Text="{x:Static h:Icons.Edit}"
                                             Command="{Binding EditCommand}"
                                             VerticalOptions="Center"
@@ -286,8 +298,8 @@
                                 Spacing="8"
                                 Padding="0,40,0,0"
                                 HorizontalOptions="Center">
-                                <Border Style="{StaticResource EmptyIconTile}">
-                                    <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
+                                <Border Style="{StaticResource EmptyIconTileIndigo}">
+                                    <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F;" />
                                 </Border>
                                 <Label Style="{StaticResource CardTitle}" Text="{Binding EmptyTitle}" HorizontalOptions="Center" />
                                 <Label

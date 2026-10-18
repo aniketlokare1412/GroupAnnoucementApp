@@ -30,8 +30,8 @@
             <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding HasNoSelection}">
                 <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding SelectedCountText}" />
             </Border>
-            <Border Style="{StaticResource BadgeBrand}" IsVisible="{Binding HasSelection}">
-                <Label Style="{StaticResource BadgeBrandText}" Text="{Binding SelectedCountText}" />
+            <Border Style="{StaticResource BadgeBlue}" IsVisible="{Binding HasSelection}">
+                <Label Style="{StaticResource BadgeBlueText}" Text="{Binding SelectedCountText}" />
             </Border>
 
             <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
@@ -103,7 +103,7 @@
                         Padding="0,40,0,0"
                         HorizontalOptions="Center">
                         <Border Style="{StaticResource EmptyIconTile}">
-                            <Label Style="{StaticResource EmptyIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Person}" />
+                            <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F64B;" />
                         </Border>
                         <Label Style="{StaticResource CardTitle}" Text="No users to add" HorizontalOptions="Center" />
                         <Label
@@ -125,7 +125,7 @@
 
         <Button
             Grid.Row="2"
-            Style="{StaticResource PillPrimary}"
+            Style="{StaticResource PillBlue}"
             Text="{Binding AddButtonText}"
             Command="{Binding AddSelectedCommand}"
             IsEnabled="{Binding IsNotBusy}"

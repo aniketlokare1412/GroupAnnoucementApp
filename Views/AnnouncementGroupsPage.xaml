@@ -54,6 +54,7 @@
         </Grid>
 
         <Button
+                Style="{StaticResource GradientButton}"
             Grid.Row="4"
             Text="Refresh"
             Command="{Binding RefreshCommand}"
