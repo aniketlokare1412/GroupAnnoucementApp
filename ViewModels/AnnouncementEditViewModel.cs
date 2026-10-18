@@ -12,9 +12,8 @@ namespace GroupAnnouncementApp.ViewModels;
 //   announcementedit                                   -> new announcement, pick ONE OR MORE groups
 //   announcementedit?groupId=..&groupName=..           -> new announcement for that one group
 //   announcementedit?groupId=..&groupName=..&announcementId=..  -> edit an existing announcement
-// In "pick groups" mode, chips above the group pills tick every ACTIVE group of a community or super
-// community. It is only a shortcut: it never unticks, the admin can still untick single groups, and each
-// group still receives its own copy of the announcement as always.
+// In "pick groups" mode one summary card opens the full-screen audience picker, where the admin can search
+// and tick single groups, communities or super communities. Each group still receives its own copy.
 // Cancel is the back arrow. After a successful save the page goes back and a toast confirms it.
 [QueryProperty(nameof(GroupId), "groupId")]
 [QueryProperty(nameof(GroupName), "groupName")]
@@ -25,7 +24,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private readonly ISessionService _session;
     private readonly IAnnouncementService _announcementService;
     private readonly IGroupAdminService _groupService;
-    private readonly ICommunityService _communityService;
+    private readonly IAudiencePickerService _audiencePicker;
     private readonly IToastService _toasts;
 
     private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
@@ -35,11 +34,6 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     // The cards of the "Post to" picker (filtered by the search box).
     public ObservableCollection<SelectableGroupItem> Groups { get; } = new ObservableCollection<SelectableGroupItem>();
 
-    // "Select a whole community" chips above the group pills.
-    public ObservableCollection<QuickPickItem> QuickPicks { get; } = new ObservableCollection<QuickPickItem>();
-
-    [ObservableProperty]
-    private bool _hasQuickPicks;
 
     // Set by Shell from the route.
     [ObservableProperty]
@@ -135,6 +129,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(IsTemplate))]
     [NotifyPropertyChangedFor(nameof(ShowTitleEntry))]
     [NotifyPropertyChangedFor(nameof(IsMessageReadOnly))]
+    [NotifyPropertyChangedFor(nameof(MessageBoxHeight))]
     private int _templateIndex = -1;
 
     [ObservableProperty]
@@ -151,6 +146,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(ShowTitleEntry))]
     [NotifyPropertyChangedFor(nameof(IsMessageReadOnly))]
     [NotifyPropertyChangedFor(nameof(ShowCustomTime))]
+    [NotifyPropertyChangedFor(nameof(MessageBoxHeight))]
     private bool _isNewPost = true;
 
     public bool IsCustom => IsNewPost && TemplateIndex == MessageTemplates.All.Count;
@@ -160,6 +156,10 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     public bool ShowTitleEntry => !IsNewPost || IsCustom;
 
     public bool IsMessageReadOnly => IsNewPost && !IsCustom;
+
+    // A template message is fixed text of about 4 to 6 lines, so its box only needs that much room.
+    // A message the admin types (custom text, or editing an existing post) gets a little more.
+    public double MessageBoxHeight => IsTemplate ? 120 : 150;
 
     public bool ShowCustomTime => IsNewPost && TimeIndex == ResolutionOptions.CustomIndex;
 
@@ -360,14 +360,14 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         ISessionService session,
         IAnnouncementService announcementService,
         IGroupAdminService groupService,
-        ICommunityService communityService,
+        IAudiencePickerService audiencePicker,
         IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _announcementService = announcementService;
         _groupService = groupService;
-        _communityService = communityService;
+        _audiencePicker = audiencePicker;
         _toasts = toasts;
 
         TitleCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxTitleLength);
@@ -499,8 +499,6 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                 }
             }
 
-            await LoadCommunityShortcutsAsync();
-
             _isLoaded = true;
             ApplyFilter();
             UpdateSelectedCount();
@@ -512,74 +510,41 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
     }
 
-    // Builds the community chips. Never blocks posting: if the communities cannot be loaded,
-    // the group pills still work and the chips are simply not shown.
-    private async Task LoadCommunityShortcutsAsync()
+    // Opens the full-screen picker (search, communities, super communities). Done ticks the chosen groups here.
+    // Going back from the picker keeps the selection as it was.
+    [RelayCommand]
+    private async Task ChooseGroupsAsync()
     {
-        QuickPicks.Clear();
-        HasQuickPicks = false;
-
-        OperationResult<CommunityDirectory> result = await _communityService.GetDirectoryAsync();
-        if (!result.IsSuccess || result.Value == null)
+        if (IsBusy || !_isLoaded)
         {
             return;
         }
 
-        CommunityDirectory directory = result.Value;
-
-        // Only active groups are in the picker, and only those can receive an announcement.
-        HashSet<string> activeIds = new HashSet<string>();
+        List<AudienceGroup> groups = new List<AudienceGroup>();
+        HashSet<string> selected = new HashSet<string>();
         for (int i = 0; i < _allItems.Count; i++)
         {
-            activeIds.Add(_allItems[i].Id);
-        }
+            AudienceGroup group = new AudienceGroup();
+            group.Id = _allItems[i].Id;
+            group.Name = _allItems[i].Name;
+            group.Number = _allItems[i].Number;
+            groups.Add(group);
 
-        // Super communities first (the bigger sets), then communities.
-        for (int i = 0; i < directory.SuperCommunities.Count; i++)
-        {
-            List<string> ids = KeepActive(directory.GroupIdsOfSuper(directory.SuperCommunities[i].Id), activeIds);
-            if (ids.Count > 0)
+            if (_allItems[i].IsSelected)
             {
-                QuickPicks.Add(QuickPickItem.Create(directory.SuperCommunities[i].Name, true, ids, SelectQuickPick));
+                selected.Add(_allItems[i].Id);
             }
         }
 
-        for (int i = 0; i < directory.Communities.Count; i++)
+        HashSet<string>? result = await _audiencePicker.PickAsync(groups, selected);
+        if (result == null)
         {
-            List<string> ids = KeepActive(directory.Communities[i].GroupIds, activeIds);
-            if (ids.Count > 0)
-            {
-                QuickPicks.Add(QuickPickItem.Create(directory.Communities[i].Name, false, ids, SelectQuickPick));
-            }
+            return;
         }
 
-        HasQuickPicks = QuickPicks.Count > 0;
-    }
-
-    private static List<string> KeepActive(List<string> ids, HashSet<string> activeIds)
-    {
-        List<string> kept = new List<string>();
-        for (int i = 0; i < ids.Count; i++)
-        {
-            if (activeIds.Contains(ids[i]) && !kept.Contains(ids[i]))
-            {
-                kept.Add(ids[i]);
-            }
-        }
-
-        return kept;
-    }
-
-    // Ticks the groups. It never unticks anything.
-    private void SelectQuickPick(QuickPickItem item)
-    {
-        HashSet<string> wanted = new HashSet<string>(item.GroupIds);
         for (int i = 0; i < _allItems.Count; i++)
         {
-            if (wanted.Contains(_allItems[i].Id))
-            {
-                _allItems[i].IsSelected = true;
-            }
+            _allItems[i].IsSelected = result.Contains(_allItems[i].Id);
         }
     }
 

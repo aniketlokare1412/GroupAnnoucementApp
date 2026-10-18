@@ -16,6 +16,7 @@ public partial class OutageEditViewModel : BaseViewModel
     private readonly ISessionService _session;
     private readonly IOutageService _outageService;
     private readonly IGroupAdminService _groupService;
+    private readonly IAudiencePickerService _audiencePicker;
     private readonly IToastService _toasts;
 
     private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
@@ -62,12 +63,14 @@ public partial class OutageEditViewModel : BaseViewModel
         ISessionService session,
         IOutageService outageService,
         IGroupAdminService groupService,
+        IAudiencePickerService audiencePicker,
         IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _outageService = outageService;
         _groupService = groupService;
+        _audiencePicker = audiencePicker;
         _toasts = toasts;
     }
 
@@ -123,6 +126,44 @@ public partial class OutageEditViewModel : BaseViewModel
         {
             IsBusy = false;
             ShowLoading = false;
+        }
+    }
+
+    // Opens the full-screen picker: single groups, communities or super communities (search included).
+    // Going back from the picker keeps the selection as it was.
+    [RelayCommand]
+    private async Task ChooseGroupsAsync()
+    {
+        if (IsBusy || !_isLoaded)
+        {
+            return;
+        }
+
+        List<AudienceGroup> groups = new List<AudienceGroup>();
+        HashSet<string> selected = new HashSet<string>();
+        for (int i = 0; i < _allItems.Count; i++)
+        {
+            AudienceGroup group = new AudienceGroup();
+            group.Id = _allItems[i].Id;
+            group.Name = _allItems[i].Name;
+            group.Number = _allItems[i].Number;
+            groups.Add(group);
+
+            if (_allItems[i].IsSelected)
+            {
+                selected.Add(_allItems[i].Id);
+            }
+        }
+
+        HashSet<string>? result = await _audiencePicker.PickAsync(groups, selected);
+        if (result == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < _allItems.Count; i++)
+        {
+            _allItems[i].IsSelected = result.Contains(_allItems[i].Id);
         }
     }
 

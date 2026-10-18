@@ -17,6 +17,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute(Routes.GroupEdit, typeof(GroupEditPage));
         Routing.RegisterRoute(Routes.CommunityEdit, typeof(CommunityEditPage));
         Routing.RegisterRoute(Routes.Structure, typeof(StructurePage));
+        Routing.RegisterRoute(Routes.AudiencePicker, typeof(AudiencePickerPage));
         Routing.RegisterRoute(Routes.GroupMembers, typeof(GroupMembersPage));
         Routing.RegisterRoute(Routes.AddMembers, typeof(AddMembersPage));
         Routing.RegisterRoute(Routes.AnnouncementGroups, typeof(AnnouncementGroupsPage));

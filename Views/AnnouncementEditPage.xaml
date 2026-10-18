@@ -14,7 +14,7 @@
          group pills, then the one main button pinned to the bottom. Cancel = the back arrow. -->
     <Grid RowDefinitions="*,Auto">
 
-        <Grid Grid.Row="0" RowDefinitions="Auto,*,Auto" RowSpacing="14" Padding="16,12,16,8">
+        <Grid Grid.Row="0" RowDefinitions="Auto,Auto,*" RowSpacing="14" Padding="16,12,16,8">
 
             <!-- 1. Title -->
             <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="10" RowDefinitions="Auto,Auto,Auto,Auto">
@@ -77,7 +77,7 @@
             </Grid>
 
             <!-- 2. Message: fills whatever height is left -->
-            <Grid Grid.Row="1" RowDefinitions="Auto,*,Auto" RowSpacing="6">
+            <Grid Grid.Row="1" RowDefinitions="Auto,Auto,Auto" RowSpacing="6">
                 <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
                     <Label Grid.Column="0" Style="{StaticResource FieldLabel}" Text="Message" />
                     <Label
@@ -86,7 +86,7 @@
                         Text="{Binding MessageCountText}"
                         AutomationProperties.IsInAccessibleTree="False" />
                 </Grid>
-                <Border Grid.Row="1" Style="{StaticResource FieldBorder}" Padding="10,6" MinimumHeightRequest="96">
+                <Border Grid.Row="1" Style="{StaticResource FieldBorder}" Padding="10,6" HeightRequest="{Binding MessageBoxHeight}">
                     <Editor
                         Placeholder="Choose a title to see the message"
                         IsReadOnly="{Binding IsMessageReadOnly}"
@@ -153,127 +153,27 @@
                     </Grid>
                 </Border>
 
-                <!-- Several groups: search, count, then small pills to tap -->
-                <VerticalStackLayout Spacing="10" IsVisible="{Binding IsPickerVisible}">
-
-                    <Border Style="{StaticResource SearchBorder}">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                            <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
-                            <Entry
-                                Grid.Column="1"
-                                Style="{StaticResource SearchEntry}"
-                                Placeholder="Search groups"
-                                ReturnType="Search"
-                                Text="{Binding SearchText}"
-                                SemanticProperties.Description="Search groups" />
-                        </Grid>
-                    </Border>
-
-                    <!-- Shortcut: tap a community to tick all of its active groups -->
-                    <VerticalStackLayout Spacing="4" IsVisible="{Binding HasQuickPicks}">
-                        <Label Style="{StaticResource Caption}" Text="Select a whole community" />
-                        <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                            <HorizontalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding QuickPicks}" IsEnabled="{Binding IsNotBusy}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:QuickPickItem">
-                                        <Border
-                                            Style="{StaticResource BadgeBrand}"
-                                            SemanticProperties.Description="{Binding Label}"
-                                            SemanticProperties.Hint="Double tap to tick all of them">
-                                            <Border.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding SelectCommand}" />
-                                            </Border.GestureRecognizers>
-                                            <Label Style="{StaticResource BadgeBrandText}" Text="{Binding PillText}" MaximumWidthRequest="240" LineBreakMode="TailTruncation" MaxLines="1" />
-                                        </Border>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </HorizontalStackLayout>
-                        </ScrollView>
-                    </VerticalStackLayout>
-
-                    <Grid ColumnDefinitions="*,Auto,Auto">
-                        <Border Grid.Column="0" Style="{StaticResource BadgeNeutral}" IsVisible="{Binding HasNoSelection}">
-                            <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding SelectedCountText}" />
+                <!-- Several groups: one line with the count; tap it to open the full picker
+                     (search, communities, super communities). Fine for hundreds of groups. -->
+                <Border
+                    Style="{StaticResource RowCard}"
+                    IsVisible="{Binding IsPickerVisible}"
+                    SemanticProperties.Description="{Binding SelectedCountText}"
+                    SemanticProperties.Hint="Opens the group picker">
+                    <Border.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding ChooseGroupsCommand}" />
+                    </Border.GestureRecognizers>
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
+                        <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
+                            <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
                         </Border>
-                        <Border Grid.Column="0" Style="{StaticResource BadgeBrand}" IsVisible="{Binding HasSelection}">
-                            <Label Style="{StaticResource BadgeBrandText}" Text="{Binding SelectedCountText}" />
-                        </Border>
-                        <Button
-                            Grid.Column="1"
-                            Style="{StaticResource LinkButton}"
-                            Text="Select all"
-                            Command="{Binding SelectAllCommand}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Hint="Ticks every group shown below" />
-                        <Button
-                            Grid.Column="2"
-                            Style="{StaticResource LinkButton}"
-                            Text="Clear"
-                            Command="{Binding ClearSelectionCommand}"
-                            IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Hint="Unticks all groups" />
-                    </Grid>
-
-                    <!-- Fixed-height pill area (about three rows). If there are very many groups, only this area scrolls. -->
-                    <Grid HeightRequest="124">
-
-                        <ScrollView VerticalScrollBarVisibility="Never">
-                            <FlexLayout
-                                Wrap="Wrap"
-                                Direction="Row"
-                                JustifyContent="Start"
-                                AlignItems="Start"
-                                AlignContent="Start"
-                                IsEnabled="{Binding IsNotBusy}"
-                                BindableLayout.ItemsSource="{Binding Groups}">
-                                <BindableLayout.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:SelectableGroupItem">
-                                        <Grid
-                                            Margin="0,0,8,8"
-                                            SemanticProperties.Description="{Binding CardLabel}"
-                                            SemanticProperties.Hint="Double tap to select or unselect">
-                                            <Grid.GestureRecognizers>
-                                                <TapGestureRecognizer Command="{Binding ToggleCommand}" />
-                                            </Grid.GestureRecognizers>
-
-                                            <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSelected}">
-                                                <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
-                                                    <Label Style="{StaticResource PillAdd}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Add}" />
-                                                    <Label Style="{StaticResource GroupPillText}" Text="{Binding PillText}" MaximumWidthRequest="220" />
-                                                </HorizontalStackLayout>
-                                            </Border>
-
-                                            <Border Style="{StaticResource GroupPillOn}" IsVisible="{Binding IsSelected}">
-                                                <HorizontalStackLayout Spacing="4" VerticalOptions="Center">
-                                                    <Label Style="{StaticResource PillCheck}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Check}" />
-                                                    <Label Style="{StaticResource GroupPillTextOn}" Text="{Binding PillText}" MaximumWidthRequest="220" />
-                                                </HorizontalStackLayout>
-                                            </Border>
-                                        </Grid>
-                                    </DataTemplate>
-                                </BindableLayout.ItemTemplate>
-                            </FlexLayout>
-                        </ScrollView>
-
-                        <!-- First load -->
-                        <controls:SkeletonList Kind="Pills" IsVisible="{Binding ShowPickerSkeleton}" VerticalOptions="Start" />
-
-                        <!-- No (matching) active groups -->
-                        <VerticalStackLayout
-                            IsVisible="{Binding HasNoGroups}"
-                            Spacing="4"
-                            VerticalOptions="Center"
-                            HorizontalOptions="Center">
-                            <Label Style="{StaticResource CardTitle}" Text="No active groups" HorizontalOptions="Center" />
-                            <Label
-                                Style="{StaticResource Caption}"
-                                Text="Create or activate a group first, or change your search."
-                                HorizontalTextAlignment="Center" />
+                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                            <Label Style="{StaticResource CardTitle}" Text="{Binding SelectedCountText}" />
+                            <Label Style="{StaticResource Caption}" Text="Tap to choose groups, communities or super communities" LineBreakMode="TailTruncation" MaxLines="1" />
                         </VerticalStackLayout>
-
+                        <Label Grid.Column="2" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.ChevronRight}" />
                     </Grid>
-
-                </VerticalStackLayout>
+                </Border>
 
             </VerticalStackLayout>
 

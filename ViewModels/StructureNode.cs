@@ -31,6 +31,45 @@ public partial class StructureNode : ObservableObject
     public string Initials { get; private set; } = string.Empty;
     public string Number { get; private set; } = string.Empty;
     public bool IsInactive { get; private set; }
+
+    // True for a group that sits in the "Groups with no community" section.
+    public bool IsUngrouped { get; set; }
+
+    // Picks the colour of the row's stripe on the Structure screen:
+    // super community, community, group, group with no community, section header.
+    public string ColorName
+    {
+        get
+        {
+            if (Kind == StructureKind.Super)
+            {
+                return "super";
+            }
+
+            if (Kind == StructureKind.Community)
+            {
+                return "community";
+            }
+
+            if (Kind == StructureKind.Group)
+            {
+                return IsUngrouped ? "ungrouped" : "group";
+            }
+
+            return "section";
+        }
+    }
+
+    // Headers (super community, community, section) are semibold, groups are regular.
+    public bool IsHeader
+    {
+        get { return Kind != StructureKind.Group; }
+    }
+
+    public bool IsNotHeader
+    {
+        get { return Kind == StructureKind.Group; }
+    }
     public int Depth { get; private set; }
     public List<StructureNode> Children { get; } = new List<StructureNode>();
 
@@ -70,7 +109,7 @@ public partial class StructureNode : ObservableObject
 
     public Thickness RowMargin
     {
-        get { return new Thickness(Depth * 18, 0, 0, 0); }
+        get { return new Thickness(Depth * 14, 0, 0, 0); }
     }
 
     public string ToggleLabel

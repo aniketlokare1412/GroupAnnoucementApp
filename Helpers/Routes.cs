@@ -33,6 +33,9 @@ public static class Routes
     // (communityedit?kind=community|super&communityId=...). No communityId = create.
     public const string CommunityEdit = "communityedit";
 
+    // Admin: full-screen picker for who an announcement or outage goes to (groups, communities, super communities).
+    public const string AudiencePicker = "audiencepicker";
+
     // Admin: read-only tree of super communities, communities and groups. Opened from the Groups tab header.
     public const string Structure = "structure";
 

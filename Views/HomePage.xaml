@@ -32,6 +32,9 @@
                                                         <Label Grid.Column="2" Style="{StaticResource Caption}" Text="{Binding DateText}" HorizontalTextAlignment="End" VerticalOptions="Center" />
                                                     </Grid>
 
+                                                    <!-- Partition: header | content (same line as in the admin card) -->
+                                                    <BoxView Style="{StaticResource Hairline}" />
+
                                                     <!-- 2. Status row: one line with the state and the countdown (real announcements only) -->
                                                     <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
                                                         <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
@@ -82,6 +85,8 @@
 
                                                     <!-- 4. Notice, expected time, and the one action (real announcements only) -->
                                                     <VerticalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
+                                                        <!-- Partition: content | notice and action -->
+                                                        <BoxView Style="{StaticResource Hairline}" />
                                                         <Border Style="{StaticResource NoticeBanner}" IsVisible="{Binding Extras.ShowSubMessage}">
                                                             <VerticalStackLayout Spacing="4">
                                                                 <Label Style="{StaticResource NoticeBannerText}" FontFamily="OpenSansSemibold" Text="{Binding Extras.SubMessageTitle}" />
@@ -141,10 +146,13 @@
 
                         <!-- Counts -->
                         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card3D}">
+                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="Groups" SemanticProperties.Hint="Opens the groups list">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenGroupsTabCommand}" />
+                                </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileViolet}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465;" />
+                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Group}" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding GroupsCountText}" />
@@ -152,10 +160,13 @@
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource Card3D}">
+                            <Border Grid.Row="0" Grid.Column="1" Style="{StaticResource Card3D}" SemanticProperties.Description="Users" SemanticProperties.Hint="Opens the users list">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenUsersTabCommand}" />
+                                </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileGreen}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F464;" />
+                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Person}" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding UsersCountText}" />
@@ -163,10 +174,13 @@
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card3D}">
+                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="Communities" SemanticProperties.Hint="Opens the communities list">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenCommunitiesTabCommand}" />
+                                </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                                     <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F;" />
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Workspaces}" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding CommunitiesCountText}" />
@@ -174,10 +188,13 @@
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card3D}">
+                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card3D}" SemanticProperties.Description="Super communities" SemanticProperties.Hint="Opens the super communities list">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding OpenSuperCommunitiesTabCommand}" />
+                                </Border.GestureRecognizers>
                                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
-                                    <Border Grid.Column="0" Style="{StaticResource IconTileAmber}" VerticalOptions="Center">
-                                        <Label Style="{StaticResource EmojiIcon}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F310;" />
+                                    <Border Grid.Column="0" Style="{StaticResource IconTileBlue}" VerticalOptions="Center">
+                                        <Label Style="{StaticResource Icon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.AccountTree}" />
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding SuperCommunitiesCountText}" />
@@ -212,8 +229,10 @@
                             <HorizontalStackLayout Spacing="18">
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
-                                        Style="{StaticResource EmojiButtonViolet}"
-                                        Text="&#x1F465;"
+                                        Style="{StaticResource EmojiButtonBlue}"
+                                        FontFamily="MaterialIconsRound"
+                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
+                                        Text="{x:Static h:Icons.GroupAdd}"
                                         Command="{Binding NewGroupCommand}"
                                         SemanticProperties.Description="New group"
                                         SemanticProperties.Hint="Create a group" />
@@ -222,7 +241,9 @@
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
                                         Style="{StaticResource EmojiButtonBlue}"
-                                        Text="&#x1F4E2;"
+                                        FontFamily="MaterialIconsRound"
+                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
+                                        Text="{x:Static h:Icons.Campaign}"
                                         Command="{Binding NewPostCommand}"
                                         SemanticProperties.Description="New post"
                                         SemanticProperties.Hint="Write an announcement for one or more groups" />
@@ -230,8 +251,10 @@
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
-                                        Style="{StaticResource EmojiButtonAmber}"
-                                        Text="&#x26A1;"
+                                        Style="{StaticResource EmojiButtonBlue}"
+                                        FontFamily="MaterialIconsRound"
+                                        TextColor="{AppThemeBinding Light={StaticResource BrandDeepLight}, Dark={StaticResource BrandDeepDark}}"
+                                        Text="{x:Static h:Icons.PowerOff}"
                                         Command="{Binding NewOutageCommand}"
                                         SemanticProperties.Description="Plan an outage"
                                         SemanticProperties.Hint="Schedule a planned outage message for one or more groups" />
@@ -243,7 +266,13 @@
                         <!-- Every group: tap one to see its announcements -->
                         <VerticalStackLayout Spacing="8">
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="Groups" />
+                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="Groups" VerticalOptions="Center" />
+                                <Button
+                                    Grid.Column="1"
+                                    Style="{StaticResource LinkButton}"
+                                    Text="View all"
+                                    Command="{Binding OpenGroupsTabCommand}"
+                                    IsVisible="{Binding HasMoreAdminGroups}" />
                             </Grid>
 
                             <VerticalStackLayout Spacing="8" BindableLayout.ItemsSource="{Binding AdminGroups}">
@@ -288,6 +317,13 @@
                                     </DataTemplate>
                                 </BindableLayout.ItemTemplate>
                             </VerticalStackLayout>
+
+                            <Button
+                                Style="{StaticResource PillTonal}"
+                                Text="{Binding ViewAllGroupsText}"
+                                Command="{Binding OpenGroupsTabCommand}"
+                                IsVisible="{Binding HasMoreAdminGroups}"
+                                HorizontalOptions="Fill" />
 
                             <Label
                                 Style="{StaticResource Caption}"

@@ -157,16 +157,6 @@
                                                     IsVisible="{Binding HasDescription}"
                                                     LineBreakMode="TailTruncation"
                                                     MaxLines="1" />
-                                                <!-- Small chips: what is inside / where it belongs -->
-                                                <HorizontalStackLayout Spacing="4" Margin="0,2,0,0" IsVisible="{Binding HasChips}" BindableLayout.ItemsSource="{Binding Chips}">
-                                                    <BindableLayout.ItemTemplate>
-                                                        <DataTemplate x:DataType="x:String">
-                                                            <Border Style="{StaticResource BadgeNeutral}" AutomationProperties.IsInAccessibleTree="False">
-                                                                <Label Style="{StaticResource BadgeNeutralText}" Text="{Binding .}" MaximumWidthRequest="110" LineBreakMode="TailTruncation" MaxLines="1" />
-                                                            </Border>
-                                                        </DataTemplate>
-                                                    </BindableLayout.ItemTemplate>
-                                                </HorizontalStackLayout>
                                             </VerticalStackLayout>
                                         </Grid>
 

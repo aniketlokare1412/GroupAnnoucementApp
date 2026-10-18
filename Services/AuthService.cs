@@ -136,14 +136,12 @@ public class AuthService : IAuthService
         }
     }
 
+    // The technical details go to the debug log only. They are never shown on screen,
+    // not even in a debug build, so a user (or tester) only ever reads the friendly message.
     private static string WithDebugDetails(string friendlyMessage, Exception ex)
     {
-#if DEBUG
         System.Diagnostics.Debug.WriteLine("AUTH ERROR: " + BuildErrorText(ex));
-        return friendlyMessage + " [" + ex.GetType().Name + ": " + ex.Message + "]";
-#else
-    return friendlyMessage;
-#endif
+        return friendlyMessage;
     }
 
     // Looks at the exception type name and message text (including inner
@@ -178,6 +176,12 @@ public class AuthService : IAuthService
             || text.Contains("usernotfound") || text.Contains("invalidcredential"))
         {
             return "Incorrect phone number or password.";
+        }
+
+        // Firebase says "An internal error has occurred" for problems on the way to the server.
+        if (text.Contains("internal error"))
+        {
+            return "We could not reach the server. Please check your internet connection and try again.";
         }
 
         return "Login failed. Please try again.";
@@ -219,9 +223,16 @@ public class AuthService : IAuthService
 
     private static bool IsNetworkProblem(string text)
     {
+        // "Software caused connection abort", "connection reset" and similar are what Android reports
+        // when the mobile data or Wi-Fi drops in the middle of a request. They are network problems.
         return text.Contains("network") || text.Contains("unable to resolve host")
             || text.Contains("timeout") || text.Contains("timed out")
-            || text.Contains("unreachable");
+            || text.Contains("unreachable") || text.Contains("connection abort")
+            || text.Contains("software caused") || text.Contains("connection reset")
+            || text.Contains("connection refused") || text.Contains("failed to connect")
+            || text.Contains("no address associated") || text.Contains("unexpected end of stream")
+            || text.Contains("sslhandshake") || text.Contains("socketexception")
+            || text.Contains("ioexception");
     }
 
     private static bool IsTooManyRequests(string text)
