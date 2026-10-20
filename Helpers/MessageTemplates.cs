@@ -1,4 +1,4 @@
-﻿namespace GroupAnnouncementApp.Helpers;
+namespace GroupAnnouncementApp.Helpers;
 
 // How the resolution time is written into the message body.
 public enum TemplateTime
@@ -102,12 +102,9 @@ public static class MessageTemplates
         }
     };
 
-    // More than this many panic presses on one announcement shows the "single phase" message under it.
-    public const int PanicSubMessageThreshold = 5;
-
-    public const string SinglePhaseTitle = "सिंगल फेज";
-
-    public const string SinglePhaseBody = "आपल्या परिसरातील ट्रान्सफॉर्मर सिंगल फेज झाल्याचे सूचना आम्हाला मिळाली आहे. आम्ही येऊन लवकरच आपला पूर्ववत करू";
+    // Shown on every member's home screen, under each group, until the admin sends a message for that group
+    // (and again after that work is marked completed).
+    public const string FiveMinuteNotice = "तुमची लाईट गेली असल्यास तुम्ही ५ मिनिटे वाट बघा पुढील मेसेज तुम्हाला लगेचच मिळेल.";
 
     // The titles for the drop-down: the ready-made messages only.
     public static List<string> DropDownTitles()

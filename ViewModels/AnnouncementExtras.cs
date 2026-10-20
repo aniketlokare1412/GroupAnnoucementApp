@@ -23,7 +23,8 @@ public sealed class AnnouncementExtras : ObservableObject
     private readonly IToastService _toasts;
 
     private bool _isCompleted;
-    private bool _hasPressed;
+    private DateTimeOffset? _lastPressAt;
+    private bool _clockRegistered;
     private int _panicCount;
 
     public AnnouncementExtras(
@@ -48,10 +49,7 @@ public sealed class AnnouncementExtras : ObservableObject
         _toasts = toasts;
 
         // While the countdown runs, one shared clock ticks every second (see Register).
-        if (ShowTimer)
-        {
-            Register(this);
-        }
+        EnsureClock();
 
         PressPanicCommand = new AsyncRelayCommand(PressPanicAsync);
         CompleteCommand = new AsyncRelayCommand(CompleteAsync);
@@ -135,22 +133,6 @@ public sealed class AnnouncementExtras : ObservableObject
         }
     }
 
-    // More than 5 presses: this announcement shows the extra "single phase" message.
-    public bool ShowSubMessage
-    {
-        get { return _panicCount > MessageTemplates.PanicSubMessageThreshold; }
-    }
-
-    public string SubMessageTitle
-    {
-        get { return MessageTemplates.SinglePhaseTitle; }
-    }
-
-    public string SubMessageBody
-    {
-        get { return MessageTemplates.SinglePhaseBody; }
-    }
-
     public bool HasPanic
     {
         get { return _panicCount > 0; }
@@ -179,7 +161,7 @@ public sealed class AnnouncementExtras : ObservableObject
         }
     }
 
-    // The panic button opens when the work is completed or the resolution time has passed.
+    // The panic button opens when the resolution time has passed, or at once when there is no resolution time.
     private bool IsUnlocked
     {
         get
@@ -189,8 +171,25 @@ public sealed class AnnouncementExtras : ObservableObject
                 return true;
             }
 
-            return ShowTimeUp;
+            return !HasResolution || ShowTimeUp;
         }
+    }
+
+    // After a press the button waits 5 minutes before it can be pressed again.
+    private DateTimeOffset CooldownEndsAt
+    {
+        get { return _lastPressAt == null ? DateTimeOffset.MinValue : _lastPressAt.Value.AddMinutes(PanicLimits.CooldownMinutes); }
+    }
+
+    private bool InCooldown
+    {
+        get { return _lastPressAt != null && DateTimeOffset.UtcNow < CooldownEndsAt; }
+    }
+
+    // The shared clock runs while the countdown or the panic wait is on screen.
+    private bool NeedsClock
+    {
+        get { return ShowTimer || InCooldown; }
     }
 
     // Members only.
@@ -199,43 +198,38 @@ public sealed class AnnouncementExtras : ObservableObject
         get { return !_isAdmin; }
     }
 
-    // The panic button is only drawn once it is open (or already used, then it says "Reported").
-    // While it is locked, a small caption explains when it opens instead.
+    // Members always see the button. It is greyed out while the time has not run out and for 5 minutes after a press.
     public bool ShowPanicButton
     {
-        get { return !_isAdmin && (IsUnlocked || _hasPressed); }
-    }
-
-    public bool ShowPanicHint
-    {
-        get { return !_isAdmin && !IsUnlocked && !_hasPressed; }
-    }
-
-    public string PanicHintText
-    {
-        get { return "Problem report opens when the time is up or the work is completed."; }
+        get { return !_isAdmin; }
     }
 
     public bool CanPressPanic
     {
-        get { return !_isAdmin && !_hasPressed && IsUnlocked; }
+        get { return !_isAdmin && IsUnlocked && !InCooldown; }
     }
 
     public string PanicText
     {
         get
         {
-            if (_hasPressed)
+            if (!IsUnlocked)
             {
-                return "Reported";
+                return "Available when the time is up";
             }
 
-            if (IsUnlocked)
+            if (InCooldown)
             {
-                return "Problem not solved? Report it";
+                TimeSpan left = CooldownEndsAt - DateTimeOffset.UtcNow;
+                if (left < TimeSpan.Zero)
+                {
+                    left = TimeSpan.Zero;
+                }
+
+                return "Reported. Report again in " + left.Minutes.ToString("00") + ":" + left.Seconds.ToString("00");
             }
 
-            return "Available when the time is up or the work is completed";
+            return _lastPressAt != null ? "Still not solved? Report again" : "Problem not solved? Report it";
         }
     }
 
@@ -255,23 +249,26 @@ public sealed class AnnouncementExtras : ObservableObject
         get { return "Panic reports: " + _panicCount; }
     }
 
-    // Loads what the card needs from Firestore: a member's own report, or an admin's count.
+    // Loads what the card needs from Firestore: a member's last report, or an admin's count.
     public async Task LoadAsync()
     {
-        // Everyone counts the presses (members may read the anonymous press records).
-        OperationResult<int> count = await _panics.CountAsync(_groupId, _announcementId);
-        if (count.IsSuccess)
+        if (_isAdmin)
         {
-            _panicCount = count.Value;
-        }
-
-        if (!_isAdmin)
-        {
-            OperationResult<bool> pressed = await _panics.HasPressedAsync(_groupId, _announcementId);
-            if (pressed.IsSuccess)
+            OperationResult<int> count = await _panics.CountAsync(_groupId, _announcementId);
+            if (count.IsSuccess)
             {
-                _hasPressed = pressed.Value;
+                _panicCount = count.Value;
             }
+        }
+        else
+        {
+            OperationResult<DateTimeOffset?> last = await _panics.GetLastPressAsync(_groupId, _announcementId);
+            if (last.IsSuccess)
+            {
+                _lastPressAt = last.Value;
+            }
+
+            EnsureClock();
         }
 
         // An empty name means "everything changed".
@@ -282,6 +279,16 @@ public sealed class AnnouncementExtras : ObservableObject
     // were replaced by a refresh simply drop out.
     private static readonly List<WeakReference<AnnouncementExtras>> Live = new List<WeakReference<AnnouncementExtras>>();
     private static IDispatcherTimer? _ticker;
+
+    // Joins the shared clock once, and only while it is needed.
+    private void EnsureClock()
+    {
+        if (!_clockRegistered && NeedsClock)
+        {
+            _clockRegistered = true;
+            Register(this);
+        }
+    }
 
     private static void Register(AnnouncementExtras extras)
     {
@@ -328,14 +335,16 @@ public sealed class AnnouncementExtras : ObservableObject
     // Returns true while this card still needs the clock.
     private bool Tick()
     {
-        if (ShowTimer)
+        if (NeedsClock)
         {
             OnPropertyChanged(nameof(TimeLeftText));
+            OnPropertyChanged(nameof(PanicText));
             return true;
         }
 
-        // The time just ran out (or the work was completed): refresh everything, the panic button opens.
+        // The time ran out, the 5-minute wait ended or the work was completed: refresh everything.
         OnPropertyChanged(string.Empty);
+        _clockRegistered = false;
         return false;
     }
 
@@ -348,7 +357,7 @@ public sealed class AnnouncementExtras : ObservableObject
 
         bool confirmed = await _dialogs.ConfirmAsync(
             "Report a problem",
-            "Report that the problem is still not solved? You can report only once.",
+            "Report that the problem is still not solved? You can report again after " + PanicLimits.CooldownMinutes + " minutes.",
             "Report",
             "Cancel");
         if (!confirmed)
@@ -363,8 +372,9 @@ public sealed class AnnouncementExtras : ObservableObject
             return;
         }
 
-        _hasPressed = true;
+        _lastPressAt = DateTimeOffset.UtcNow;
         _panicCount++;
+        EnsureClock();
         AlertFeedback.Buzz();
         OnPropertyChanged(string.Empty);
         _toasts.Show("Your report was sent");

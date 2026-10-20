@@ -20,8 +20,32 @@ public sealed class MemberAnnouncementItem : ObservableObject
     public Color TileForeground { get; private set; } = TileColors.Foreground(null);
     public string Title { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
+
+    // False for the general notice shown to a member who has not joined any group (no group header).
+    public bool HasGroup { get; private set; } = true;
+
+    // "Also in: Community 2, Community 3" - shown once on the card when its group is in several communities.
+    public string AlsoInText { get; set; } = string.Empty;
+
+    public bool HasAlsoIn
+    {
+        get { return !string.IsNullOrEmpty(AlsoInText); }
+    }
+
+    // The "leave group" icon in the card header. Only one card per group shows it.
+    public bool ShowLeave { get; set; }
+
+    public ICommand? LeaveCommand { get; set; }
+
+    // The 5-minute notice has no title line.
+    public bool HasTitle
+    {
+        get { return !string.IsNullOrEmpty(Title); }
+    }
     public string DateText { get; private set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; private set; }
+
+    private bool _isNotice;
 
     private ImageSource? _image;
 
@@ -126,7 +150,15 @@ public sealed class MemberAnnouncementItem : ObservableObject
 
     public string CardLabel
     {
-        get { return "Announcement in " + GroupName + ": " + Title + ". " + DateText.Replace("\n", " "); }
+        get
+        {
+            if (_isNotice)
+            {
+                return (HasGroup ? "Notice for " + GroupName + ": " : "Notice: ") + Message;
+            }
+
+            return "Announcement in " + GroupName + ": " + Title + ". " + DateText.Replace("\n", " ");
+        }
     }
 
     private void ApplyGroup(AnnouncementGroup group)
@@ -158,13 +190,43 @@ public sealed class MemberAnnouncementItem : ObservableObject
         return item;
     }
 
+    // The standing "wait 5 minutes" message of a group that has no active message from the admin.
+    // CreatedAt is the oldest possible time, so it always sits below the real messages.
+    public static MemberAnnouncementItem FromFiveMinuteNotice(AnnouncementGroup group)
+    {
+        MemberAnnouncementItem item = new MemberAnnouncementItem();
+        item.ApplyGroup(group);
+        item.Title = string.Empty;
+        item.Message = MessageTemplates.FiveMinuteNotice;
+        item._fallbackAccent = Color.FromArgb("#0F766E");
+        item.CreatedAt = DateTimeOffset.MinValue;
+        item.DateText = string.Empty;
+        item._isNotice = true;
+        return item;
+    }
+
+    // The same 5-minute message for a member who has not joined any group yet. No group header.
+    public static MemberAnnouncementItem FromGeneralNotice()
+    {
+        MemberAnnouncementItem item = new MemberAnnouncementItem();
+        item.HasGroup = false;
+        item.Title = string.Empty;
+        item.Message = MessageTemplates.FiveMinuteNotice;
+        item._fallbackAccent = Color.FromArgb("#0F766E");
+        item.CreatedAt = DateTimeOffset.MinValue;
+        item.DateText = string.Empty;
+        item._isNotice = true;
+        return item;
+    }
+
     public static MemberAnnouncementItem From(AnnouncementGroup group, Announcement announcement, IAttachmentService? attachments = null)
     {
         MemberAnnouncementItem item = new MemberAnnouncementItem();
         item.ApplyGroup(group);
         item.Title = announcement.Title;
         item.Message = announcement.Message;
-        item.CreatedAt = announcement.CreatedAt;
+        // A message just posted can still have no server time: it is the newest.
+        item.CreatedAt = announcement.CreatedAt == default ? DateTimeOffset.UtcNow : announcement.CreatedAt;
         item.ConfigureAttachment(group.Id, announcement.Id, announcement, attachments);
         item.DateText = announcement.CreatedAt == default
             ? "Just now"

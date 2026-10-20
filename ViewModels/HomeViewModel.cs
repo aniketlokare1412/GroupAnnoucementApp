@@ -189,24 +189,55 @@ public partial class HomeViewModel : BaseViewModel
         List<MemberAnnouncementItem> items = new List<MemberAnnouncementItem>();
         for (int i = 0; i < groups.Count; i++)
         {
-            // A planned outage (or its cancellation) is shown instead of the regular message while it is on.
+            // A planned outage is shown next to the group's other message, not instead of it.
             OperationResult<Outage?> outageResult = outageTasks[i].Result;
             if (outageResult.IsSuccess && outageResult.Value != null && OutageText.IsShownAt(outageResult.Value, now))
             {
                 items.Add(MemberAnnouncementItem.FromOutage(groups[i], outageResult.Value, now));
-                continue;
             }
 
             OperationResult<List<Announcement>> result = tasks[i].Result;
-            if (result.IsSuccess && result.Value != null && result.Value.Count > 0)
+            if (!result.IsSuccess || result.Value == null)
             {
-                MemberAnnouncementItem card = MemberAnnouncementItem.From(groups[i], result.Value[0], _attachments);
-                card.Extras = new AnnouncementExtras(groups[i].Id, result.Value[0], false, _announcementService, _panicService, _dialogs, _toasts);
+                // Could not load: show nothing for this group rather than a wrong "wait 5 minutes".
+                continue;
+            }
+
+            // Newest first. A completed message disappears and the 5-minute notice comes back.
+            Announcement? latest = result.Value.Count > 0 ? result.Value[0] : null;
+            if (latest != null && latest.Status != AnnouncementStatus.Completed)
+            {
+                MemberAnnouncementItem card = MemberAnnouncementItem.From(groups[i], latest, _attachments);
+                card.Extras = new AnnouncementExtras(groups[i].Id, latest, false, _announcementService, _panicService, _dialogs, _toasts);
                 items.Add(card);
+            }
+            else
+            {
+                items.Add(MemberAnnouncementItem.FromFiveMinuteNotice(groups[i]));
             }
         }
 
-        items.Sort((a, b) => b.CreatedAt.CompareTo(a.CreatedAt));
+        // A member who has not joined any (active) group still sees the 5-minute message.
+        if (groups.Count == 0)
+        {
+            items.Add(MemberAnnouncementItem.FromGeneralNotice());
+        }
+
+        // Newest message first; the 5-minute notices (oldest possible time) end up below the real messages.
+        items = items.OrderByDescending(x => x.CreatedAt).ToList();
+
+        // One "leave group" icon per group, on the first card of that group.
+        HashSet<string> withLeave = new HashSet<string>();
+        for (int i = 0; i < items.Count; i++)
+        {
+            string leaveGroupId = items[i].GroupId;
+            if (!string.IsNullOrEmpty(leaveGroupId) && withLeave.Add(leaveGroupId))
+            {
+                string leaveGroupName = items[i].GroupName;
+                items[i].ShowLeave = true;
+                items[i].LeaveCommand = new AsyncRelayCommand(() => LeaveGroupFromHomeAsync(leaveGroupId, leaveGroupName));
+            }
+        }
 
         MemberAnnouncements.Clear();
         for (int i = 0; i < items.Count; i++)
@@ -292,16 +323,21 @@ public partial class HomeViewModel : BaseViewModel
             GroupsCountText = groups.Count.ToString();
 
             // Active groups first (the service already sorted by name; OrderBy keeps that order).
-            List<AnnouncementGroup> ordered = groups.OrderByDescending(g => g.IsActive).ToList();
-
-            // How many people pressed the panic button on each group's latest announcement.
+            // Panic reports and fresh messages move a group to the top of the list.
             List<string> groupIds = new List<string>();
-            for (int i = 0; i < ordered.Count; i++)
+            for (int i = 0; i < groups.Count; i++)
             {
-                groupIds.Add(ordered[i].Id);
+                groupIds.Add(groups[i].Id);
             }
 
-            Dictionary<string, int> panicCounts = await _panicService.GetLatestCountsAsync(groupIds);
+            Dictionary<string, GroupActivity> activity = await _panicService.GetLatestActivityAsync(groupIds);
+            Dictionary<string, int> panicCounts = new Dictionary<string, int>();
+            foreach (KeyValuePair<string, GroupActivity> pair in activity)
+            {
+                panicCounts[pair.Key] = pair.Value.PanicCount;
+            }
+
+            List<AnnouncementGroup> ordered = OrderForAdminHome(groups, activity);
 
             // One beep when any group's panic count has gone up since the last check.
             if (_previousPanicCounts != null)
@@ -376,6 +412,36 @@ public partial class HomeViewModel : BaseViewModel
     }
 
     // The count tiles and "View all" jump to the Groups tab on the right view (0 groups, 1 communities, 2 super communities).
+    // 1) active groups first, 2) groups with panic reports on a message that is still open (most reports first),
+    // 3) groups the admin posted to most recently, 4) the rest by name.
+    private static List<AnnouncementGroup> OrderForAdminHome(List<AnnouncementGroup> groups, Dictionary<string, GroupActivity> activity)
+    {
+        return groups
+            .OrderByDescending(g => g.IsActive)
+            .ThenByDescending(g => OpenPanics(activity, g.Id) > 0)
+            .ThenByDescending(g => OpenPanics(activity, g.Id))
+            .ThenByDescending(g => LastPost(activity, g.Id))
+            .ThenBy(g => g.Name, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static int OpenPanics(Dictionary<string, GroupActivity> activity, string groupId)
+    {
+        GroupActivity? item;
+        if (activity.TryGetValue(groupId, out item) && !item.IsCompleted)
+        {
+            return item.PanicCount;
+        }
+
+        return 0;
+    }
+
+    private static DateTimeOffset LastPost(Dictionary<string, GroupActivity> activity, string groupId)
+    {
+        GroupActivity? item;
+        return activity.TryGetValue(groupId, out item) ? item.LastPostedAt : DateTimeOffset.MinValue;
+    }
+
     [RelayCommand]
     private Task OpenGroupsTabAsync()
     {
@@ -435,8 +501,72 @@ public partial class HomeViewModel : BaseViewModel
         await LoadMemberAnnouncementsAsync();
     }
 
-    // Puts each card under the communities its group is in (a group in two communities shows under
-    // both), grouped by super community. Groups in no community go last under "Other groups".
+    private bool _isLeaving;
+
+    // The "leave group" icon on a Home card: same confirmation as on the group page, then Home reloads.
+    private async Task LeaveGroupFromHomeAsync(string groupId, string groupName)
+    {
+        if (_isLeaving)
+        {
+            return;
+        }
+
+        string shownName = string.IsNullOrWhiteSpace(groupName) ? "the group" : groupName;
+        bool confirmed = await _dialogs.ConfirmAsync(
+            "Leave group",
+            "Leave \"" + shownName + "\"? You will no longer see its announcements. You can join again later.",
+            "Leave",
+            "Cancel");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        _isLeaving = true;
+        try
+        {
+            OperationResult result = await _membershipService.LeaveGroupAsync(groupId);
+            if (!result.IsSuccess)
+            {
+                ErrorMessage = result.ErrorMessage;
+                return;
+            }
+
+            _toasts.Show("Left " + shownName);
+            await LoadAsync();
+        }
+        finally
+        {
+            _isLeaving = false;
+        }
+    }
+
+    // Orders communities: those inside a super community first (by super community name), then by name.
+    private static int CompareCommunities(CommunityDirectory directory, Community a, Community b)
+    {
+        SuperCommunity? superA = directory.SuperOf(a);
+        SuperCommunity? superB = directory.SuperOf(b);
+        if (superA != null && superB == null)
+        {
+            return -1;
+        }
+
+        if (superA == null && superB != null)
+        {
+            return 1;
+        }
+
+        if (superA != null && superB != null && superA.Id != superB.Id)
+        {
+            return string.Compare(superA.Name, superB.Name, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
+    }
+
+    // Shows every card ONCE, under the first community its group is in (communities inside a super
+    // community come first). A group in more than one community shows "Also in: ..." on its first card.
+    // Groups in no community go last under "Other groups".
     // With no communities around the member's groups there is one block without headings.
     private void BuildMemberSections(List<MemberAnnouncementItem> items)
     {
@@ -444,26 +574,44 @@ public partial class HomeViewModel : BaseViewModel
 
         Dictionary<string, List<MemberAnnouncementItem>> byCommunity = new Dictionary<string, List<MemberAnnouncementItem>>();
         List<MemberAnnouncementItem> others = new List<MemberAnnouncementItem>();
+        HashSet<string> alsoShown = new HashSet<string>();
 
         for (int i = 0; i < items.Count; i++)
         {
-            List<Community> communities = _directory == null ? new List<Community>() : _directory.CommunitiesOfGroup(items[i].GroupId);
+            List<Community> communities = new List<Community>();
+            if (_directory != null)
+            {
+                communities.AddRange(_directory.CommunitiesOfGroup(items[i].GroupId));
+            }
+
             if (communities.Count == 0)
             {
                 others.Add(items[i]);
                 continue;
             }
 
-            for (int j = 0; j < communities.Count; j++)
+            CommunityDirectory knownDirectory = _directory!;
+            communities.Sort((a, b) => CompareCommunities(knownDirectory, a, b));
+
+            // The primary community only: the card is not repeated under the other communities.
+            List<MemberAnnouncementItem>? list;
+            if (!byCommunity.TryGetValue(communities[0].Id, out list))
             {
-                List<MemberAnnouncementItem>? list;
-                if (!byCommunity.TryGetValue(communities[j].Id, out list))
+                list = new List<MemberAnnouncementItem>();
+                byCommunity[communities[0].Id] = list;
+            }
+
+            list.Add(items[i]);
+
+            if (communities.Count > 1 && alsoShown.Add(items[i].GroupId))
+            {
+                List<string> otherNames = new List<string>();
+                for (int j = 1; j < communities.Count; j++)
                 {
-                    list = new List<MemberAnnouncementItem>();
-                    byCommunity[communities[j].Id] = list;
+                    otherNames.Add(communities[j].Name);
                 }
 
-                list.Add(items[i]);
+                items[i].AlsoInText = "Also in: " + string.Join(", ", otherNames);
             }
         }
 
@@ -488,27 +636,7 @@ public partial class HomeViewModel : BaseViewModel
         }
 
         // Communities inside a super community first (by super community name), the others after.
-        used.Sort((a, b) =>
-        {
-            SuperCommunity? superA = directory.SuperOf(a);
-            SuperCommunity? superB = directory.SuperOf(b);
-            if (superA != null && superB == null)
-            {
-                return -1;
-            }
-
-            if (superA == null && superB != null)
-            {
-                return 1;
-            }
-
-            if (superA != null && superB != null && superA.Id != superB.Id)
-            {
-                return string.Compare(superA.Name, superB.Name, StringComparison.OrdinalIgnoreCase);
-            }
-
-            return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
-        });
+        used.Sort((a, b) => CompareCommunities(directory, a, b));
 
         string lastSuperName = string.Empty;
         for (int i = 0; i < used.Count; i++)
