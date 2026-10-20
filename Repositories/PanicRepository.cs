@@ -17,7 +17,9 @@ public class PanicRepository : IPanicRepository
     {
         PanicPress press = new PanicPress();
         press.UserId = uid;
-        IDocumentReference document = _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + uid);
+        // One document per press (uid + time), so a member can press again after the cooldown.
+        string pressId = uid + "_" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        IDocumentReference document = _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + pressId);
         return document.SetDataAsync(press);
     }
 
@@ -26,6 +28,31 @@ public class PanicRepository : IPanicRepository
         IDocumentReference document = _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + uid);
         IDocumentSnapshot<PanicPress> snapshot = await document.GetDocumentSnapshotAsync<PanicPress>();
         return snapshot.Data != null;
+    }
+
+    public async Task<DateTimeOffset?> LastPressAsync(string groupId, string announcementId, string uid)
+    {
+        IQuery query = _firestore.GetCollection(CollectionPath(groupId, announcementId)).WhereEqualsTo("userId", uid);
+        IQuerySnapshot<PanicPress> snapshot = await query.GetDocumentsAsync<PanicPress>();
+
+        DateTimeOffset? latest = null;
+        foreach (IDocumentSnapshot<PanicPress> document in snapshot.Documents)
+        {
+            PanicPress? press = document.Data;
+            if (press == null)
+            {
+                continue;
+            }
+
+            // A press just made can still have no server time: it is the newest.
+            DateTimeOffset at = press.CreatedAt == default ? DateTimeOffset.UtcNow : press.CreatedAt;
+            if (latest == null || at > latest.Value)
+            {
+                latest = at;
+            }
+        }
+
+        return latest;
     }
 
     public async Task<int> CountAsync(string groupId, string announcementId)
