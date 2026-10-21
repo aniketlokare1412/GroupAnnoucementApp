@@ -117,13 +117,18 @@ public class PanicService : IPanicService
 
     public async Task<Dictionary<string, GroupActivity>> GetLatestActivityAsync(List<string> groupIds)
     {
+        // With 200 groups this must not start 400 requests at once: at most 10 groups are read at a time.
         List<Task<GroupActivity>> tasks = new List<Task<GroupActivity>>();
-        for (int i = 0; i < groupIds.Count; i++)
+        using (SemaphoreSlim gate = new SemaphoreSlim(10))
         {
-            tasks.Add(LatestActivityAsync(groupIds[i]));
-        }
+            for (int i = 0; i < groupIds.Count; i++)
+            {
+                string groupId = groupIds[i];
+                tasks.Add(LimitedActivityAsync(gate, groupId));
+            }
 
-        await Task.WhenAll(tasks);
+            await Task.WhenAll(tasks);
+        }
 
         Dictionary<string, GroupActivity> result = new Dictionary<string, GroupActivity>();
         for (int i = 0; i < groupIds.Count; i++)
@@ -132,6 +137,19 @@ public class PanicService : IPanicService
         }
 
         return result;
+    }
+
+    private async Task<GroupActivity> LimitedActivityAsync(SemaphoreSlim gate, string groupId)
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return await LatestActivityAsync(groupId);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     // The newest announcement of one group: its panic count, when it was posted and whether it is completed.
@@ -152,14 +170,17 @@ public class PanicService : IPanicService
                 }
             }
 
+            // With no open announcement the members see the 5-minute notice: its panic presses count.
             if (latest == null)
             {
+                activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
                 return activity;
             }
 
             activity.LastPostedAt = latest.CreatedAt == default ? DateTimeOffset.UtcNow : latest.CreatedAt;
             activity.IsCompleted = latest.Status == AnnouncementStatus.Completed;
-            activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, latest.Id));
+            string countedId = activity.IsCompleted ? PanicLimits.NoticeAnnouncementId : latest.Id;
+            activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, countedId));
             return activity;
         }
         catch (Exception ex)

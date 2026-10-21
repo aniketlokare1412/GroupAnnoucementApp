@@ -5,7 +5,35 @@ public sealed class AttachmentPick
 {
     public string FileName { get; set; } = string.Empty;
     public string ContentType { get; set; } = "application/octet-stream";
-    public byte[] Bytes { get; set; } = Array.Empty<byte>();
+    private byte[] _bytes = Array.Empty<byte>();
+    private string? _base64;
+
+    public byte[] Bytes
+    {
+        get { return _bytes; }
+        set
+        {
+            _bytes = value;
+            _base64 = null;
+        }
+    }
+
+    // The file as base64 text, worked out once. Posting to many groups stores one copy per group,
+    // so this saves repeating the conversion for every group.
+    public string Base64
+    {
+        get
+        {
+            string? cached = _base64;
+            if (cached == null)
+            {
+                cached = Convert.ToBase64String(_bytes);
+                _base64 = cached;
+            }
+
+            return cached;
+        }
+    }
 }
 
 // What was stored for an announcement. Kind is "image" or "file".

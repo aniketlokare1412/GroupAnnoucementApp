@@ -93,10 +93,16 @@ public sealed class MemberAnnouncementItem : ObservableObject
         get { return _extras != null; }
     }
 
+    // The status row (Work in progress, timer ...) is for real announcements; the 5-minute notice only has the panic button.
+    public bool HasStatusRow
+    {
+        get { return _extras != null && !_isNotice; }
+    }
+
     // Stripe colour: red = work in progress, amber = time is up (or planned outage), green = completed / restored.
     public Color AccentColor
     {
-        get { return _extras != null ? _extras.AccentColor : _fallbackAccent; }
+        get { return _extras != null && !_isNotice ? _extras.AccentColor : _fallbackAccent; }
     }
 
     private void OnExtrasChanged(object? sender, PropertyChangedEventArgs e)

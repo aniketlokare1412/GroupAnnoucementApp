@@ -40,7 +40,7 @@ public class AttachmentService : IAttachmentService
             document.Name = file.FileName;
             document.ContentType = file.ContentType;
             document.Size = file.Bytes.Length;
-            document.Data = Convert.ToBase64String(file.Bytes);
+            document.Data = file.Base64;
             document.CreatedBy = uid;
 
             await ServiceHelper.WithTimeoutAsync(_attachmentRepository.CreateAsync(groupId, announcementId, document));

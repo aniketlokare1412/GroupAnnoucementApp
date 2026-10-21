@@ -27,6 +27,14 @@ public sealed class AnnouncementExtras : ObservableObject
     private bool _clockRegistered;
     private int _panicCount;
 
+    // Presses made in this session, so a card that is rebuilt (Home refreshes) keeps its 5-minute wait at once.
+    private static readonly Dictionary<string, DateTimeOffset> RecentPresses = new Dictionary<string, DateTimeOffset>();
+
+    private string CacheKey
+    {
+        get { return _groupId + "/" + _announcementId; }
+    }
+
     public AnnouncementExtras(
         string groupId,
         Announcement announcement,
@@ -48,11 +56,32 @@ public sealed class AnnouncementExtras : ObservableObject
         _dialogs = dialogs;
         _toasts = toasts;
 
+        lock (RecentPresses)
+        {
+            DateTimeOffset cached;
+            if (RecentPresses.TryGetValue(CacheKey, out cached))
+            {
+                _lastPressAt = cached;
+            }
+        }
+
         // While the countdown runs, one shared clock ticks every second (see Register).
         EnsureClock();
 
         PressPanicCommand = new AsyncRelayCommand(PressPanicAsync);
         CompleteCommand = new AsyncRelayCommand(CompleteAsync);
+    }
+
+    // The panic button under the 5-minute notice: the same button, enabled from the start. There is no
+    // announcement, so the presses go to the fixed "notice" id of the group.
+    public static AnnouncementExtras ForNotice(string groupId, IPanicService panics, IDialogService dialogs, IToastService toasts)
+    {
+        Announcement stand = new Announcement();
+        stand.Id = PanicLimits.NoticeAnnouncementId;
+        stand.GroupId = groupId;
+        stand.Status = AnnouncementStatus.Active;
+        stand.ResolveMinutes = 0;
+        return new AnnouncementExtras(groupId, stand, false, null!, panics, dialogs, toasts);
     }
 
     public ICommand PressPanicCommand { get; private set; }
@@ -266,6 +295,17 @@ public sealed class AnnouncementExtras : ObservableObject
             if (last.IsSuccess)
             {
                 _lastPressAt = last.Value;
+                lock (RecentPresses)
+                {
+                    if (last.Value != null)
+                    {
+                        RecentPresses[CacheKey] = last.Value.Value;
+                    }
+                    else
+                    {
+                        RecentPresses.Remove(CacheKey);
+                    }
+                }
             }
 
             EnsureClock();
@@ -373,6 +413,11 @@ public sealed class AnnouncementExtras : ObservableObject
         }
 
         _lastPressAt = DateTimeOffset.UtcNow;
+        lock (RecentPresses)
+        {
+            RecentPresses[CacheKey] = _lastPressAt.Value;
+        }
+
         _panicCount++;
         EnsureClock();
         AlertFeedback.Buzz();

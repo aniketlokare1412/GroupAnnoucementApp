@@ -66,13 +66,25 @@ public class PanicRepository : IPanicRepository
     {
         ICollectionReference collection = _firestore.GetCollection(CollectionPath(groupId, announcementId));
         IQuerySnapshot<PanicPress> snapshot = await collection.GetDocumentsAsync<PanicPress>();
+        // Repeated presses can add up to many documents: delete them side by side, 25 at a time.
+        List<Task> deletions = new List<Task>();
         foreach (IDocumentSnapshot<PanicPress> document in snapshot.Documents)
         {
             PanicPress? press = document.Data;
             if (press != null)
             {
-                await _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + press.Id).DeleteDocumentAsync();
+                deletions.Add(_firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + press.Id).DeleteDocumentAsync());
+                if (deletions.Count >= 25)
+                {
+                    await Task.WhenAll(deletions);
+                    deletions.Clear();
+                }
             }
+        }
+
+        if (deletions.Count > 0)
+        {
+            await Task.WhenAll(deletions);
         }
     }
 

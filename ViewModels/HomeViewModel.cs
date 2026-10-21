@@ -213,7 +213,9 @@ public partial class HomeViewModel : BaseViewModel
             }
             else
             {
-                items.Add(MemberAnnouncementItem.FromFiveMinuteNotice(groups[i]));
+                MemberAnnouncementItem notice = MemberAnnouncementItem.FromFiveMinuteNotice(groups[i]);
+                notice.Extras = AnnouncementExtras.ForNotice(groups[i].Id, _panicService, _dialogs, _toasts);
+                items.Add(notice);
             }
         }
 
@@ -412,7 +414,7 @@ public partial class HomeViewModel : BaseViewModel
     }
 
     // The count tiles and "View all" jump to the Groups tab on the right view (0 groups, 1 communities, 2 super communities).
-    // 1) active groups first, 2) groups with panic reports on a message that is still open (most reports first),
+    // 1) active groups first, 2) groups with open panic reports (on the open message or on the 5-minute notice, most reports first),
     // 3) groups the admin posted to most recently, 4) the rest by name.
     private static List<AnnouncementGroup> OrderForAdminHome(List<AnnouncementGroup> groups, Dictionary<string, GroupActivity> activity)
     {
@@ -428,7 +430,7 @@ public partial class HomeViewModel : BaseViewModel
     private static int OpenPanics(Dictionary<string, GroupActivity> activity, string groupId)
     {
         GroupActivity? item;
-        if (activity.TryGetValue(groupId, out item) && !item.IsCompleted)
+        if (activity.TryGetValue(groupId, out item))
         {
             return item.PanicCount;
         }

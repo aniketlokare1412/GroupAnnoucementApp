@@ -49,7 +49,7 @@
                                                     <BoxView Style="{StaticResource Hairline}" IsVisible="{Binding HasGroup}" />
 
                                                     <!-- 2. Status row: one line with the state and the countdown (real announcements only) -->
-                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasExtras}">
+                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasStatusRow}">
                                                         <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding Extras.IsActive}" Padding="10,4">
                                                             <HorizontalStackLayout Spacing="8">
                                                                 <controls:BlinkingDot IsVisible="{Binding Extras.IsActive}" VerticalOptions="Center" />

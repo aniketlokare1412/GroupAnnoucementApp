@@ -36,14 +36,23 @@ public class MembershipService : IMembershipService
         try
         {
             HashSet<string> memberOf = await LoadMemberGroupIdsAsync(uid);
-            List<AnnouncementGroup> active = await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
+
+            // Only the member's own groups are read (a handful), not every active group in the app.
+            List<Task<AnnouncementGroup?>> lookups = new List<Task<AnnouncementGroup?>>();
+            foreach (string groupId in memberOf)
+            {
+                lookups.Add(ReadVisibleGroupAsync(groupId));
+            }
+
+            await Task.WhenAll(lookups);
 
             List<AnnouncementGroup> mine = new List<AnnouncementGroup>();
-            for (int i = 0; i < active.Count; i++)
+            for (int i = 0; i < lookups.Count; i++)
             {
-                if (memberOf.Contains(active[i].Id))
+                AnnouncementGroup? group = lookups[i].Result;
+                if (group != null && group.IsActive)
                 {
-                    mine.Add(active[i]);
+                    mine.Add(group);
                 }
             }
 
@@ -59,6 +68,27 @@ public class MembershipService : IMembershipService
             System.Diagnostics.Debug.WriteLine("LOAD MY GROUPS ERROR: " + ex);
             return OperationResult<List<AnnouncementGroup>>.Fail(ServiceHelper.MapError(ex, "We could not load your groups. Please check your connection and try again."));
         }
+    }
+
+    // One group by id. A group that members may not read (inactive, or gone) counts as "not there",
+    // exactly like the old "all active groups" query that never returned it.
+    private async Task<AnnouncementGroup?> ReadVisibleGroupAsync(string groupId)
+    {
+        try
+        {
+            return await ServiceHelper.WithTimeoutAsync(_groupRepository.GetByIdAsync(groupId));
+        }
+        catch (Exception ex) when (IsPermissionDenied(ex))
+        {
+            return null;
+        }
+    }
+
+    private static bool IsPermissionDenied(Exception ex)
+    {
+        string text = ex.Message ?? string.Empty;
+        return text.Contains("PERMISSION_DENIED", StringComparison.OrdinalIgnoreCase)
+            || text.Contains("permission", StringComparison.OrdinalIgnoreCase);
     }
 
     public async Task<OperationResult<BrowseGroupsResult>> GetBrowseGroupsAsync()

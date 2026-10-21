@@ -159,7 +159,7 @@ public class AnnouncementService : IAnnouncementService
         try
         {
             // Every target must still be an active group.
-            List<AnnouncementGroup> allGroups = await ServiceHelper.WithTimeoutAsync(_groupRepository.GetAllAsync());
+            List<AnnouncementGroup> allGroups = await LoadTargetGroupsAsync(targets);
             for (int i = 0; i < targets.Count; i++)
             {
                 if (!IsActiveGroup(allGroups, targets[i]))
@@ -178,54 +178,29 @@ public class AnnouncementService : IAnnouncementService
             PublishResult result = new PublishResult();
             string? lastError = null;
 
-            for (int i = 0; i < targets.Count; i++)
+            // The groups are posted to side by side (a few at a time) instead of one after the other.
+            // The results are read back in the order of the selected groups.
+            using (SemaphoreSlim gate = new SemaphoreSlim(MaxParallelGroups))
             {
-                string groupId = targets[i];
-
-                Announcement announcement = new Announcement();
-                announcement.GroupId = groupId;
-                announcement.BatchId = batchId;
-                announcement.Title = cleanTitle;
-                announcement.Message = cleanMessage;
-                announcement.IsActive = true;
-                announcement.IsEdited = false;
-                announcement.CreatedBy = uid;
-
-                string announcementId = Guid.NewGuid().ToString("N");
-
-                try
+                List<Task<GroupPostOutcome>> posts = new List<Task<GroupPostOutcome>>();
+                for (int i = 0; i < targets.Count; i++)
                 {
-                    announcement.Status = AnnouncementStatus.Active;
-                    announcement.ResolveMinutes = resolveMinutes < 0 ? 0 : resolveMinutes;
+                    string target = targets[i];
+                    posts.Add(RunLimitedAsync(gate, () => PostToGroupAsync(target, uid, batchId, cleanTitle, cleanMessage, attachment, resolveMinutes)));
+                }
 
-                    // Each group gets its own copy of the file, so replacing one group's
-                    // announcement never removes a file another group still shows.
-                    if (attachment != null)
+                GroupPostOutcome[] outcomes = await Task.WhenAll(posts);
+                for (int i = 0; i < outcomes.Length; i++)
+                {
+                    if (outcomes[i].Posted)
                     {
-                        OperationResult<UploadedAttachment> uploaded = await _attachments.UploadAsync(groupId, announcementId, attachment);
-                        if (!uploaded.IsSuccess || uploaded.Value == null)
-                        {
-                            throw new InvalidOperationException(uploaded.ErrorMessage ?? "The file could not be saved.");
-                        }
-
-                        announcement.AttachmentName = uploaded.Value.Name;
-                        announcement.AttachmentKind = uploaded.Value.Kind;
+                        result.PostedGroupIds.Add(outcomes[i].GroupId);
                     }
-
-                    await ServiceHelper.WithTimeoutAsync(_announcementRepository.CreateAsync(groupId, announcementId, announcement));
-                    result.PostedGroupIds.Add(groupId);
-                    await DeleteOlderAsync(groupId, announcementId);
-                }
-                catch (TimeoutException)
-                {
-                    result.FailedGroupIds.Add(groupId);
-                    lastError = "Some requests took too long and may still go through. Refresh the group's announcements to check.";
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine("PUBLISH ANNOUNCEMENT ERROR: " + ex);
-                    result.FailedGroupIds.Add(groupId);
-                    lastError = ServiceHelper.MapError(ex, "We could not post the announcement.");
+                    else
+                    {
+                        result.FailedGroupIds.Add(outcomes[i].GroupId);
+                        lastError = outcomes[i].Error;
+                    }
                 }
             }
 
@@ -358,31 +333,183 @@ public class AnnouncementService : IAnnouncementService
         }
     }
 
-    // Only the newest announcement of a group is kept: older ones are deleted for good.
-    // This is best effort. If it fails, the list still shows only the latest one.
-    private async Task DeleteOlderAsync(string groupId, string keepId)
+    // How many groups are posted to at the same time.
+    private const int MaxParallelGroups = 10;
+
+    // Up to this many selected groups are checked one by one (in parallel); beyond it one read of all groups is cheaper.
+    private const int ParallelLookupLimit = 15;
+
+    private sealed class GroupPostOutcome
+    {
+        public string GroupId = string.Empty;
+        public bool Posted;
+        public string? Error;
+    }
+
+    private static async Task<GroupPostOutcome> RunLimitedAsync(SemaphoreSlim gate, Func<Task<GroupPostOutcome>> work)
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return await work();
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
+    // The selected groups only. With a few groups this is far cheaper than reading every group.
+    private async Task<List<AnnouncementGroup>> LoadTargetGroupsAsync(List<string> targets)
+    {
+        if (targets.Count > ParallelLookupLimit)
+        {
+            return await ServiceHelper.WithTimeoutAsync(_groupRepository.GetAllAsync());
+        }
+
+        List<Task<AnnouncementGroup?>> lookups = new List<Task<AnnouncementGroup?>>();
+        for (int i = 0; i < targets.Count; i++)
+        {
+            lookups.Add(ServiceHelper.WithTimeoutAsync(_groupRepository.GetByIdAsync(targets[i])));
+        }
+
+        await Task.WhenAll(lookups);
+
+        List<AnnouncementGroup> found = new List<AnnouncementGroup>();
+        for (int i = 0; i < lookups.Count; i++)
+        {
+            AnnouncementGroup? group = lookups[i].Result;
+            if (group != null)
+            {
+                found.Add(group);
+            }
+        }
+
+        return found;
+    }
+
+    // Posts to ONE group: file copy, the new announcement, then the removal of the older ones.
+    // Never throws: the outcome says whether the announcement was posted.
+    private async Task<GroupPostOutcome> PostToGroupAsync(string groupId, string uid, string batchId, string title, string message, AttachmentPick? attachment, int resolveMinutes)
+    {
+        GroupPostOutcome outcome = new GroupPostOutcome();
+        outcome.GroupId = groupId;
+
+        Announcement announcement = new Announcement();
+        announcement.GroupId = groupId;
+        announcement.BatchId = batchId;
+        announcement.Title = title;
+        announcement.Message = message;
+        announcement.IsActive = true;
+        announcement.IsEdited = false;
+        announcement.CreatedBy = uid;
+
+        string announcementId = Guid.NewGuid().ToString("N");
+
+        try
+        {
+            announcement.Status = AnnouncementStatus.Active;
+            announcement.ResolveMinutes = resolveMinutes < 0 ? 0 : resolveMinutes;
+
+            // Each group gets its own copy of the file, so replacing one group's
+            // announcement never removes a file another group still shows.
+            if (attachment != null)
+            {
+                OperationResult<UploadedAttachment> uploaded = await _attachments.UploadAsync(groupId, announcementId, attachment);
+                if (!uploaded.IsSuccess || uploaded.Value == null)
+                {
+                    throw new InvalidOperationException(uploaded.ErrorMessage ?? "The file could not be saved.");
+                }
+
+                announcement.AttachmentName = uploaded.Value.Name;
+                announcement.AttachmentKind = uploaded.Value.Kind;
+            }
+
+            // The group's current announcements are read while the new one is written (one round trip saved).
+            Task<List<Announcement>> olderTask = ReadAnnouncementsQuietlyAsync(groupId);
+
+            await ServiceHelper.WithTimeoutAsync(_announcementRepository.CreateAsync(groupId, announcementId, announcement));
+            outcome.Posted = true;
+
+            // A new message replaces the 5-minute notice: its panic presses are cleared (together with the old announcement).
+            Task noticeTask = ClearNoticePanicsAsync(groupId);
+            await DeleteOlderAsync(groupId, announcementId, olderTask);
+            await noticeTask;
+        }
+        catch (TimeoutException)
+        {
+            outcome.Error = "Some requests took too long and may still go through. Refresh the group's announcements to check.";
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("PUBLISH ANNOUNCEMENT ERROR: " + ex);
+            outcome.Error = ServiceHelper.MapError(ex, "We could not post the announcement.");
+        }
+
+        return outcome;
+    }
+
+    // Best effort, never throws.
+    private async Task ClearNoticePanicsAsync(string groupId)
     {
         try
         {
-            List<Announcement> all = await ServiceHelper.WithTimeoutAsync(_announcementRepository.GetByGroupAsync(groupId, false));
+            await _panics.DeleteAllAsync(groupId, PanicLimits.NoticeAnnouncementId);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("CLEAR NOTICE PANICS ERROR: " + ex);
+        }
+    }
+
+    // A failed read counts as "nothing to clean up".
+    private async Task<List<Announcement>> ReadAnnouncementsQuietlyAsync(string groupId)
+    {
+        try
+        {
+            return await ServiceHelper.WithTimeoutAsync(_announcementRepository.GetByGroupAsync(groupId, false));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("READ OLDER ANNOUNCEMENTS ERROR: " + ex);
+            return new List<Announcement>();
+        }
+    }
+
+    // Only the newest announcement of a group is kept: older ones are deleted for good.
+    // This is best effort. If it fails, the list still shows only the latest one.
+    private async Task DeleteOlderAsync(string groupId, string keepId, Task<List<Announcement>> olderTask)
+    {
+        try
+        {
+            List<Announcement> all = await olderTask;
+            List<Task> deletions = new List<Task>();
             for (int i = 0; i < all.Count; i++)
             {
                 if (all[i].Id != keepId)
                 {
-                    await _panics.DeleteAllAsync(groupId, all[i].Id);
-                    if (!string.IsNullOrEmpty(all[i].AttachmentKind))
-                    {
-                        await _attachments.DeleteAsync(groupId, all[i].Id);
-                    }
-
-                    await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, all[i].Id));
+                    deletions.Add(DeleteOneOlderAsync(groupId, all[i]));
                 }
             }
+
+            await Task.WhenAll(deletions);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("DELETE OLDER ANNOUNCEMENTS ERROR: " + ex);
         }
+    }
+
+    // The panic reports and the file go first (together), the announcement itself last.
+    private async Task DeleteOneOlderAsync(string groupId, Announcement older)
+    {
+        Task panicTask = _panics.DeleteAllAsync(groupId, older.Id);
+        Task fileTask = string.IsNullOrEmpty(older.AttachmentKind)
+            ? Task.CompletedTask
+            : _attachments.DeleteAsync(groupId, older.Id);
+
+        await Task.WhenAll(panicTask, fileTask);
+        await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, older.Id));
     }
 
     private async Task<OperationResult?> CheckCanChangeAsync(string groupId, string announcementId, string uid)
