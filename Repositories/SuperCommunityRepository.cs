@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -18,6 +19,7 @@ public class SuperCommunityRepository : ISuperCommunityRepository
     public Task CreateAsync(string id, SuperCommunity superCommunity)
     {
         IDocumentReference document = _firestore.GetDocument(SuperCommunitiesCollection + "/" + id);
+        FirestoreMeter.Write("SuperCommunity.CreateAsync");
         return document.SetDataAsync(superCommunity);
     }
 
@@ -25,6 +27,7 @@ public class SuperCommunityRepository : ISuperCommunityRepository
     {
         IDocumentReference document = _firestore.GetDocument(SuperCommunitiesCollection + "/" + id);
         IDocumentSnapshot<SuperCommunity> snapshot = await document.GetDocumentSnapshotAsync<SuperCommunity>();
+        FirestoreMeter.Read("SuperCommunity.GetByIdAsync", 1);
         return snapshot.Data;
     }
 
@@ -32,6 +35,7 @@ public class SuperCommunityRepository : ISuperCommunityRepository
     {
         ICollectionReference collection = _firestore.GetCollection(SuperCommunitiesCollection);
         IQuerySnapshot<SuperCommunity> snapshot = await collection.GetDocumentsAsync<SuperCommunity>();
+        FirestoreMeter.Read("SuperCommunity.GetAllAsync", snapshot.Documents.Count());
 
         List<SuperCommunity> items = new List<SuperCommunity>();
         foreach (IDocumentSnapshot<SuperCommunity> document in snapshot.Documents)
@@ -49,6 +53,7 @@ public class SuperCommunityRepository : ISuperCommunityRepository
     public Task UpdateDetailsAsync(string id, string name, string description, string number)
     {
         IDocumentReference document = _firestore.GetDocument(SuperCommunitiesCollection + "/" + id);
+        FirestoreMeter.Write("SuperCommunity.UpdateDetailsAsync");
         return document.UpdateDataAsync(
             ("name", (object?)name),
             ("description", (object?)description),

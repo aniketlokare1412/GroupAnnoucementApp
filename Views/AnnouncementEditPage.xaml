@@ -106,7 +106,7 @@
                         Command="{Binding PickAttachmentCommand}"
                         IsEnabled="{Binding IsNotBusy}"
                         SemanticProperties.Description="Attach an image or document"
-                        SemanticProperties.Hint="Optional. One file. Photos are made smaller automatically; documents can be up to 700 kilobytes" />
+                        SemanticProperties.Hint="Optional. One file. Photos are made smaller automatically; documents can be up to 200 kilobytes" />
                     <Label
                         Grid.Column="1"
                         Style="{StaticResource Caption}"

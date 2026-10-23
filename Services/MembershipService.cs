@@ -12,17 +12,28 @@ public class MembershipService : IMembershipService
     private readonly IAuthService _authService;
     private readonly IGroupRepository _groupRepository;
     private readonly IMembershipRepository _membershipRepository;
+    private readonly IDirectoryService _directory;
+    private readonly IUserGroupsService _userGroups;
+
+    // Home's refresh asks for "my groups" every 20 seconds. Group names and numbers rarely change,
+    // so a directory copy up to 60 seconds old replaces one read per group. Groups that are not in the
+    // copy (for example one created seconds ago) are still read one by one, exactly as before.
+    private const int DirectoryMaxAgeSeconds = 60;
 
     public MembershipService(
         ISessionService session,
         IAuthService authService,
         IGroupRepository groupRepository,
-        IMembershipRepository membershipRepository)
+        IMembershipRepository membershipRepository,
+        IDirectoryService directory,
+        IUserGroupsService userGroups)
     {
+        _userGroups = userGroups;
         _session = session;
         _authService = authService;
         _groupRepository = groupRepository;
         _membershipRepository = membershipRepository;
+        _directory = directory;
     }
 
     public async Task<OperationResult<List<AnnouncementGroup>>> GetMyGroupsAsync()
@@ -39,9 +50,18 @@ public class MembershipService : IMembershipService
 
             // Only the member's own groups are read (a handful), not every active group in the app.
             List<Task<AnnouncementGroup?>> lookups = new List<Task<AnnouncementGroup?>>();
+            DirectorySnapshot? snapshot = await _directory.GetAsync(DirectoryMaxAgeSeconds);
             foreach (string groupId in memberOf)
             {
-                lookups.Add(ReadVisibleGroupAsync(groupId));
+                AnnouncementGroup? known = snapshot?.FindGroup(groupId);
+                if (known != null)
+                {
+                    lookups.Add(Task.FromResult<AnnouncementGroup?>(DirectorySnapshot.CloneGroup(known)));
+                }
+                else
+                {
+                    lookups.Add(ReadVisibleGroupAsync(groupId));
+                }
             }
 
             await Task.WhenAll(lookups);
@@ -102,7 +122,12 @@ public class MembershipService : IMembershipService
         try
         {
             // The active groups are essential: without them there is nothing to search.
-            List<AnnouncementGroup> active = await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
+            // Phase 1: one directory read (always fresh here, so a group created a moment ago is listed)
+            // instead of one read per active group. Falls back to the old query before the directory exists.
+            DirectorySnapshot? snapshot = await _directory.GetAsync(0);
+            List<AnnouncementGroup> active = snapshot != null
+                ? snapshot.CopyGroups(true)
+                : await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
             active.Sort(CompareByName);
 
             // Showing which groups the user already joined is nice to have, but searching and
@@ -163,7 +188,10 @@ public class MembershipService : IMembershipService
 
         try
         {
-            List<AnnouncementGroup> active = await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
+            DirectorySnapshot? snapshot = await _directory.GetAsync(0);
+            List<AnnouncementGroup> active = snapshot != null
+                ? snapshot.CopyGroups(true)
+                : await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
             if (!ContainsGroup(active, groupId))
             {
                 return OperationResult.Fail("This group is no longer available.");
@@ -176,6 +204,7 @@ public class MembershipService : IMembershipService
             }
 
             await ServiceHelper.WithTimeoutAsync(_membershipRepository.AddAsync(groupId, uid, uid));
+            await UpdateGroupIdsAsync(() => _userGroups.AddAsync(uid, groupId), uid, groupId, true);
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -210,6 +239,7 @@ public class MembershipService : IMembershipService
         try
         {
             await ServiceHelper.WithTimeoutAsync(_membershipRepository.RemoveAsync(groupId, uid));
+            await UpdateGroupIdsAsync(() => _userGroups.RemoveAsync(uid, groupId), uid, groupId, false);
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -220,6 +250,68 @@ public class MembershipService : IMembershipService
         {
             System.Diagnostics.Debug.WriteLine("LEAVE GROUP ERROR: " + ex);
             return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not leave the group. Please try again."));
+        }
+    }
+
+    // Phase 2: keeps userGroups/{uid} in step. The membership itself is already saved, so a failure here must
+    // not turn a successful join / leave into an error: the list is retried once, then repaired on the next pull-to-refresh.
+    private async Task UpdateGroupIdsAsync(Func<Task> update, string uid, string groupId, bool joined)
+    {
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            try
+            {
+                await update();
+                return;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("USER GROUPS UPDATE ERROR: " + ex);
+            }
+        }
+
+        // This session still sees the change.
+        try
+        {
+            List<string> ids = await _userGroups.GetIdsAsync(uid);
+            if (joined && !ids.Contains(groupId))
+            {
+                ids.Add(groupId);
+            }
+            else if (!joined)
+            {
+                ids.Remove(groupId);
+            }
+
+            _userGroups.SetKnown(uid, ids);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("USER GROUPS LOCAL UPDATE ERROR: " + ex);
+        }
+    }
+
+    public async Task<OperationResult> ReconcileGroupsAsync()
+    {
+        string? uid = GetMemberUid();
+        if (uid == null)
+        {
+            return OperationResult.Fail("Only members can view their groups.");
+        }
+
+        try
+        {
+            await _userGroups.ReconcileAsync(uid);
+            return OperationResult.Success();
+        }
+        catch (TimeoutException)
+        {
+            return OperationResult.Fail("Loading your groups is taking too long. Please check your connection and try again.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("RECONCILE GROUPS ERROR: " + ex);
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not refresh your groups. Please check your connection and try again."));
         }
     }
 
@@ -243,7 +335,9 @@ public class MembershipService : IMembershipService
 
     private async Task<HashSet<string>> LoadMemberGroupIdsAsync(string uid)
     {
-        List<string> ids = await ServiceHelper.WithTimeoutAsync(_membershipRepository.GetGroupIdsForUserAsync(uid));
+        // Phase 2: from the member's own userGroups document (memory copy when the live listener is running)
+        // instead of a collection group query over every member document.
+        List<string> ids = await _userGroups.GetIdsAsync(uid);
 
         HashSet<string> set = new HashSet<string>();
         for (int i = 0; i < ids.Count; i++)

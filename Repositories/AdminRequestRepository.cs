@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -18,6 +19,7 @@ public class AdminRequestRepository : IAdminRequestRepository
     public Task CreateAsync(string uid, AdminRequest request)
     {
         IDocumentReference document = _firestore.GetDocument(RequestsCollection + "/" + uid);
+        FirestoreMeter.Write("AdminRequest.CreateAsync");
         return document.SetDataAsync(request);
     }
 
@@ -25,6 +27,7 @@ public class AdminRequestRepository : IAdminRequestRepository
     {
         IDocumentReference document = _firestore.GetDocument(RequestsCollection + "/" + uid);
         IDocumentSnapshot<AdminRequest> snapshot = await document.GetDocumentSnapshotAsync<AdminRequest>();
+        FirestoreMeter.Read("AdminRequest.GetByIdAsync", 1);
         return snapshot.Data;
     }
 
@@ -32,6 +35,7 @@ public class AdminRequestRepository : IAdminRequestRepository
     {
         ICollectionReference collection = _firestore.GetCollection(RequestsCollection);
         IQuerySnapshot<AdminRequest> snapshot = await collection.GetDocumentsAsync<AdminRequest>();
+        FirestoreMeter.Read("AdminRequest.GetAllAsync", snapshot.Documents.Count());
 
         List<AdminRequest> requests = new List<AdminRequest>();
         foreach (IDocumentSnapshot<AdminRequest> document in snapshot.Documents)
@@ -49,6 +53,7 @@ public class AdminRequestRepository : IAdminRequestRepository
     public Task DeleteAsync(string uid)
     {
         IDocumentReference document = _firestore.GetDocument(RequestsCollection + "/" + uid);
+        FirestoreMeter.Delete("AdminRequest.DeleteAsync");
         return document.DeleteDocumentAsync();
     }
 }

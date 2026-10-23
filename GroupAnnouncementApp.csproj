@@ -197,6 +197,9 @@
 		<None Update="Views\HomePage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</None>
+		<None Update="Views\UsersPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
 		<None Update="Views\WelcomePage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>

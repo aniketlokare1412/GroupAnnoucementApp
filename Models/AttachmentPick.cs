@@ -1,6 +1,6 @@
 namespace GroupAnnouncementApp.Models;
 
-// A file the admin picked, read into memory (at most 700 KB after shrinking).
+// A file the admin picked, read into memory (at most 200 KB after shrinking).
 public sealed class AttachmentPick
 {
     public string FileName { get; set; } = string.Empty;

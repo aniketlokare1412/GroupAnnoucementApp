@@ -10,12 +10,16 @@ public class SessionService : ISessionService
 
     private readonly IAuthService _authService;
     private readonly IUserService _userService;
+    private readonly IMemberFeedService _memberFeed;
+    private readonly IAdminStatsWatcher _statsWatcher;
 
     private UserProfile? _currentProfile;
     private string? _notice;
 
-    public SessionService(IAuthService authService, IUserService userService)
+    public SessionService(IAuthService authService, IUserService userService, IMemberFeedService memberFeed, IAdminStatsWatcher statsWatcher)
     {
+        _statsWatcher = statsWatcher;
+        _memberFeed = memberFeed;
         _authService = authService;
         _userService = userService;
     }
@@ -96,6 +100,10 @@ public class SessionService : ISessionService
         if (result.IsSuccess)
         {
             _currentProfile = null;
+
+            // Phase 2: stop the live listeners and forget the previous member's data.
+            _memberFeed.Stop();
+            _statsWatcher.Stop();
         }
         return result;
     }

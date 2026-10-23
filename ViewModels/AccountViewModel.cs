@@ -1,4 +1,4 @@
-﻿using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
@@ -16,6 +16,7 @@ public partial class AccountViewModel : BaseViewModel
     private readonly INavigationService _navigation;
     private readonly ISessionService _session;
     private readonly IAdminRequestService _adminRequests;
+    private readonly IToastService _toasts;
 
     // Bumped every time the confirm state starts or ends, so an old timer never cancels a newer one.
     private int _confirmToken;
@@ -45,11 +46,20 @@ public partial class AccountViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isRequestPending;
 
-    public AccountViewModel(INavigationService navigation, ISessionService session, IAdminRequestService adminRequests)
+    // True for admins (set when the tab appears).
+    [ObservableProperty]
+    private bool _isAdmin;
+
+    public AccountViewModel(
+        INavigationService navigation,
+        ISessionService session,
+        IAdminRequestService adminRequests,
+        IToastService toasts)
     {
         _navigation = navigation;
         _session = session;
         _adminRequests = adminRequests;
+        _toasts = toasts;
     }
 
     // Called by the page every time it appears (Shell reuses the page instance,
@@ -71,6 +81,7 @@ public partial class AccountViewModel : BaseViewModel
         DisplayName = string.IsNullOrWhiteSpace(profile.Phone) ? profile.Name : profile.Phone;
         UserEmail = string.Empty;
         RoleText = _session.IsAdmin ? "Administrator" : "Member";
+        IsAdmin = _session.IsAdmin;
         string digits = PhoneLogin.Normalize(DisplayName);
         Initials = digits.Length >= 2 ? digits.Substring(digits.Length - 2) : BuildInitials(DisplayName);
 

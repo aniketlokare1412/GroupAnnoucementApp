@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -24,12 +25,14 @@ public class MembershipRepository : IMembershipRepository
         member.AddedBy = addedBy;
 
         IDocumentReference document = _firestore.GetDocument(MemberPath(groupId, userId));
+        FirestoreMeter.Write("Membership.AddAsync");
         return document.SetDataAsync(member);
     }
 
     public Task RemoveAsync(string groupId, string userId)
     {
         IDocumentReference document = _firestore.GetDocument(MemberPath(groupId, userId));
+        FirestoreMeter.Delete("Membership.RemoveAsync");
         return document.DeleteDocumentAsync();
     }
 
@@ -37,6 +40,7 @@ public class MembershipRepository : IMembershipRepository
     {
         IDocumentReference document = _firestore.GetDocument(MemberPath(groupId, userId));
         IDocumentSnapshot<GroupMember> snapshot = await document.GetDocumentSnapshotAsync<GroupMember>();
+        FirestoreMeter.Read("Membership.GetAsync", 1);
         return snapshot.Data;
     }
 
@@ -44,6 +48,7 @@ public class MembershipRepository : IMembershipRepository
     {
         ICollectionReference collection = _firestore.GetCollection(GroupsCollection + "/" + groupId + "/" + MembersCollection);
         IQuerySnapshot<GroupMember> snapshot = await collection.GetDocumentsAsync<GroupMember>();
+        FirestoreMeter.Read("Membership.GetByGroupAsync", snapshot.Documents.Count());
 
         List<GroupMember> members = new List<GroupMember>();
         foreach (IDocumentSnapshot<GroupMember> document in snapshot.Documents)
@@ -63,6 +68,7 @@ public class MembershipRepository : IMembershipRepository
         // Needs the collection group index on members.userId (see firestore.indexes.json).
         IQuery query = _firestore.GetCollectionGroup(MembersCollection).WhereEqualsTo("userId", userId);
         IQuerySnapshot<GroupMember> snapshot = await query.GetDocumentsAsync<GroupMember>();
+        FirestoreMeter.Read("Membership.GetGroupIdsForUserAsync", snapshot.Documents.Count());
 
         List<string> groupIds = new List<string>();
         foreach (IDocumentSnapshot<GroupMember> document in snapshot.Documents)

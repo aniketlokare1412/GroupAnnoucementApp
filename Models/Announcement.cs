@@ -47,6 +47,11 @@ public sealed class Announcement : IFirestoreObject
     [FirestoreProperty("attachmentKind")]
     public string AttachmentKind { get; set; } = string.Empty;
 
+    // Phase 4: the file of a broadcast is stored ONCE (sharedAttachments/{sharedFileId}) and every group's
+    // announcement points at it. Empty = no shared file (no file, or an older per-group copy).
+    [FirestoreProperty("sharedFileId")]
+    public string SharedFileId { get; set; } = string.Empty;
+
     [FirestoreProperty("isActive")]
     public bool IsActive { get; set; } = false;
 

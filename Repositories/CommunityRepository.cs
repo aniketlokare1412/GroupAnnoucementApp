@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -18,6 +19,7 @@ public class CommunityRepository : ICommunityRepository
     public Task CreateAsync(string id, Community community)
     {
         IDocumentReference document = _firestore.GetDocument(CommunitiesCollection + "/" + id);
+        FirestoreMeter.Write("Community.CreateAsync");
         return document.SetDataAsync(community);
     }
 
@@ -25,6 +27,7 @@ public class CommunityRepository : ICommunityRepository
     {
         IDocumentReference document = _firestore.GetDocument(CommunitiesCollection + "/" + id);
         IDocumentSnapshot<Community> snapshot = await document.GetDocumentSnapshotAsync<Community>();
+        FirestoreMeter.Read("Community.GetByIdAsync", 1);
         return snapshot.Data;
     }
 
@@ -32,6 +35,7 @@ public class CommunityRepository : ICommunityRepository
     {
         ICollectionReference collection = _firestore.GetCollection(CommunitiesCollection);
         IQuerySnapshot<Community> snapshot = await collection.GetDocumentsAsync<Community>();
+        FirestoreMeter.Read("Community.GetAllAsync", snapshot.Documents.Count());
 
         List<Community> communities = new List<Community>();
         foreach (IDocumentSnapshot<Community> document in snapshot.Documents)
@@ -54,6 +58,7 @@ public class CommunityRepository : ICommunityRepository
     public Task UpdateAsync(string id, string name, string description, string number, List<string> groupIds, string superCommunityId)
     {
         IDocumentReference document = _firestore.GetDocument(CommunitiesCollection + "/" + id);
+        FirestoreMeter.Write("Community.UpdateAsync");
         return document.UpdateDataAsync(
             ("name", (object?)name),
             ("description", (object?)description),
@@ -65,6 +70,7 @@ public class CommunityRepository : ICommunityRepository
     public Task SetSuperCommunityAsync(string id, string superCommunityId)
     {
         IDocumentReference document = _firestore.GetDocument(CommunitiesCollection + "/" + id);
+        FirestoreMeter.Write("Community.SetSuperCommunityAsync");
         return document.UpdateDataAsync(("superCommunityId", (object?)superCommunityId));
     }
 }

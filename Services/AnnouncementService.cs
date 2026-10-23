@@ -1,5 +1,7 @@
 using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
+using System.Collections.Concurrent;
+using GroupAnnouncementApp.Repositories;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using GroupAnnouncementApp.Services.Interfaces;
 using Microsoft.Maui.Networking;
@@ -14,6 +16,10 @@ public class AnnouncementService : IAnnouncementService
     private readonly IAttachmentService _attachments;
     private readonly IPanicRepository _panics;
     private readonly IGroupRepository _groupRepository;
+    private readonly IFeedService _feed;
+    private readonly IGroupStatsService _stats;
+    private readonly IFirestoreBatchFactory _batches;
+    private readonly IAdminStatsWatcher _watcher;
 
     public AnnouncementService(
         ISessionService session,
@@ -21,8 +27,16 @@ public class AnnouncementService : IAnnouncementService
         IAnnouncementRepository announcementRepository,
         IGroupRepository groupRepository,
         IAttachmentService attachments,
-        IPanicRepository panics)
+        IPanicRepository panics,
+        IFeedService feed,
+        IGroupStatsService stats,
+        IFirestoreBatchFactory batches,
+        IAdminStatsWatcher watcher)
     {
+        _batches = batches;
+        _watcher = watcher;
+        _feed = feed;
+        _stats = stats;
         _panics = panics;
         _attachments = attachments;
         _session = session;
@@ -175,33 +189,72 @@ public class AnnouncementService : IAnnouncementService
                 batchId = Guid.NewGuid().ToString("N");
             }
 
+            // Phase 4: a file is stored ONCE for the whole broadcast (every group's announcement points at it).
+            PostSettings settings = new PostSettings();
+            settings.Uid = uid;
+            settings.BatchId = batchId;
+            settings.Title = cleanTitle;
+            settings.Message = cleanMessage;
+            settings.ResolveMinutes = resolveMinutes < 0 ? 0 : resolveMinutes;
+            if (attachment != null)
+            {
+                string fileId = Guid.NewGuid().ToString("N");
+                OperationResult<UploadedAttachment> uploaded = await _attachments.UploadSharedAsync(fileId, attachment);
+                if (!uploaded.IsSuccess || uploaded.Value == null)
+                {
+                    return OperationResult<PublishResult>.Fail(uploaded.ErrorMessage ?? "The file could not be saved.");
+                }
+
+                settings.SharedFileId = fileId;
+                settings.AttachmentName = uploaded.Value.Name;
+                settings.AttachmentKind = uploaded.Value.Kind;
+            }
+
+            // What the admin Home already knows (live stats): lets the clean-up skip reads that cannot find anything.
+            if (_watcher.IsLive)
+            {
+                settings.Known = _watcher.Snapshot();
+            }
+
             PublishResult result = new PublishResult();
             string? lastError = null;
 
-            // The groups are posted to side by side (a few at a time) instead of one after the other.
-            // The results are read back in the order of the selected groups.
-            using (SemaphoreSlim gate = new SemaphoreSlim(MaxParallelGroups))
+            // The groups are sent in small batches (12 groups, a few batches at a time). One batch = the announcement,
+            // the feed and the stats of each of its groups. The results are read back in the order of the selected groups.
+            using (SemaphoreSlim gate = new SemaphoreSlim(MaxParallelBatches))
             {
-                List<Task<GroupPostOutcome>> posts = new List<Task<GroupPostOutcome>>();
-                for (int i = 0; i < targets.Count; i++)
+                List<Task<List<GroupPostOutcome>>> chunks = new List<Task<List<GroupPostOutcome>>>();
+                for (int start = 0; start < targets.Count; start += BatchGroupCount)
                 {
-                    string target = targets[i];
-                    posts.Add(RunLimitedAsync(gate, () => PostToGroupAsync(target, uid, batchId, cleanTitle, cleanMessage, attachment, resolveMinutes)));
+                    List<string> chunk = targets.GetRange(start, Math.Min(BatchGroupCount, targets.Count - start));
+                    chunks.Add(RunLimitedAsync(gate, () => PostChunkAsync(chunk, settings)));
                 }
 
-                GroupPostOutcome[] outcomes = await Task.WhenAll(posts);
-                for (int i = 0; i < outcomes.Length; i++)
+                List<GroupPostOutcome>[] outcomes = await Task.WhenAll(chunks);
+                for (int c = 0; c < outcomes.Length; c++)
                 {
-                    if (outcomes[i].Posted)
+                    for (int i = 0; i < outcomes[c].Count; i++)
                     {
-                        result.PostedGroupIds.Add(outcomes[i].GroupId);
-                    }
-                    else
-                    {
-                        result.FailedGroupIds.Add(outcomes[i].GroupId);
-                        lastError = outcomes[i].Error;
+                        if (outcomes[c][i].Posted)
+                        {
+                            result.PostedGroupIds.Add(outcomes[c][i].GroupId);
+                        }
+                        else
+                        {
+                            result.FailedGroupIds.Add(outcomes[c][i].GroupId);
+                            lastError = outcomes[c][i].Error;
+                        }
                     }
                 }
+            }
+
+            // Shared files of the replaced announcements are removed when no announcement uses them any more.
+            await SweepSharedFilesAsync(settings.ReplacedFiles);
+
+            // Nothing was posted: the file just stored is not used by anyone.
+            if (result.PostedGroupIds.Count == 0 && !string.IsNullOrEmpty(settings.SharedFileId))
+            {
+                await _attachments.DeleteSharedAsync(settings.SharedFileId);
             }
 
             if (result.PostedGroupIds.Count == 0)
@@ -259,6 +312,9 @@ public class AnnouncementService : IAnnouncementService
             }
 
             await ServiceHelper.WithTimeoutAsync(_announcementRepository.UpdateAsync(groupId, announcementId, cleanTitle, cleanMessage));
+
+            // Phase 2: members listen to the group's feed document, so it gets the change too.
+            await _feed.AnnouncementEditedAsync(groupId, cleanTitle, cleanMessage);
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -299,6 +355,8 @@ public class AnnouncementService : IAnnouncementService
             }
 
             await ServiceHelper.WithTimeoutAsync(_announcementRepository.SetActiveAsync(groupId, announcementId, false));
+            await _feed.AnnouncementRemovedAsync(groupId);
+            await _stats.RemovedAsync(groupId);
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -323,7 +381,10 @@ public class AnnouncementService : IAnnouncementService
 
         try
         {
-            await ServiceHelper.WithTimeoutAsync(_announcementRepository.SetStatusAsync(groupId, announcementId, AnnouncementStatus.Completed, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            long completedAtMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            await ServiceHelper.WithTimeoutAsync(_announcementRepository.SetStatusAsync(groupId, announcementId, AnnouncementStatus.Completed, completedAtMs));
+            await _feed.AnnouncementCompletedAsync(groupId, completedAtMs);
+            await _stats.CompletedAsync(groupId);
             return OperationResult.Success();
         }
         catch (Exception ex)
@@ -336,6 +397,11 @@ public class AnnouncementService : IAnnouncementService
     // How many groups are posted to at the same time.
     private const int MaxParallelGroups = 10;
 
+    // Phase 4: groups per batch, and batches sent at the same time. A batch may hold 500 writes, but security
+    // rules may look at about 20 other documents per batch (one group document per group), so 12 groups is safe.
+    private const int BatchGroupCount = 12;
+    private const int MaxParallelBatches = 4;
+
     // Up to this many selected groups are checked one by one (in parallel); beyond it one read of all groups is cheaper.
     private const int ParallelLookupLimit = 15;
 
@@ -346,7 +412,7 @@ public class AnnouncementService : IAnnouncementService
         public string? Error;
     }
 
-    private static async Task<GroupPostOutcome> RunLimitedAsync(SemaphoreSlim gate, Func<Task<GroupPostOutcome>> work)
+    private static async Task<T> RunLimitedAsync<T>(SemaphoreSlim gate, Func<Task<T>> work)
     {
         await gate.WaitAsync();
         try
@@ -388,52 +454,267 @@ public class AnnouncementService : IAnnouncementService
         return found;
     }
 
-    // Posts to ONE group: file copy, the new announcement, then the removal of the older ones.
+    // Everything the groups of one post share.
+    private sealed class PostSettings
+    {
+        public string Uid = string.Empty;
+        public string BatchId = string.Empty;
+        public string Title = string.Empty;
+        public string Message = string.Empty;
+        public int ResolveMinutes;
+        public string SharedFileId = string.Empty;
+        public string AttachmentName = string.Empty;
+        public string AttachmentKind = string.Empty;
+        public Dictionary<string, GroupActivity> Known = new Dictionary<string, GroupActivity>();
+        public ConcurrentBag<string> ReplacedFiles = new ConcurrentBag<string>();
+    }
+
+    private sealed class PreparedPost
+    {
+        public string GroupId = string.Empty;
+        public string AnnouncementId = string.Empty;
+        public Task<List<Announcement>> OlderTask = Task.FromResult(new List<Announcement>());
+        public string? Error;
+    }
+
+    private static Announcement BuildAnnouncement(string groupId, string announcementId, PostSettings s)
+    {
+        Announcement announcement = new Announcement();
+        announcement.Id = announcementId;
+        announcement.GroupId = groupId;
+        announcement.BatchId = s.BatchId;
+        announcement.Title = s.Title;
+        announcement.Message = s.Message;
+        announcement.IsActive = true;
+        announcement.IsEdited = false;
+        announcement.CreatedBy = s.Uid;
+        announcement.Status = AnnouncementStatus.Active;
+        announcement.ResolveMinutes = s.ResolveMinutes;
+        announcement.SharedFileId = s.SharedFileId;
+        announcement.AttachmentName = s.AttachmentName;
+        announcement.AttachmentKind = s.AttachmentKind;
+        return announcement;
+    }
+
+    // Posts to up to 12 groups at once: the announcement, the feed and the stats of every group go in ONE batch.
+    // If the batch fails, each group is posted the old way, one by one, so each group still gets its own result.
+    private async Task<List<GroupPostOutcome>> PostChunkAsync(List<string> groupIds, PostSettings s)
+    {
+        FirestoreBatch batch = _batches.Create();
+
+        List<Task<PreparedPost>> preparing = new List<Task<PreparedPost>>();
+        for (int i = 0; i < groupIds.Count; i++)
+        {
+            preparing.Add(PrepareAsync(batch, groupIds[i], s));
+        }
+
+        PreparedPost[] prepared = await Task.WhenAll(preparing);
+
+        List<PreparedPost> ready = new List<PreparedPost>();
+        for (int i = 0; i < prepared.Length; i++)
+        {
+            if (prepared[i].Error == null)
+            {
+                ready.Add(prepared[i]);
+            }
+        }
+
+        bool committed = false;
+        if (ready.Count > 0)
+        {
+            try
+            {
+                await ServiceHelper.WithTimeoutAsync(batch.CommitAsync());
+                committed = true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("PUBLISH BATCH ERROR (falling back to one group at a time): " + ex);
+            }
+        }
+
+        List<GroupPostOutcome> outcomes = new List<GroupPostOutcome>();
+        List<Task<GroupPostOutcome>> fallbacks = new List<Task<GroupPostOutcome>>();
+        for (int i = 0; i < prepared.Length; i++)
+        {
+            GroupPostOutcome outcome = new GroupPostOutcome();
+            outcome.GroupId = prepared[i].GroupId;
+            if (prepared[i].Error != null)
+            {
+                outcome.Error = prepared[i].Error;
+                outcomes.Add(outcome);
+            }
+            else if (committed)
+            {
+                outcome.Posted = true;
+                outcomes.Add(outcome);
+            }
+            else
+            {
+                // Not posted by the batch: post this group alone (the result replaces this placeholder).
+                outcomes.Add(outcome);
+                fallbacks.Add(PostToGroupAsync(prepared[i].GroupId, s));
+            }
+        }
+
+        if (fallbacks.Count > 0)
+        {
+            GroupPostOutcome[] single = await Task.WhenAll(fallbacks);
+            for (int i = 0; i < single.Length; i++)
+            {
+                for (int j = 0; j < outcomes.Count; j++)
+                {
+                    if (outcomes[j].GroupId == single[i].GroupId)
+                    {
+                        outcomes[j] = single[i];
+                    }
+                }
+            }
+        }
+
+        if (committed)
+        {
+            await CleanUpChunkAsync(ready, s);
+        }
+
+        return outcomes;
+    }
+
+    // Reads what the new announcement needs (the group's feed) and adds its three writes to the batch.
+    private async Task<PreparedPost> PrepareAsync(FirestoreBatch batch, string groupId, PostSettings s)
+    {
+        PreparedPost post = new PreparedPost();
+        post.GroupId = groupId;
+        post.AnnouncementId = Guid.NewGuid().ToString("N");
+
+        try
+        {
+            Announcement announcement = BuildAnnouncement(groupId, post.AnnouncementId, s);
+
+            // The group's current announcements are read while the feed is read (they are cleaned up after the post).
+            post.OlderTask = ReadAnnouncementsQuietlyAsync(groupId);
+
+            await _feed.QueuePostedAsync(batch, groupId, announcement);
+            _announcementRepository.QueueCreate(batch, groupId, post.AnnouncementId, announcement);
+            _stats.QueuePosted(batch, groupId);
+        }
+        catch (TimeoutException)
+        {
+            post.Error = "Some requests took too long and may still go through. Refresh the group's announcements to check.";
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("PUBLISH PREPARE ERROR: " + ex);
+            post.Error = ServiceHelper.MapError(ex, "We could not post the announcement.");
+        }
+
+        return post;
+    }
+
+    // After a batch was saved: for every group clear the notice reports and the old announcement's reports / file,
+    // then delete the old announcements of all the groups in one more batch. Best effort, never throws.
+    private async Task CleanUpChunkAsync(List<PreparedPost> posted, PostSettings s)
+    {
+        try
+        {
+            List<Task<List<Announcement>>> jobs = new List<Task<List<Announcement>>>();
+            for (int i = 0; i < posted.Count; i++)
+            {
+                jobs.Add(CleanUpGroupAsync(posted[i], s));
+            }
+
+            List<Announcement>[] olderLists = await Task.WhenAll(jobs);
+
+            FirestoreBatch deletions = _batches.Create();
+            List<Announcement> all = new List<Announcement>();
+            for (int i = 0; i < olderLists.Length; i++)
+            {
+                for (int j = 0; j < olderLists[i].Count; j++)
+                {
+                    all.Add(olderLists[i][j]);
+                    _announcementRepository.QueueDelete(deletions, olderLists[i][j].GroupId, olderLists[i][j].Id);
+                }
+            }
+
+            if (all.Count == 0)
+            {
+                return;
+            }
+
+            try
+            {
+                await ServiceHelper.WithTimeoutAsync(deletions.CommitAsync());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("DELETE OLDER BATCH ERROR (deleting one by one): " + ex);
+                await DeleteOneByOneAsync(all);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("CLEAN UP CHUNK ERROR: " + ex);
+        }
+    }
+
+    private async Task<List<Announcement>> CleanUpGroupAsync(PreparedPost post, PostSettings s)
+    {
+        Task noticeTask = ClearNoticePanicsAsync(post.GroupId, s);
+        List<Announcement> older = await CollectOlderAsync(post.GroupId, post.AnnouncementId, post.OlderTask, s);
+        await noticeTask;
+        return older;
+    }
+
+    private async Task DeleteOneByOneAsync(List<Announcement> older)
+    {
+        List<Task> tasks = new List<Task>();
+        for (int i = 0; i < older.Count; i++)
+        {
+            tasks.Add(DeleteQuietlyAsync(older[i].GroupId, older[i].Id));
+        }
+
+        await Task.WhenAll(tasks);
+    }
+
+    private async Task DeleteQuietlyAsync(string groupId, string announcementId)
+    {
+        try
+        {
+            await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, announcementId));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("DELETE OLDER ANNOUNCEMENT ERROR: " + ex);
+        }
+    }
+
+    // Posts to ONE group the old way (announcement, then feed + stats). Used when a batch could not be saved.
     // Never throws: the outcome says whether the announcement was posted.
-    private async Task<GroupPostOutcome> PostToGroupAsync(string groupId, string uid, string batchId, string title, string message, AttachmentPick? attachment, int resolveMinutes)
+    private async Task<GroupPostOutcome> PostToGroupAsync(string groupId, PostSettings s)
     {
         GroupPostOutcome outcome = new GroupPostOutcome();
         outcome.GroupId = groupId;
 
-        Announcement announcement = new Announcement();
-        announcement.GroupId = groupId;
-        announcement.BatchId = batchId;
-        announcement.Title = title;
-        announcement.Message = message;
-        announcement.IsActive = true;
-        announcement.IsEdited = false;
-        announcement.CreatedBy = uid;
-
         string announcementId = Guid.NewGuid().ToString("N");
+        Announcement announcement = BuildAnnouncement(groupId, announcementId, s);
 
         try
         {
-            announcement.Status = AnnouncementStatus.Active;
-            announcement.ResolveMinutes = resolveMinutes < 0 ? 0 : resolveMinutes;
-
-            // Each group gets its own copy of the file, so replacing one group's
-            // announcement never removes a file another group still shows.
-            if (attachment != null)
-            {
-                OperationResult<UploadedAttachment> uploaded = await _attachments.UploadAsync(groupId, announcementId, attachment);
-                if (!uploaded.IsSuccess || uploaded.Value == null)
-                {
-                    throw new InvalidOperationException(uploaded.ErrorMessage ?? "The file could not be saved.");
-                }
-
-                announcement.AttachmentName = uploaded.Value.Name;
-                announcement.AttachmentKind = uploaded.Value.Kind;
-            }
-
             // The group's current announcements are read while the new one is written (one round trip saved).
             Task<List<Announcement>> olderTask = ReadAnnouncementsQuietlyAsync(groupId);
 
             await ServiceHelper.WithTimeoutAsync(_announcementRepository.CreateAsync(groupId, announcementId, announcement));
+
+            // The group's feed is what members listen to: if it cannot be written the post counts as failed for
+            // this group (it stays selected). The stats are written at the same time and never fail a post.
+            Task statsTask = _stats.PostedAsync(groupId);
+            await _feed.PostedAsync(groupId, announcement);
+            await statsTask;
             outcome.Posted = true;
 
-            // A new message replaces the 5-minute notice: its panic presses are cleared (together with the old announcement).
-            Task noticeTask = ClearNoticePanicsAsync(groupId);
-            await DeleteOlderAsync(groupId, announcementId, olderTask);
+            Task noticeTask = ClearNoticePanicsAsync(groupId, s);
+            List<Announcement> older = await CollectOlderAsync(groupId, announcementId, olderTask, s);
+            await DeleteOneByOneAsync(older);
             await noticeTask;
         }
         catch (TimeoutException)
@@ -449,9 +730,16 @@ public class AnnouncementService : IAnnouncementService
         return outcome;
     }
 
-    // Best effort, never throws.
-    private async Task ClearNoticePanicsAsync(string groupId)
+    // A new message replaces the 5-minute notice: its panic presses are cleared. When the live stats say there are
+    // none (0 reports), the clean-up is skipped (it would only read an empty list).
+    private async Task ClearNoticePanicsAsync(string groupId, PostSettings s)
     {
+        GroupActivity? known;
+        if (s.Known.TryGetValue(groupId, out known) && known.NoticePanicCount == 0)
+        {
+            return;
+        }
+
         try
         {
             await _panics.DeleteAllAsync(groupId, PanicLimits.NoticeAnnouncementId);
@@ -477,39 +765,100 @@ public class AnnouncementService : IAnnouncementService
     }
 
     // Only the newest announcement of a group is kept: older ones are deleted for good.
-    // This is best effort. If it fails, the list still shows only the latest one.
-    private async Task DeleteOlderAsync(string groupId, string keepId, Task<List<Announcement>> olderTask)
+    // This does the side work (panic reports, the file) and returns the older announcements that still have to be
+    // deleted. Best effort: on a problem it returns what it has (the list still shows only the latest one).
+    private async Task<List<Announcement>> CollectOlderAsync(string groupId, string keepId, Task<List<Announcement>> olderTask, PostSettings s)
     {
+        List<Announcement> toDelete = new List<Announcement>();
         try
         {
             List<Announcement> all = await olderTask;
-            List<Task> deletions = new List<Task>();
+
+            // The newest older announcement is the one the stats counters belong to.
+            Announcement? newestOlder = null;
             for (int i = 0; i < all.Count; i++)
             {
-                if (all[i].Id != keepId)
+                if (all[i].Id == keepId)
                 {
-                    deletions.Add(DeleteOneOlderAsync(groupId, all[i]));
+                    continue;
+                }
+
+                if (newestOlder == null || all[i].CreatedAt == default || (newestOlder.CreatedAt != default && all[i].CreatedAt > newestOlder.CreatedAt))
+                {
+                    newestOlder = all[i];
                 }
             }
 
-            await Task.WhenAll(deletions);
+            GroupActivity? known;
+            bool newestHasNoReports = s.Known.TryGetValue(groupId, out known) && known.HasAnnouncement && known.AnnouncementPanicCount == 0;
+
+            List<Task> work = new List<Task>();
+            for (int i = 0; i < all.Count; i++)
+            {
+                if (all[i].Id == keepId)
+                {
+                    continue;
+                }
+
+                toDelete.Add(all[i]);
+                bool skipReports = newestHasNoReports && ReferenceEquals(all[i], newestOlder);
+                work.Add(CleanUpOlderAsync(groupId, all[i], skipReports, s));
+            }
+
+            await Task.WhenAll(work);
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("DELETE OLDER ANNOUNCEMENTS ERROR: " + ex);
         }
+
+        return toDelete;
     }
 
-    // The panic reports and the file go first (together), the announcement itself last.
-    private async Task DeleteOneOlderAsync(string groupId, Announcement older)
+    // The panic reports and the file of one older announcement. A shared file is only noted here: it is deleted
+    // later, when no announcement uses it any more (SweepSharedFilesAsync).
+    private async Task CleanUpOlderAsync(string groupId, Announcement older, bool skipReports, PostSettings s)
     {
-        Task panicTask = _panics.DeleteAllAsync(groupId, older.Id);
-        Task fileTask = string.IsNullOrEmpty(older.AttachmentKind)
-            ? Task.CompletedTask
-            : _attachments.DeleteAsync(groupId, older.Id);
+        Task panicTask = skipReports ? Task.CompletedTask : _panics.DeleteAllAsync(groupId, older.Id);
+
+        Task fileTask = Task.CompletedTask;
+        if (!string.IsNullOrEmpty(older.SharedFileId))
+        {
+            s.ReplacedFiles.Add(older.SharedFileId);
+        }
+        else if (!string.IsNullOrEmpty(older.AttachmentKind))
+        {
+            fileTask = _attachments.DeleteAsync(groupId, older.Id);
+        }
 
         await Task.WhenAll(panicTask, fileTask);
-        await ServiceHelper.WithTimeoutAsync(_announcementRepository.DeleteAsync(groupId, older.Id));
+    }
+
+    // One broadcast file is used by many groups. After the old announcements are gone, a file that no
+    // announcement points at any more is deleted (1 read per file, 1 delete when unused). Best effort.
+    private async Task SweepSharedFilesAsync(ConcurrentBag<string> replaced)
+    {
+        HashSet<string> done = new HashSet<string>();
+        foreach (string fileId in replaced)
+        {
+            if (!done.Add(fileId))
+            {
+                continue;
+            }
+
+            try
+            {
+                bool stillUsed = await ServiceHelper.WithTimeoutAsync(_announcementRepository.ExistsWithSharedFileAsync(fileId));
+                if (!stillUsed)
+                {
+                    await _attachments.DeleteSharedAsync(fileId);
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("SWEEP SHARED FILE ERROR: " + ex);
+            }
+        }
     }
 
     private async Task<OperationResult?> CheckCanChangeAsync(string groupId, string announcementId, string uid)

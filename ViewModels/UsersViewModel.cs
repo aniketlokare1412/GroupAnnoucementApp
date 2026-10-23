@@ -21,7 +21,15 @@ public partial class UsersViewModel : BaseViewModel
     private List<UserProfile> _allUsers = new List<UserProfile>();
     private bool _hasLoaded;
 
-    public ObservableCollection<UserListItem> Users { get; } = new ObservableCollection<UserListItem>();
+    // Smooth Users tab: the list is rebuilt only when the users (or the search) really changed, in one step,
+    // on a background thread. Coming back to the tab with nothing new does no list work at all.
+    private string _lastFingerprint = string.Empty;
+    private string _appliedTerm = string.Empty;
+    private int _applyVersion;
+    private CancellationTokenSource? _searchDelay;
+    private const int SearchDelayMs = 250;
+
+    public BulkObservableCollection<UserListItem> Users { get; } = new BulkObservableCollection<UserListItem>();
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -63,10 +71,31 @@ public partial class UsersViewModel : BaseViewModel
         _toasts = toasts;
     }
 
-    // Runs automatically whenever the search text changes.
+    // Pull-to-refresh asks for a fresh read of every user; opening the tab uses the list kept for 30 minutes.
+    private bool _forceNextLoad;
+
+    // Runs automatically whenever the search text changes. Waits a moment so typing "98765" filters once, not five times.
     partial void OnSearchTextChanged(string value)
     {
-        ApplyFilter();
+        _ = ApplyFilterAfterDelayAsync();
+    }
+
+    private async Task ApplyFilterAfterDelayAsync()
+    {
+        _searchDelay?.Cancel();
+        CancellationTokenSource source = new CancellationTokenSource();
+        _searchDelay = source;
+
+        try
+        {
+            await Task.Delay(SearchDelayMs, source.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await ApplyFilterAsync();
     }
 
     // Called by the page every time it appears.
@@ -90,16 +119,30 @@ public partial class UsersViewModel : BaseViewModel
 
         try
         {
-            OperationResult<List<UserProfile>> result = await _adminService.GetAllUsersAsync();
+            bool force = _forceNextLoad;
+            _forceNextLoad = false;
+            OperationResult<List<UserProfile>> result = await _adminService.GetAllUsersAsync(force);
             if (!result.IsSuccess)
             {
                 ErrorMessage = result.ErrorMessage;
                 return;
             }
 
-            _allUsers = result.Value ?? new List<UserProfile>();
+            List<UserProfile> loaded = result.Value ?? new List<UserProfile>();
+            string fingerprint = Fingerprint(loaded, _authService.GetCurrentUserId());
+            string term = (SearchText ?? string.Empty).Trim();
+            bool unchanged = _hasLoaded
+                && string.Equals(fingerprint, _lastFingerprint, StringComparison.Ordinal)
+                && string.Equals(term, _appliedTerm, StringComparison.Ordinal);
+
+            _allUsers = loaded;
+            _lastFingerprint = fingerprint;
             _hasLoaded = true;
-            ApplyFilter();
+
+            if (!unchanged)
+            {
+                await ApplyFilterAsync();
+            }
         }
         finally
         {
@@ -114,6 +157,7 @@ public partial class UsersViewModel : BaseViewModel
         IsRefreshing = true;
         try
         {
+            _forceNextLoad = true;
             await LoadAsync();
         }
         finally
@@ -255,31 +299,50 @@ public partial class UsersViewModel : BaseViewModel
         }
     }
 
-    private void ApplyFilter()
+    // Builds the rows on a background thread, then swaps them into the list in one step.
+    private async Task ApplyFilterAsync()
     {
+        int version = ++_applyVersion;
         string term = (SearchText ?? string.Empty).Trim();
         string? currentUid = _authService.GetCurrentUserId();
+        List<UserProfile> source = _allUsers;
+        bool loaded = _hasLoaded;
+        Func<UserListItem, Task> onRole = ChangeRoleAsync;
+        Func<UserListItem, Task> onActive = ChangeActiveAsync;
 
-        Users.Clear();
+        List<UserListItem> rows = new List<UserListItem>();
         int adminCount = 0;
-        for (int i = 0; i < _allUsers.Count; i++)
+
+        await Task.Run(() =>
         {
-            UserProfile profile = _allUsers[i];
-
-            if (string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal))
+            for (int i = 0; i < source.Count; i++)
             {
-                adminCount++;
-            }
+                UserProfile profile = source[i];
 
-            if (Matches(profile, term))
-            {
-                Users.Add(UserListItem.FromProfile(profile, currentUid, ChangeRoleAsync, ChangeActiveAsync));
+                if (string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal))
+                {
+                    adminCount++;
+                }
+
+                if (Matches(profile, term))
+                {
+                    rows.Add(UserListItem.FromProfile(profile, currentUid, onRole, onActive));
+                }
             }
+        });
+
+        if (version != _applyVersion)
+        {
+            // A newer filter started while this one was building: let that one finish.
+            return;
         }
 
-        HasNoUsers = _hasLoaded && Users.Count == 0;
+        _appliedTerm = term;
+        Users.ReplaceAll(rows);
 
-        if (!_hasLoaded)
+        HasNoUsers = loaded && rows.Count == 0;
+
+        if (!loaded)
         {
             SummaryText = string.Empty;
             return;
@@ -287,16 +350,16 @@ public partial class UsersViewModel : BaseViewModel
 
         if (term.Length > 0)
         {
-            SummaryText = Users.Count + " of " + _allUsers.Count + " users";
+            SummaryText = rows.Count + " of " + source.Count + " users";
         }
         else
         {
-            string total = _allUsers.Count == 1 ? "1 user" : _allUsers.Count + " users";
+            string total = source.Count == 1 ? "1 user" : source.Count + " users";
             string admins = adminCount == 1 ? "1 admin" : adminCount + " admins";
             SummaryText = total + "  -  " + admins;
         }
 
-        if (_allUsers.Count == 0)
+        if (source.Count == 0)
         {
             EmptyTitle = "No users yet";
             EmptyHint = "People appear here after they register.";
@@ -306,6 +369,25 @@ public partial class UsersViewModel : BaseViewModel
             EmptyTitle = "No users found";
             EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
+    }
+
+    // Changes whenever anything a row shows or does changes (and with the signed-in user, who gets no buttons).
+    private static string Fingerprint(List<UserProfile> users, string? currentUid)
+    {
+        HashCode hash = new HashCode();
+        hash.Add(currentUid);
+        for (int i = 0; i < users.Count; i++)
+        {
+            UserProfile user = users[i];
+            hash.Add(user.Id);
+            hash.Add(user.Name);
+            hash.Add(user.Phone);
+            hash.Add(user.Email);
+            hash.Add(user.UserType);
+            hash.Add(user.IsActive);
+        }
+
+        return users.Count + ":" + hash.ToHashCode();
     }
 
     private static bool Matches(UserProfile profile, string term)

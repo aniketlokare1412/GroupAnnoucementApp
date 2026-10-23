@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Services.Interfaces;
+using Microsoft.Maui.ApplicationModel;
 
 namespace GroupAnnouncementApp.ViewModels;
 
@@ -28,10 +29,16 @@ public partial class HomeViewModel : BaseViewModel
     private readonly IMembershipService _membershipService;
     private readonly IToastService _toasts;
     private readonly ICommunityService _communityService;
+    private readonly IMemberFeedService _memberFeed;
+    private readonly IAdminStatsWatcher _statsWatcher;
 
     // The community structure: admin counts and the member headings above the announcements.
     private CommunityDirectory? _directory;
     private DateTime _directoryLoadedUtc = DateTime.MinValue;
+
+    // The communities and super communities (headings) rarely change, so they are re-read this often
+    // (and at once on pull-to-refresh) instead of every 2 minutes.
+    private const int DirectoryCacheMinutes = 10;
 
     private List<AnnouncementGroup> _memberGroups = new List<AnnouncementGroup>();
     private bool _hasLoaded;
@@ -46,7 +53,7 @@ public partial class HomeViewModel : BaseViewModel
     // Member: the same cards as MemberAnnouncements, split under community / super community headings.
     public ObservableCollection<MemberHomeSection> MemberSections { get; } = new ObservableCollection<MemberHomeSection>();
 
-    public ObservableCollection<HomeGroupItem> AdminGroups { get; } = new ObservableCollection<HomeGroupItem>();
+    public BulkObservableCollection<HomeGroupItem> AdminGroups { get; } = new BulkObservableCollection<HomeGroupItem>();
     public ObservableCollection<HomeGroupItem> MyGroups { get; } = new ObservableCollection<HomeGroupItem>();
 
     [ObservableProperty]
@@ -135,8 +142,12 @@ public partial class HomeViewModel : BaseViewModel
         IPanicService panicService,
         IDialogService dialogs,
         IOutageService outageService,
-        ICommunityService communityService)
+        ICommunityService communityService,
+        IMemberFeedService memberFeed,
+        IAdminStatsWatcher statsWatcher)
     {
+        _statsWatcher = statsWatcher;
+        _memberFeed = memberFeed;
         _communityService = communityService;
         _outageService = outageService;
         _panicService = panicService;
@@ -158,17 +169,60 @@ public partial class HomeViewModel : BaseViewModel
         ApplyMemberFilter();
     }
 
-    // One small request per active joined group; only the latest announcement of each is kept.
+    // What one joined group shows on a card: its latest announcement and its planned outage.
+    private sealed class GroupState
+    {
+        public AnnouncementGroup Group = new AnnouncementGroup();
+        public Announcement? Latest;
+        public bool AnnouncementOk;
+        public Outage? Outage;
+        public bool OutageOk;
+    }
+
+    // Phase 2: members are served by live listeners. If they cannot start (for example the new rules are not
+    // deployed yet) Home falls back to the old way (reads every 20 seconds, driven by the page timer).
+    private bool _usePolling;
+
+    // True while Home has to be refreshed by a timer (admins always; members only in the fallback).
+    // Phase 3: admins are served by the live stats listener too; they only poll when it cannot start.
+    private bool _adminPolling;
+
+    public bool UsesPolling
+    {
+        get { return IsAdmin ? _adminPolling : _usePolling; }
+    }
+
+    // Admin: what the live ordering is built from (no reads when a stats document changes).
+    private List<AnnouncementGroup> _adminGroups = new List<AnnouncementGroup>();
+    private bool _adminHooked;
+    private int _adminRebuildToken;
+
+    // Smooth Home: the group cards are rebuilt only when what they show really changed. Coming back from another
+    // screen with nothing new does no list work (rebuilding the cards used to freeze the screen for a moment).
+    private string _adminListSignature = string.Empty;
+
+    // The pending admin request count is read at most once a minute (and again after the Requests screen was opened
+    // or on pull-to-refresh), not on every return to Home.
+    private DateTime _pendingCheckedUtc = DateTime.MinValue;
+    private int _pendingCount;
+    private bool _forceAdminRefresh;
+    private const int PendingRequestsMaxAgeSeconds = 60;
+
+
+    private bool _listenersHooked;
+    private string? _liveIdsKey;
+    private bool _forceReload;
+    private bool _reloadRequested;
+    private int _rebuildToken;
+    private string _lastSignature = string.Empty;
+
+    // Groups whose feed document does not exist (or cannot be read): read the old way, once, and remember it.
+    private readonly Dictionary<string, GroupState> _fallbackStates = new Dictionary<string, GroupState>();
+
+    // Polling mode: one small request per active joined group; only the latest announcement of each is kept.
     private async Task LoadMemberAnnouncementsAsync()
     {
-        List<AnnouncementGroup> groups = new List<AnnouncementGroup>();
-        for (int i = 0; i < _memberGroups.Count; i++)
-        {
-            if (_memberGroups[i].IsActive)
-            {
-                groups.Add(_memberGroups[i]);
-            }
-        }
+        List<AnnouncementGroup> groups = ActiveMemberGroups();
 
         List<Task<OperationResult<List<Announcement>>>> tasks = new List<Task<OperationResult<List<Announcement>>>>();
         for (int i = 0; i < groups.Count; i++)
@@ -185,39 +239,90 @@ public partial class HomeViewModel : BaseViewModel
         await Task.WhenAll(tasks);
         await Task.WhenAll(outageTasks);
 
-        DateTimeOffset now = DateTimeOffset.UtcNow;
-        List<MemberAnnouncementItem> items = new List<MemberAnnouncementItem>();
+        List<GroupState> states = new List<GroupState>();
         for (int i = 0; i < groups.Count; i++)
         {
-            // A planned outage is shown next to the group's other message, not instead of it.
-            OperationResult<Outage?> outageResult = outageTasks[i].Result;
-            if (outageResult.IsSuccess && outageResult.Value != null && OutageText.IsShownAt(outageResult.Value, now))
-            {
-                items.Add(MemberAnnouncementItem.FromOutage(groups[i], outageResult.Value, now));
-            }
+            states.Add(StateFromReads(groups[i], tasks[i].Result, outageTasks[i].Result));
+        }
 
-            OperationResult<List<Announcement>> result = tasks[i].Result;
-            if (!result.IsSuccess || result.Value == null)
-            {
-                // Could not load: show nothing for this group rather than a wrong "wait 5 minutes".
-                continue;
-            }
+        ApplyMemberStates(groups, states);
+    }
 
-            // Newest first. A completed message disappears and the 5-minute notice comes back.
-            Announcement? latest = result.Value.Count > 0 ? result.Value[0] : null;
-            if (latest != null && latest.Status != AnnouncementStatus.Completed)
+    private static GroupState StateFromReads(AnnouncementGroup group, OperationResult<List<Announcement>> result, OperationResult<Outage?> outageResult)
+    {
+        GroupState state = new GroupState();
+        state.Group = group;
+        state.OutageOk = outageResult.IsSuccess;
+        state.Outage = outageResult.IsSuccess ? outageResult.Value : null;
+        state.AnnouncementOk = result.IsSuccess && result.Value != null;
+        if (state.AnnouncementOk)
+        {
+            // Newest first.
+            state.Latest = result.Value!.Count > 0 ? result.Value[0] : null;
+        }
+
+        return state;
+    }
+
+    private List<AnnouncementGroup> ActiveMemberGroups()
+    {
+        List<AnnouncementGroup> groups = new List<AnnouncementGroup>();
+        for (int i = 0; i < _memberGroups.Count; i++)
+        {
+            if (_memberGroups[i].IsActive)
             {
-                MemberAnnouncementItem card = MemberAnnouncementItem.From(groups[i], latest, _attachments);
-                card.Extras = new AnnouncementExtras(groups[i].Id, latest, false, _announcementService, _panicService, _dialogs, _toasts);
-                items.Add(card);
+                groups.Add(_memberGroups[i]);
+            }
+        }
+
+        return groups;
+    }
+
+    // The cards built for one group, with the signature of what they were built from.
+    private sealed class CardCacheEntry
+    {
+        public string Signature = string.Empty;
+        public List<MemberAnnouncementItem> Cards = new List<MemberAnnouncementItem>();
+    }
+
+    private Dictionary<string, CardCacheEntry> _cardCache = new Dictionary<string, CardCacheEntry>();
+
+    // Builds the cards from what is known about each group. No reads happen here, except that a card that is
+    // NEW (its group changed) loads its picture and its panic button state. A group whose data did not change keeps
+    // its card, so a change in one group does not make every card read again.
+    private void ApplyMemberStates(List<AnnouncementGroup> groups, List<GroupState> states)
+    {
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        _lastSignature = SignatureOf(states, now);
+
+        List<MemberAnnouncementItem> items = new List<MemberAnnouncementItem>();
+        List<MemberAnnouncementItem> fresh = new List<MemberAnnouncementItem>();
+        Dictionary<string, CardCacheEntry> nextCache = new Dictionary<string, CardCacheEntry>();
+        for (int i = 0; i < states.Count; i++)
+        {
+            GroupState state = states[i];
+            string signature = StateSignature(state, now);
+
+            CardCacheEntry? cached;
+            List<MemberAnnouncementItem> cards;
+            if (_cardCache.TryGetValue(state.Group.Id, out cached) && cached.Signature == signature)
+            {
+                cards = cached.Cards;
             }
             else
             {
-                MemberAnnouncementItem notice = MemberAnnouncementItem.FromFiveMinuteNotice(groups[i]);
-                notice.Extras = AnnouncementExtras.ForNotice(groups[i].Id, _panicService, _dialogs, _toasts);
-                items.Add(notice);
+                cards = BuildCards(state, now);
+                fresh.AddRange(cards);
             }
+
+            CardCacheEntry entry = new CardCacheEntry();
+            entry.Signature = signature;
+            entry.Cards = cards;
+            nextCache[state.Group.Id] = entry;
+            items.AddRange(cards);
         }
+
+        _cardCache = nextCache;
 
         // A member who has not joined any (active) group still sees the 5-minute message.
         if (groups.Count == 0)
@@ -229,6 +334,12 @@ public partial class HomeViewModel : BaseViewModel
         items = items.OrderByDescending(x => x.CreatedAt).ToList();
 
         // One "leave group" icon per group, on the first card of that group.
+        for (int i = 0; i < items.Count; i++)
+        {
+            items[i].ShowLeave = false;
+            items[i].LeaveCommand = null;
+        }
+
         HashSet<string> withLeave = new HashSet<string>();
         for (int i = 0; i < items.Count; i++)
         {
@@ -250,16 +361,291 @@ public partial class HomeViewModel : BaseViewModel
         HasNoMemberAnnouncements = MemberAnnouncements.Count == 0;
         BuildMemberSections(items);
 
-        // Images arrive a moment later, so the cards show up first.
-        for (int i = 0; i < MemberAnnouncements.Count; i++)
+        // Images arrive a moment later, so the cards show up first. Only new cards load anything.
+        for (int i = 0; i < fresh.Count; i++)
         {
-            _ = MemberAnnouncements[i].LoadImageAsync(_attachments);
-            _ = MemberAnnouncements[i].Extras?.LoadAsync();
+            _ = fresh[i].LoadImageAsync(_attachments);
+            _ = fresh[i].Extras?.LoadAsync();
+        }
+    }
+
+    // The cards of ONE group: an outage card (when one is showing) and the announcement or the 5-minute notice.
+    private List<MemberAnnouncementItem> BuildCards(GroupState state, DateTimeOffset now)
+    {
+        List<MemberAnnouncementItem> cards = new List<MemberAnnouncementItem>();
+        AnnouncementGroup group = state.Group;
+
+        // A planned outage is shown next to the group's other message, not instead of it.
+        if (state.OutageOk && state.Outage != null && OutageText.IsShownAt(state.Outage, now))
+        {
+            cards.Add(MemberAnnouncementItem.FromOutage(group, state.Outage, now));
+        }
+
+        if (!state.AnnouncementOk)
+        {
+            // Could not load: show nothing for this group rather than a wrong "wait 5 minutes".
+            return cards;
+        }
+
+        // A completed message disappears and the 5-minute notice comes back.
+        Announcement? latest = state.Latest;
+        if (latest != null && latest.Status != AnnouncementStatus.Completed)
+        {
+            MemberAnnouncementItem card = MemberAnnouncementItem.From(group, latest, _attachments);
+            card.Extras = new AnnouncementExtras(group.Id, latest, false, _announcementService, _panicService, _dialogs, _toasts);
+            cards.Add(card);
+        }
+        else
+        {
+            MemberAnnouncementItem notice = MemberAnnouncementItem.FromFiveMinuteNotice(group);
+            notice.Extras = AnnouncementExtras.ForNotice(group.Id, _panicService, _dialogs, _toasts);
+            cards.Add(notice);
+        }
+
+        return cards;
+    }
+
+    // Changes only when what the member sees for this group changes: its name, a message, a status,
+    // or an outage coming into / going out of view.
+    private static string StateSignature(GroupState state, DateTimeOffset now)
+    {
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        text.Append(state.Group.Id).Append('|').Append(state.Group.Name).Append('|').Append(state.Group.Number).Append('|');
+        text.Append(state.AnnouncementOk ? "a" : "x");
+        if (state.Latest != null)
+        {
+            text.Append(state.Latest.Id).Append('|').Append(state.Latest.Status).Append('|').Append(state.Latest.Title).Append('|').Append(state.Latest.Message);
+            text.Append('|').Append(state.Latest.IsEdited).Append(state.Latest.ResolveMinutes).Append(state.Latest.AttachmentName);
+            text.Append('|').Append(state.Latest.CreatedAt.ToUnixTimeMilliseconds());
+        }
+
+        text.Append('#');
+        if (state.OutageOk && state.Outage != null && OutageText.IsShownAt(state.Outage, now))
+        {
+            text.Append('o').Append(state.Outage.Status).Append(state.Outage.StartMs).Append(state.Outage.EndMs).Append(state.Outage.PublishAtMs).Append(state.Outage.CancelledAtMs);
+        }
+
+        return text.ToString();
+    }
+
+    private static string SignatureOf(List<GroupState> states, DateTimeOffset now)
+    {
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        for (int i = 0; i < states.Count; i++)
+        {
+            text.Append(StateSignature(states[i], now)).Append(';');
+        }
+
+        return text.ToString();
+    }
+
+    // ---- Phase 2: live listeners ----
+
+    private async Task LoadMemberLiveAsync(string uid)
+    {
+        List<string> memberIds = await _memberFeed.StartAsync(uid);
+        string idsKey = KeyOf(memberIds);
+        HookListeners();
+
+        bool force = _forceReload;
+        _forceReload = false;
+        if (force)
+        {
+            // Pull-to-refresh: re-check the group list against the members collection (repairs a missed update).
+            await _membershipService.ReconcileGroupsAsync();
+            _fallbackStates.Clear();
+        }
+
+        // Nothing is read when the member's groups are the same as the last time (for example Home appearing again).
+        if (!force && _hasLoaded && string.Equals(_liveIdsKey, idsKey, StringComparison.Ordinal))
+        {
+            await TickLocalAsync();
+            return;
+        }
+
+        OperationResult<List<AnnouncementGroup>> result = await _membershipService.GetMyGroupsAsync();
+        if (!result.IsSuccess)
+        {
+            ErrorMessage = result.ErrorMessage;
+            return;
+        }
+
+        _memberGroups = result.Value ?? new List<AnnouncementGroup>();
+        _hasLoaded = true;
+        JoinedText = _memberGroups.Count + " joined";
+        ApplyMemberFilter();
+
+        // The headings are nice to have: if this fails, the announcements show without them.
+        if (_directory == null || force || (DateTime.UtcNow - _directoryLoadedUtc).TotalMinutes >= DirectoryCacheMinutes)
+        {
+            OperationResult<CommunityDirectory> directoryResult = await _communityService.GetDirectoryAsync();
+            if (directoryResult.IsSuccess && directoryResult.Value != null)
+            {
+                _directory = directoryResult.Value;
+                _directoryLoadedUtc = DateTime.UtcNow;
+            }
+        }
+
+        List<AnnouncementGroup> active = ActiveMemberGroups();
+        List<string> activeIds = new List<string>();
+        for (int i = 0; i < active.Count; i++)
+        {
+            activeIds.Add(active[i].Id);
+        }
+
+        _memberFeed.WatchGroups(activeIds);
+        _liveIdsKey = idsKey;
+        await _memberFeed.WaitForFirstAnswersAsync(TimeSpan.FromSeconds(6));
+        await RebuildLiveAsync();
+    }
+
+    private static string KeyOf(List<string> ids)
+    {
+        List<string> sorted = new List<string>(ids);
+        sorted.Sort(StringComparer.Ordinal);
+        return string.Join(",", sorted);
+    }
+
+    private void HookListeners()
+    {
+        if (_listenersHooked)
+        {
+            return;
+        }
+
+        _listenersHooked = true;
+        _memberFeed.FeedChanged += OnFeedChanged;
+        _memberFeed.GroupsChanged += OnGroupsChanged;
+    }
+
+    // Listener callbacks arrive on any thread.
+    private void OnFeedChanged()
+    {
+        MainThread.BeginInvokeOnMainThread(() => _ = ScheduleRebuildAsync());
+    }
+
+    private void OnGroupsChanged()
+    {
+        MainThread.BeginInvokeOnMainThread(() => _ = ReloadAfterGroupsChangedAsync());
+    }
+
+    private async Task ReloadAfterGroupsChangedAsync()
+    {
+        if (!IsMember || _usePolling)
+        {
+            return;
+        }
+
+        _liveIdsKey = null;
+        await LoadAsync();
+    }
+
+    // Several documents often change together (a post to many groups): one rebuild after a short pause.
+    private async Task ScheduleRebuildAsync()
+    {
+        if (!IsMember || _usePolling || !_hasLoaded)
+        {
+            return;
+        }
+
+        int token = ++_rebuildToken;
+        await Task.Delay(250);
+        if (token != _rebuildToken)
+        {
+            return;
+        }
+
+        await RebuildLiveAsync();
+    }
+
+    private async Task RebuildLiveAsync()
+    {
+        List<AnnouncementGroup> groups = ActiveMemberGroups();
+        List<GroupState> states = await CollectLiveStatesAsync(groups);
+        ApplyMemberStates(groups, states);
+    }
+
+    private async Task<List<GroupState>> CollectLiveStatesAsync(List<AnnouncementGroup> groups)
+    {
+        List<GroupState> states = new List<GroupState>();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            AnnouncementGroup group = groups[i];
+            GroupFeedDocument? feed;
+            FeedState feedState = _memberFeed.GetState(group.Id, out feed);
+            if (feedState == FeedState.Ready && feed != null)
+            {
+                GroupState ready = new GroupState();
+                ready.Group = group;
+                ready.Latest = feed.ToAnnouncement(group.Id);
+                ready.AnnouncementOk = true;
+                ready.Outage = feed.ToOutage(group.Id);
+                ready.OutageOk = true;
+                states.Add(ready);
+                continue;
+            }
+
+            // No feed document yet (or no answer): read this group the old way. Remembered for Missing / Failed.
+            GroupState? known;
+            if (feedState != FeedState.Unknown && _fallbackStates.TryGetValue(group.Id, out known))
+            {
+                known.Group = group;
+                states.Add(known);
+                continue;
+            }
+
+            Task<OperationResult<List<Announcement>>> announcementTask = _announcementService.GetForGroupAsync(group.Id);
+            Task<OperationResult<Outage?>> outageTask = _outageService.GetAsync(group.Id);
+            await Task.WhenAll(announcementTask, outageTask);
+            GroupState read = StateFromReads(group, announcementTask.Result, outageTask.Result);
+            if (feedState != FeedState.Unknown)
+            {
+                _fallbackStates[group.Id] = read;
+            }
+
+            states.Add(read);
+        }
+
+        return states;
+    }
+
+    // Called every 30 seconds by the page while Home is visible. No reads: it only re-evaluates the cards
+    // against the clock, so a planned outage appears / disappears on time without anything changing on the server.
+    public async Task TickLocalAsync()
+    {
+        if (!IsMember || _usePolling || !_hasLoaded)
+        {
+            return;
+        }
+
+        List<AnnouncementGroup> groups = ActiveMemberGroups();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            GroupFeedDocument? feed;
+            FeedState feedState = _memberFeed.GetState(groups[i].Id, out feed);
+            if (feedState == FeedState.Unknown)
+            {
+                return;
+            }
+        }
+
+        List<GroupState> states = await CollectLiveStatesAsync(groups);
+        if (!string.Equals(SignatureOf(states, DateTimeOffset.UtcNow), _lastSignature, StringComparison.Ordinal))
+        {
+            ApplyMemberStates(groups, states);
         }
     }
 
     // Called by the page every time it appears, so counts and lists are fresh after edits elsewhere.
     public async Task LoadAsync()
+    {
+        using (PerfTimer.Start("Home.Load"))
+        {
+            await LoadUntimedAsync();
+        }
+    }
+
+    private async Task LoadUntimedAsync()
     {
         UserProfile? profile = _session.CurrentProfile;
         if (profile == null)
@@ -271,6 +657,8 @@ public partial class HomeViewModel : BaseViewModel
 
         if (IsBusy)
         {
+            // A change arrived while a load was running: load once more when it is finished.
+            _reloadRequested = true;
             return;
         }
 
@@ -296,6 +684,12 @@ public partial class HomeViewModel : BaseViewModel
             IsBusy = false;
             ShowLoading = false;
         }
+
+        if (_reloadRequested)
+        {
+            _reloadRequested = false;
+            await LoadUntimedAsync();
+        }
     }
 
     private void ApplyProfile(UserProfile profile)
@@ -312,12 +706,14 @@ public partial class HomeViewModel : BaseViewModel
 
     private async Task LoadAdminAsync()
     {
-        Task<OperationResult<List<AnnouncementGroup>>> groupsTask = _groupAdminService.GetAllGroupsAsync();
-        Task<OperationResult<List<UserProfile>>> usersTask = _userAdminService.GetAllUsersAsync();
-        await Task.WhenAll(groupsTask, usersTask);
+        // The service calls run on a background thread (reading and parsing the directory is not UI work);
+        // everything that touches the screen below runs on the UI thread again after each await.
+        bool force = _forceAdminRefresh;
+        _forceAdminRefresh = false;
 
-        OperationResult<List<AnnouncementGroup>> groupsResult = groupsTask.Result;
-        OperationResult<List<UserProfile>> usersResult = usersTask.Result;
+        // Phase 5: the count comes from the last time the user list was read (Users tab / add members), kept on the
+        // phone. Home itself never reads the users: that was 1 read per user (5,000 users = 5,000 reads).
+        OperationResult<List<AnnouncementGroup>> groupsResult = await Task.Run(() => _groupAdminService.GetAllGroupsAsync());
 
         if (groupsResult.IsSuccess)
         {
@@ -326,47 +722,17 @@ public partial class HomeViewModel : BaseViewModel
 
             // Active groups first (the service already sorted by name; OrderBy keeps that order).
             // Panic reports and fresh messages move a group to the top of the list.
+            _adminGroups = groups;
             List<string> groupIds = new List<string>();
             for (int i = 0; i < groups.Count; i++)
             {
                 groupIds.Add(groups[i].Id);
             }
 
-            Dictionary<string, GroupActivity> activity = await _panicService.GetLatestActivityAsync(groupIds);
-            Dictionary<string, int> panicCounts = new Dictionary<string, int>();
-            foreach (KeyValuePair<string, GroupActivity> pair in activity)
-            {
-                panicCounts[pair.Key] = pair.Value.PanicCount;
-            }
-
-            List<AnnouncementGroup> ordered = OrderForAdminHome(groups, activity);
-
-            // One beep when any group's panic count has gone up since the last check.
-            if (_previousPanicCounts != null)
-            {
-                foreach (KeyValuePair<string, int> pair in panicCounts)
-                {
-                    int before;
-                    _previousPanicCounts.TryGetValue(pair.Key, out before);
-                    if (pair.Value > before)
-                    {
-                        AlertFeedback.Beep();
-                        break;
-                    }
-                }
-            }
-
-            _previousPanicCounts = panicCounts;
-
-            // With a few hundred groups Home shows only the first few; "View all" opens the Groups tab.
-            AdminGroups.Clear();
-            int shown = Math.Min(ordered.Count, MaxHomeGroups);
-            HasMoreAdminGroups = ordered.Count > shown;
-            ViewAllGroupsText = "View all " + ordered.Count + " groups";
-            for (int i = 0; i < shown; i++)
-            {
-                AdminGroups.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0));
-            }
+            Dictionary<string, GroupActivity> activity = await Task.Run(() => _panicService.GetLatestActivityAsync(groupIds));
+            _adminPolling = !_statsWatcher.IsLive;
+            HookAdminStats();
+            ApplyAdminList(groups, activity);
 
             HasNoAdminGroups = groups.Count == 0;
             _hasLoaded = true;
@@ -377,20 +743,11 @@ public partial class HomeViewModel : BaseViewModel
             ErrorMessage = groupsResult.ErrorMessage;
         }
 
-        if (usersResult.IsSuccess)
-        {
-            List<UserProfile> users = usersResult.Value ?? new List<UserProfile>();
-            UsersCountText = users.Count.ToString();
-        }
-        else
-        {
-            // Not worth a banner: the rest of Home still works.
-            UsersCountText = "-";
-            _toasts.Show("Could not load the user count.");
-        }
+        int? knownUsers = _userAdminService.LastKnownUserCount();
+        UsersCountText = knownUsers == null ? "-" : knownUsers.Value.ToString();
 
         // Not worth a banner when this fails: the rest of Home still works.
-        OperationResult<CommunityDirectory> communitiesResult = await _communityService.GetDirectoryAsync();
+        OperationResult<CommunityDirectory> communitiesResult = await Task.Run(() => _communityService.GetDirectoryAsync());
         if (communitiesResult.IsSuccess && communitiesResult.Value != null)
         {
             CommunitiesCountText = communitiesResult.Value.Communities.Count.ToString();
@@ -402,15 +759,141 @@ public partial class HomeViewModel : BaseViewModel
             SuperCommunitiesCountText = "-";
         }
 
-        OperationResult<List<AdminRequest>> requestsResult = await _adminRequests.GetPendingAsync();
-        int pending = 0;
-        if (requestsResult.IsSuccess && requestsResult.Value != null)
+        bool pendingStale = (DateTime.UtcNow - _pendingCheckedUtc).TotalSeconds > PendingRequestsMaxAgeSeconds;
+        if (force || pendingStale)
         {
-            pending = requestsResult.Value.Count;
+            OperationResult<List<AdminRequest>> requestsResult = await Task.Run(() => _adminRequests.GetPendingAsync());
+            if (requestsResult.IsSuccess && requestsResult.Value != null)
+            {
+                _pendingCount = requestsResult.Value.Count;
+                _pendingCheckedUtc = DateTime.UtcNow;
+            }
+            else
+            {
+                _pendingCount = 0;
+            }
         }
 
-        HasPendingRequests = pending > 0;
-        PendingRequestsText = pending == 1 ? "1 person wants to be an admin" : pending + " people want to be admins";
+        HasPendingRequests = _pendingCount > 0;
+        PendingRequestsText = _pendingCount == 1 ? "1 person wants to be an admin" : _pendingCount + " people want to be admins";
+    }
+
+    // Orders the groups and fills the Home list from the groups and their stats. Reads nothing.
+    private void ApplyAdminList(List<AnnouncementGroup> groups, Dictionary<string, GroupActivity> activity)
+    {
+        Dictionary<string, int> panicCounts = new Dictionary<string, int>();
+        foreach (KeyValuePair<string, GroupActivity> pair in activity)
+        {
+            panicCounts[pair.Key] = pair.Value.PanicCount;
+        }
+
+        List<AnnouncementGroup> ordered = OrderForAdminHome(groups, activity);
+
+        // One beep when any group's panic count has gone up since the last check.
+        if (_previousPanicCounts != null)
+        {
+            foreach (KeyValuePair<string, int> pair in panicCounts)
+            {
+                int before;
+                _previousPanicCounts.TryGetValue(pair.Key, out before);
+                if (pair.Value > before)
+                {
+                    AlertFeedback.Beep();
+                    break;
+                }
+            }
+        }
+
+        _previousPanicCounts = panicCounts;
+
+        // With a few hundred groups Home shows only the first few; "View all" opens the Groups tab.
+        int shown = Math.Min(ordered.Count, MaxHomeGroups);
+        HasMoreAdminGroups = ordered.Count > shown;
+        ViewAllGroupsText = "View all " + ordered.Count + " groups";
+
+        // Nothing the cards show has changed (the usual case when coming back from another screen): leave them alone.
+        string signature = BuildAdminListSignature(ordered, shown, panicCounts);
+        if (string.Equals(signature, _adminListSignature, StringComparison.Ordinal) && AdminGroups.Count == shown)
+        {
+            return;
+        }
+
+        _adminListSignature = signature;
+
+        List<HomeGroupItem> cards = new List<HomeGroupItem>();
+        for (int i = 0; i < shown; i++)
+        {
+            cards.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0));
+        }
+
+        AdminGroups.ReplaceAll(cards);
+    }
+
+    // Everything a Home group card shows (and its order), as one string.
+    private static string BuildAdminListSignature(List<AnnouncementGroup> ordered, int shown, Dictionary<string, int> panicCounts)
+    {
+        System.Text.StringBuilder text = new System.Text.StringBuilder();
+        text.Append(ordered.Count).Append('|').Append(shown);
+        for (int i = 0; i < shown; i++)
+        {
+            AnnouncementGroup group = ordered[i];
+            int panics;
+            panicCounts.TryGetValue(group.Id, out panics);
+            text.Append('|').Append(group.Id)
+                .Append('~').Append(group.Name)
+                .Append('~').Append(group.Number)
+                .Append('~').Append(group.Description)
+                .Append('~').Append(group.IsActive ? '1' : '0')
+                .Append('~').Append(panics);
+        }
+
+        return text.ToString();
+    }
+
+    private void HookAdminStats()
+    {
+        if (_adminHooked)
+        {
+            return;
+        }
+
+        _adminHooked = true;
+        _statsWatcher.Changed += OnAdminStatsChanged;
+    }
+
+    // Listener callbacks arrive on any thread.
+    private void OnAdminStatsChanged()
+    {
+        MainThread.BeginInvokeOnMainThread(() => _ = ScheduleAdminRebuildAsync());
+    }
+
+    // Several stats change together (a post to many groups): one re-order after a short pause. No reads.
+    private async Task ScheduleAdminRebuildAsync()
+    {
+        if (!IsAdmin || !_hasLoaded || !_statsWatcher.IsLive)
+        {
+            return;
+        }
+
+        int token = ++_adminRebuildToken;
+        await Task.Delay(300);
+        if (token != _adminRebuildToken)
+        {
+            return;
+        }
+
+        List<string> ids = new List<string>();
+        for (int i = 0; i < _adminGroups.Count; i++)
+        {
+            ids.Add(_adminGroups[i].Id);
+        }
+
+        // Live: answered from the listener's copy, nothing is read.
+        Dictionary<string, GroupActivity> activity = await _panicService.GetLatestActivityAsync(ids);
+        if (token == _adminRebuildToken)
+        {
+            ApplyAdminList(_adminGroups, activity);
+        }
     }
 
     // The count tiles and "View all" jump to the Groups tab on the right view (0 groups, 1 communities, 2 super communities).
@@ -471,10 +954,34 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private async Task OpenAdminRequestsAsync()
     {
+        // The admin may approve or decline there: read the count again when Home comes back.
+        _pendingCheckedUtc = DateTime.MinValue;
         await _navigation.GoToAsync(Routes.AdminRequests);
     }
 
     private async Task LoadMemberAsync()
+    {
+        string uid = _session.CurrentProfile?.Id ?? string.Empty;
+        if (!_usePolling && uid.Length > 0)
+        {
+            try
+            {
+                await LoadMemberLiveAsync(uid);
+                return;
+            }
+            catch (Exception ex)
+            {
+                // The listeners could not start (for example the new rules are not deployed yet): use the old way.
+                System.Diagnostics.Debug.WriteLine("LIVE HOME FAILED, USING POLLING: " + ex);
+                _usePolling = true;
+                _memberFeed.Stop();
+            }
+        }
+
+        await LoadMemberPollingAsync();
+    }
+
+    private async Task LoadMemberPollingAsync()
     {
         OperationResult<List<AnnouncementGroup>> result = await _membershipService.GetMyGroupsAsync();
         if (!result.IsSuccess)
@@ -490,7 +997,7 @@ public partial class HomeViewModel : BaseViewModel
 
         // The headings are nice to have: if this fails, the announcements show without them.
         // The structure rarely changes, so Home's 20 second refresh reuses it for two minutes.
-        if (_directory == null || (DateTime.UtcNow - _directoryLoadedUtc).TotalMinutes >= 2)
+        if (_directory == null || (DateTime.UtcNow - _directoryLoadedUtc).TotalMinutes >= DirectoryCacheMinutes)
         {
             OperationResult<CommunityDirectory> directoryResult = await _communityService.GetDirectoryAsync();
             if (directoryResult.IsSuccess && directoryResult.Value != null)
@@ -692,6 +1199,9 @@ public partial class HomeViewModel : BaseViewModel
         IsRefreshing = true;
         try
         {
+            _directoryLoadedUtc = DateTime.MinValue;
+            _forceReload = true;
+            _forceAdminRefresh = true;
             await LoadAsync();
         }
         finally

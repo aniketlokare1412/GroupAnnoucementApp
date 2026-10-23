@@ -75,15 +75,20 @@ public static class MauiProgram
     {
         services.AddSingleton<INavigationService, ShellNavigationService>();
         services.AddSingleton<IUserRepository, UserRepository>();
+        services.AddSingleton<IUserListCache, UserListCache>();
         services.AddSingleton<IGroupRepository, GroupRepository>();
         services.AddSingleton<ICommunityRepository, CommunityRepository>();
         services.AddSingleton<ISuperCommunityRepository, SuperCommunityRepository>();
+        services.AddSingleton<IDirectoryRepository, DirectoryRepository>();
         services.AddSingleton<IMembershipRepository, MembershipRepository>();
         services.AddSingleton<IAnnouncementRepository, AnnouncementRepository>();
         services.AddSingleton<IAdminRequestRepository, AdminRequestRepository>();
         services.AddSingleton<IAttachmentRepository, AttachmentRepository>();
         services.AddSingleton<IPanicRepository, PanicRepository>();
         services.AddSingleton<IOutageRepository, OutageRepository>();
+        services.AddSingleton<IGroupFeedRepository, GroupFeedRepository>();
+        services.AddSingleton<IGroupStatsRepository, GroupStatsRepository>();
+        services.AddSingleton<IUserGroupsRepository, UserGroupsRepository>();
         services.AddSingleton<IAuthService, AuthService>();
         services.AddSingleton<IUserService, UserService>();
         services.AddSingleton<ISessionService, SessionService>();
@@ -91,6 +96,7 @@ public static class MauiProgram
         services.AddSingleton<IToastService, ToastService>();
         services.AddSingleton<IUserAdminService, UserAdminService>();
         services.AddSingleton<IGroupAdminService, GroupAdminService>();
+        services.AddSingleton<IDirectoryService, DirectoryService>();
         services.AddSingleton<ICommunityService, CommunityService>();
         services.AddSingleton<IAudiencePickerService, AudiencePickerService>();
         services.AddSingleton<ICommunityAdminService, CommunityAdminService>();
@@ -101,6 +107,12 @@ public static class MauiProgram
         services.AddSingleton<IAttachmentService, AttachmentService>();
         services.AddSingleton<IPanicService, PanicService>();
         services.AddSingleton<IOutageService, OutageService>();
+        services.AddSingleton<IFeedService, FeedService>();
+        services.AddSingleton<IUserGroupsService, UserGroupsService>();
+        services.AddSingleton<IMemberFeedService, MemberFeedService>();
+        services.AddSingleton<IFirestoreBatchFactory, FirestoreBatchFactory>();
+        services.AddSingleton<IGroupStatsService, GroupStatsService>();
+        services.AddSingleton<IAdminStatsWatcher, AdminStatsWatcher>();
     }
 
     private static void RegisterViewModels(IServiceCollection services)

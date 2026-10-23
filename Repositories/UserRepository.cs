@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -18,6 +19,7 @@ public class UserRepository : IUserRepository
     public Task CreateAsync(string uid, UserProfile profile)
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        FirestoreMeter.Write("User.CreateAsync");
         return document.SetDataAsync(profile);
     }
 
@@ -25,6 +27,7 @@ public class UserRepository : IUserRepository
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
         IDocumentSnapshot<UserProfile> snapshot = await document.GetDocumentSnapshotAsync<UserProfile>();
+        FirestoreMeter.Read("User.GetByIdAsync", 1);
         return snapshot.Data;
     }
 
@@ -32,6 +35,7 @@ public class UserRepository : IUserRepository
     {
         ICollectionReference collection = _firestore.GetCollection(UsersCollection);
         IQuerySnapshot<UserProfile> snapshot = await collection.GetDocumentsAsync<UserProfile>();
+        FirestoreMeter.Read("User.GetAllAsync", snapshot.Documents.Count());
 
         List<UserProfile> users = new List<UserProfile>();
         foreach (IDocumentSnapshot<UserProfile> document in snapshot.Documents)
@@ -49,12 +53,14 @@ public class UserRepository : IUserRepository
     public Task SetActiveAsync(string uid, bool isActive)
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        FirestoreMeter.Write("User.SetActiveAsync");
         return document.UpdateDataAsync(("isActive", (object?)isActive));
     }
 
     public Task SetUserTypeAsync(string uid, string userType)
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        FirestoreMeter.Write("User.SetUserTypeAsync");
         return document.UpdateDataAsync(
             ("userType", (object?)userType),
             ("needsPassword", (object?)(userType == UserTypes.Admin)));
@@ -63,6 +69,7 @@ public class UserRepository : IUserRepository
     public Task SetNeedsPasswordAsync(string uid, bool needsPassword)
     {
         IDocumentReference document = _firestore.GetDocument(UsersCollection + "/" + uid);
+        FirestoreMeter.Write("User.SetNeedsPasswordAsync");
         return document.UpdateDataAsync(("needsPassword", (object?)needsPassword));
     }
 }

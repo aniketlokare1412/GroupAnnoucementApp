@@ -13,15 +13,22 @@ public class UserAdminService : IUserAdminService
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
     private readonly IUserRepository _userRepository;
+    private readonly IUserListCache _cache;
 
-    public UserAdminService(ISessionService session, IAuthService authService, IUserRepository userRepository)
+    public UserAdminService(ISessionService session, IAuthService authService, IUserRepository userRepository, IUserListCache cache)
     {
+        _cache = cache;
         _session = session;
         _authService = authService;
         _userRepository = userRepository;
     }
 
-    public async Task<OperationResult<List<UserProfile>>> GetAllUsersAsync()
+    public int? LastKnownUserCount()
+    {
+        return _cache.LastKnownCount;
+    }
+
+    public async Task<OperationResult<List<UserProfile>>> GetAllUsersAsync(bool forceRefresh = false)
     {
         if (!_session.IsAdmin)
         {
@@ -30,7 +37,7 @@ public class UserAdminService : IUserAdminService
 
         try
         {
-            Task<List<UserProfile>> loadTask = _userRepository.GetAllAsync();
+            Task<List<UserProfile>> loadTask = _cache.GetAllAsync(forceRefresh);
             Task finished = await Task.WhenAny(loadTask, Task.Delay(TimeSpan.FromSeconds(TimeoutSeconds)));
 
             if (finished != loadTask)
@@ -57,7 +64,13 @@ public class UserAdminService : IUserAdminService
             return OperationResult.Fail(problem);
         }
 
-        return await RunUpdateAsync(_userRepository.SetActiveAsync(uid, isActive));
+        OperationResult activeResult = await RunUpdateAsync(_userRepository.SetActiveAsync(uid, isActive));
+        if (activeResult.IsSuccess)
+        {
+            _cache.Patch(uid, isActive, null);
+        }
+
+        return activeResult;
     }
 
     public async Task<OperationResult> SetUserTypeAsync(string uid, string userType)
@@ -73,7 +86,13 @@ public class UserAdminService : IUserAdminService
             return OperationResult.Fail(problem);
         }
 
-        return await RunUpdateAsync(_userRepository.SetUserTypeAsync(uid, userType));
+        OperationResult typeResult = await RunUpdateAsync(_userRepository.SetUserTypeAsync(uid, userType));
+        if (typeResult.IsSuccess)
+        {
+            _cache.Patch(uid, null, userType);
+        }
+
+        return typeResult;
     }
 
     // Returns null when the change is allowed, otherwise a friendly message.

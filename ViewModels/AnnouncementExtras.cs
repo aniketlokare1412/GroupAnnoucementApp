@@ -405,7 +405,12 @@ public sealed class AnnouncementExtras : ObservableObject
             return;
         }
 
-        OperationResult result = await _panics.PressAsync(_groupId, _announcementId);
+        OperationResult result;
+        using (PerfTimer.Start("Panic.Press"))
+        {
+            result = await _panics.PressAsync(_groupId, _announcementId);
+        }
+
         if (!result.IsSuccess)
         {
             _toasts.Show(result.ErrorMessage ?? "We could not send your report.");

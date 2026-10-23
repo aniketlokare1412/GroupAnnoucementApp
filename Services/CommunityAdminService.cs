@@ -13,19 +13,25 @@ public class CommunityAdminService : ICommunityAdminService
     private readonly ICommunityRepository _communityRepository;
     private readonly ISuperCommunityRepository _superRepository;
     private readonly IGroupRepository _groupRepository;
+    private readonly IDirectoryService _directory;
+
+    // Same value as the group lists: shorter than Home's 20 second refresh.
+    private const int DirectoryMaxAgeSeconds = 15;
 
     public CommunityAdminService(
         ISessionService session,
         IAuthService authService,
         ICommunityRepository communityRepository,
         ISuperCommunityRepository superRepository,
-        IGroupRepository groupRepository)
+        IGroupRepository groupRepository,
+        IDirectoryService directory)
     {
         _session = session;
         _authService = authService;
         _communityRepository = communityRepository;
         _superRepository = superRepository;
         _groupRepository = groupRepository;
+        _directory = directory;
     }
 
     // ---------- Reading ----------
@@ -39,7 +45,12 @@ public class CommunityAdminService : ICommunityAdminService
 
         try
         {
-            List<Community> items = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
+            // Phase 1: from the directory (1-2 reads) when it exists, otherwise the old query.
+            // The edit screens still read one community by id (GetCommunityAsync) from the source.
+            DirectorySnapshot? snapshot = await _directory.GetForAdminAsync(DirectoryMaxAgeSeconds);
+            List<Community> items = snapshot != null
+                ? snapshot.CopyCommunities()
+                : await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
             items.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
             return OperationResult<List<Community>>.Success(items);
         }
@@ -101,7 +112,10 @@ public class CommunityAdminService : ICommunityAdminService
 
         try
         {
-            List<SuperCommunity> items = await ServiceHelper.WithTimeoutAsync(_superRepository.GetAllAsync());
+            DirectorySnapshot? snapshot = await _directory.GetForAdminAsync(DirectoryMaxAgeSeconds);
+            List<SuperCommunity> items = snapshot != null
+                ? snapshot.CopySuperCommunities()
+                : await ServiceHelper.WithTimeoutAsync(_superRepository.GetAllAsync());
             items.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
             return OperationResult<List<SuperCommunity>>.Success(items);
         }
@@ -195,6 +209,7 @@ public class CommunityAdminService : ICommunityAdminService
             community.CreatedBy = uid;
 
             await ServiceHelper.WithTimeoutAsync(_communityRepository.CreateAsync(Guid.NewGuid().ToString("N"), community));
+            await _directory.TryRebuildAsync();
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -252,6 +267,7 @@ public class CommunityAdminService : ICommunityAdminService
 
             List<string> validGroupIds = await KeepExistingGroupIdsAsync(groupIds);
             await ServiceHelper.WithTimeoutAsync(_communityRepository.UpdateAsync(id, cleanName, cleanDescription, cleanNumber, validGroupIds, superId));
+            await _directory.TryRebuildAsync();
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -304,7 +320,7 @@ public class CommunityAdminService : ICommunityAdminService
             await ServiceHelper.WithTimeoutAsync(_superRepository.CreateAsync(id, item));
 
             // The super community exists now, so the communities can point at it.
-            return await ApplyCommunityLinksAsync(id, communityIds);
+            return await ApplyLinksAndRebuildDirectoryAsync(id, communityIds);
         }
         catch (TimeoutException)
         {
@@ -363,7 +379,7 @@ public class CommunityAdminService : ICommunityAdminService
             }
 
             await ServiceHelper.WithTimeoutAsync(_superRepository.UpdateDetailsAsync(id, cleanName, cleanDescription, cleanNumber));
-            return await ApplyCommunityLinksAsync(id, communityIds);
+            return await ApplyLinksAndRebuildDirectoryAsync(id, communityIds);
         }
         catch (TimeoutException)
         {
@@ -373,6 +389,20 @@ public class CommunityAdminService : ICommunityAdminService
         {
             System.Diagnostics.Debug.WriteLine("UPDATE SUPER COMMUNITY ERROR: " + ex);
             return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not save the super community. Please try again."));
+        }
+    }
+
+    // The links change communities, so the directory is rebuilt afterwards even when some links failed
+    // (or an error is thrown): it always mirrors what is really stored.
+    private async Task<OperationResult> ApplyLinksAndRebuildDirectoryAsync(string superId, List<string> communityIds)
+    {
+        try
+        {
+            return await ApplyCommunityLinksAsync(superId, communityIds);
+        }
+        finally
+        {
+            await _directory.TryRebuildAsync();
         }
     }
 
