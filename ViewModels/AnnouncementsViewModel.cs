@@ -70,6 +70,8 @@ public partial class AnnouncementsViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isRefreshing;
 
+    private readonly IAudiencePickerService _audiencePicker;
+
     public AnnouncementsViewModel(
         INavigationService navigation,
         ISessionService session,
@@ -80,8 +82,10 @@ public partial class AnnouncementsViewModel : BaseViewModel
         IToastService toasts,
         IAttachmentService attachments,
         IPanicService panicService,
-        IOutageService outageService)
+        IOutageService outageService,
+        IAudiencePickerService audiencePicker)
     {
+        _audiencePicker = audiencePicker;
         _outageService = outageService;
         _panicService = panicService;
         _attachments = attachments;
@@ -283,12 +287,8 @@ public partial class AnnouncementsViewModel : BaseViewModel
     [RelayCommand]
     private Task NewAsync()
     {
-        if (string.IsNullOrEmpty(GroupId))
-        {
-            return Task.CompletedTask;
-        }
-
-        return _navigation.GoToAsync(BuildEditRoute(GroupId, GroupName, null));
+        // Even from one group's page the admin first chooses the audience (here: one group), then writes the post.
+        return _audiencePicker.StartAsync(Routes.AnnouncementEdit);
     }
 
     private Task EditItemAsync(AnnouncementListItem item)
