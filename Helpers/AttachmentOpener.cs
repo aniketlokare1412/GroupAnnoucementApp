@@ -6,11 +6,13 @@ namespace GroupAnnouncementApp.Helpers;
 public static class AttachmentOpener
 {
     // Loads the stored document, saves it to the phone's cache and opens it with a viewer app.
-    public static async Task OpenAsync(IAttachmentService attachments, string groupId, string announcementId)
+    public static async Task OpenAsync(IAttachmentService attachments, string groupId, string announcementId, string? sharedFileId = null)
     {
         try
         {
-            OperationResult<AttachmentFile> result = await attachments.GetAsync(groupId, announcementId);
+            OperationResult<AttachmentFile> result = string.IsNullOrEmpty(sharedFileId)
+                ? await attachments.GetAsync(groupId, announcementId)
+                : await attachments.GetSharedAsync(sharedFileId);
             if (!result.IsSuccess || result.Value == null)
             {
                 await TellAsync(result.ErrorMessage ?? "The file could not be loaded.");

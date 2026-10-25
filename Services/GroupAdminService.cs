@@ -13,12 +13,18 @@ public class GroupAdminService : IGroupAdminService
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
     private readonly IGroupRepository _groupRepository;
+    private readonly IDirectoryService _directory;
 
-    public GroupAdminService(ISessionService session, IAuthService authService, IGroupRepository groupRepository)
+    // How long the admin lists may be served from memory. Shorter than Home's 20 second refresh,
+    // so every refresh still sees other admins' changes.
+    private const int DirectoryMaxAgeSeconds = 15;
+
+    public GroupAdminService(ISessionService session, IAuthService authService, IGroupRepository groupRepository, IDirectoryService directory)
     {
         _session = session;
         _authService = authService;
         _groupRepository = groupRepository;
+        _directory = directory;
     }
 
     public async Task<OperationResult<List<AnnouncementGroup>>> GetAllGroupsAsync()
@@ -30,7 +36,12 @@ public class GroupAdminService : IGroupAdminService
 
         try
         {
-            List<AnnouncementGroup> groups = await WithTimeoutAsync(_groupRepository.GetAllAsync());
+            // Phase 1: one or two directory reads instead of one read per group. Falls back to the
+            // old query when the directory does not exist yet or cannot be read.
+            DirectorySnapshot? snapshot = await _directory.GetForAdminAsync(DirectoryMaxAgeSeconds);
+            List<AnnouncementGroup> groups = snapshot != null
+                ? snapshot.CopyGroups(false)
+                : await WithTimeoutAsync(_groupRepository.GetAllAsync());
             groups.Sort(CompareByName);
             return OperationResult<List<AnnouncementGroup>>.Success(groups);
         }
@@ -120,6 +131,7 @@ public class GroupAdminService : IGroupAdminService
 
             string id = Guid.NewGuid().ToString("N");
             await WithTimeoutAsync(_groupRepository.CreateAsync(id, group));
+            await _directory.TryRebuildAsync();
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -169,6 +181,7 @@ public class GroupAdminService : IGroupAdminService
             }
 
             await WithTimeoutAsync(_groupRepository.UpdateDetailsAsync(id, cleanName, cleanDescription, cleanNumber));
+            await _directory.TryRebuildAsync();
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -205,6 +218,7 @@ public class GroupAdminService : IGroupAdminService
             }
 
             await WithTimeoutAsync(_groupRepository.SetActiveAsync(id, isActive));
+            await _directory.TryRebuildAsync();
             return OperationResult.Success();
         }
         catch (TimeoutException)

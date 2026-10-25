@@ -2,10 +2,10 @@ namespace GroupAnnouncementApp.Helpers;
 
 public static class AttachmentLimits
 {
-    // The file is stored inside Firestore, whose documents can hold about 1 MB. A file turns into text
-    // (about 4/3 larger), so the limit is 700 KB. Photos are shrunk to fit; documents must already fit.
-    // ALSO enforced in firestore.rules (size <= 716800).
-    public const int MaxKilobytes = 700;
+    // The file is stored inside Firestore (a copy per group), so a small limit keeps the free storage and download
+    // quota safe. A file turns into text (about 4/3 larger). Photos are shrunk to fit; documents must already fit.
+    // ALSO enforced in firestore.rules (size <= 204800, data <= 280000).
+    public const int MaxKilobytes = 200;
 
     public const int MaxBytes = MaxKilobytes * 1024;
 

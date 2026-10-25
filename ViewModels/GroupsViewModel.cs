@@ -27,10 +27,13 @@ public partial class GroupsViewModel : BaseViewModel
     private Dictionary<string, int> _panicCounts = new Dictionary<string, int>();
     private bool _hasLoaded;
 
-    public ObservableCollection<GroupListItem> Groups { get; } = new ObservableCollection<GroupListItem>();
+    // Smooth Groups tab: the group cards are rebuilt only when what they show (or the search) changed.
+    private string _groupsSignature = string.Empty;
+
+    public BulkObservableCollection<GroupListItem> Groups { get; } = new BulkObservableCollection<GroupListItem>();
 
     // The cards shown while the switcher is on Communities or Super communities.
-    public ObservableCollection<CommunityListItem> Communities { get; } = new ObservableCollection<CommunityListItem>();
+    public BulkObservableCollection<CommunityListItem> Communities { get; } = new BulkObservableCollection<CommunityListItem>();
 
     // Set by Shell when Home opens this tab on a view: admingroups?segment=1 (0 groups, 1 communities, 2 super communities).
     // The setter always applies, so tapping the same Home tile twice still switches the view back.
@@ -156,6 +159,14 @@ public partial class GroupsViewModel : BaseViewModel
 
     // Called by the page every time it appears (so the list is fresh after adding or editing).
     public async Task LoadAsync()
+    {
+        using (PerfTimer.Start("GroupsTab.Load"))
+        {
+            await LoadUntimedAsync();
+        }
+    }
+
+    private async Task LoadUntimedAsync()
     {
         if (!_session.IsAdmin)
         {
@@ -435,7 +446,7 @@ public partial class GroupsViewModel : BaseViewModel
             groupNameById[_allGroups[i].Id] = _allGroups[i].Name;
         }
 
-        Communities.Clear();
+        List<CommunityListItem> built = new List<CommunityListItem>();
         int total;
 
         if (superMode)
@@ -469,7 +480,7 @@ public partial class GroupsViewModel : BaseViewModel
                     }
                 }
 
-                Communities.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(insideNames, 3)));
+                built.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(insideNames, 3)));
             }
         }
         else
@@ -506,9 +517,11 @@ public partial class GroupsViewModel : BaseViewModel
                     }
                 }
 
-                Communities.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(groupNames, 3)));
+                built.Add(CommunityListItem.Create(item.Id, item.Name, subtitle, item.Description, EditCommunityAsync, ChipText.Build(groupNames, 3)));
             }
         }
+
+        Communities.ReplaceAll(built);
 
         string noun = superMode ? "super communities" : "communities";
         HasNoGroups = _hasLoaded && Communities.Count == 0;
@@ -553,8 +566,10 @@ public partial class GroupsViewModel : BaseViewModel
     {
         string term = (SearchText ?? string.Empty).Trim();
 
-        Groups.Clear();
         int activeCount = 0;
+        List<AnnouncementGroup> matching = new List<AnnouncementGroup>();
+        System.Text.StringBuilder signature = new System.Text.StringBuilder();
+        signature.Append(term);
         for (int i = 0; i < _allGroups.Count; i++)
         {
             AnnouncementGroup group = _allGroups[i];
@@ -566,8 +581,32 @@ public partial class GroupsViewModel : BaseViewModel
 
             if (Matches(group, term))
             {
-                Groups.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0));
+                matching.Add(group);
+                int panics;
+                _panicCounts.TryGetValue(group.Id, out panics);
+                signature.Append('|').Append(group.Id)
+                    .Append('~').Append(group.Name)
+                    .Append('~').Append(group.Number)
+                    .Append('~').Append(group.Description)
+                    .Append('~').Append(group.IsActive ? '1' : '0')
+                    .Append('~').Append(panics);
             }
+        }
+
+        // Nothing the cards show has changed (the usual case when the tab is opened again): keep the cards as they are.
+        string signatureText = signature.ToString();
+        if (!string.Equals(signatureText, _groupsSignature, StringComparison.Ordinal) || Groups.Count != matching.Count)
+        {
+            _groupsSignature = signatureText;
+
+            List<GroupListItem> cards = new List<GroupListItem>();
+            for (int i = 0; i < matching.Count; i++)
+            {
+                AnnouncementGroup group = matching[i];
+                cards.Add(GroupListItem.FromGroup(group, OpenAnnouncementsAsync, OpenMembersAsync, EditAsync, ChangeActiveAsync, _panicCounts.TryGetValue(group.Id, out int panics) ? panics : 0));
+            }
+
+            Groups.ReplaceAll(cards);
         }
 
         HasNoGroups = _hasLoaded && Groups.Count == 0;

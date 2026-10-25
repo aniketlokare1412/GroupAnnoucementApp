@@ -12,13 +12,19 @@ public class MembershipAdminService : IMembershipAdminService
     private readonly IAuthService _authService;
     private readonly IUserRepository _userRepository;
     private readonly IMembershipRepository _membershipRepository;
+    private readonly IUserGroupsService _userGroups;
+    private readonly IUserListCache _userCache;
 
     public MembershipAdminService(
         ISessionService session,
         IAuthService authService,
         IUserRepository userRepository,
-        IMembershipRepository membershipRepository)
+        IMembershipRepository membershipRepository,
+        IUserGroupsService userGroups,
+        IUserListCache userCache)
     {
+        _userCache = userCache;
+        _userGroups = userGroups;
         _session = session;
         _authService = authService;
         _userRepository = userRepository;
@@ -40,13 +46,8 @@ public class MembershipAdminService : IMembershipAdminService
         try
         {
             List<GroupMember> members = await ServiceHelper.WithTimeoutAsync(_membershipRepository.GetByGroupAsync(groupId));
-            List<UserProfile> users = await ServiceHelper.WithTimeoutAsync(_userRepository.GetAllAsync());
-
-            Dictionary<string, UserProfile> usersById = new Dictionary<string, UserProfile>();
-            for (int i = 0; i < users.Count; i++)
-            {
-                usersById[users[i].Id] = users[i];
-            }
+            // Phase 5: only the members' own profiles are read (a group has a handful of members), not every user.
+            Dictionary<string, UserProfile> usersById = await LoadMemberProfilesAsync(members);
 
             List<GroupMemberEntry> entries = new List<GroupMemberEntry>();
             for (int i = 0; i < members.Count; i++)
@@ -142,6 +143,9 @@ public class MembershipAdminService : IMembershipAdminService
             for (int i = 0; i < toAdd.Count; i++)
             {
                 await ServiceHelper.WithTimeoutAsync(_membershipRepository.AddAsync(groupId, toAdd[i], adminUid));
+
+                // Phase 2: the member's own list of group ids (what the member's Home listens to).
+                await _userGroups.AddAsync(toAdd[i], groupId);
                 added++;
             }
 
@@ -173,6 +177,7 @@ public class MembershipAdminService : IMembershipAdminService
         try
         {
             await ServiceHelper.WithTimeoutAsync(_membershipRepository.RemoveAsync(groupId, userId));
+            await _userGroups.RemoveAsync(userId, groupId);
             return OperationResult.Success();
         }
         catch (TimeoutException)
@@ -186,11 +191,68 @@ public class MembershipAdminService : IMembershipAdminService
         }
     }
 
+    // The profiles of the given members: from the user cache when it is fresh (no reads), otherwise one read each
+    // (10 at a time). A member whose profile no longer exists is left out (the entry then shows as unknown, as before).
+    private async Task<Dictionary<string, UserProfile>> LoadMemberProfilesAsync(List<GroupMember> members)
+    {
+        Dictionary<string, UserProfile> result = new Dictionary<string, UserProfile>();
+        List<string> missing = new List<string>();
+        for (int i = 0; i < members.Count; i++)
+        {
+            UserProfile? cached = _userCache.TryGetFresh(members[i].Id);
+            if (cached != null)
+            {
+                result[members[i].Id] = cached;
+            }
+            else
+            {
+                missing.Add(members[i].Id);
+            }
+        }
+
+        using (SemaphoreSlim gate = new SemaphoreSlim(10))
+        {
+            List<Task<UserProfile?>> reads = new List<Task<UserProfile?>>();
+            for (int i = 0; i < missing.Count; i++)
+            {
+                string uid = missing[i];
+                reads.Add(ReadProfileLimitedAsync(gate, uid));
+            }
+
+            await Task.WhenAll(reads);
+            for (int i = 0; i < reads.Count; i++)
+            {
+                UserProfile? profile = reads[i].Result;
+                if (profile != null)
+                {
+                    result[profile.Id] = profile;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<UserProfile?> ReadProfileLimitedAsync(SemaphoreSlim gate, string uid)
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return await ServiceHelper.WithTimeoutAsync(_userRepository.GetByIdAsync(uid));
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     // Active Regular users who are not yet in the group. Throws on failure.
     private async Task<List<UserProfile>> LoadEligibleUsersAsync(string groupId)
     {
         List<GroupMember> members = await ServiceHelper.WithTimeoutAsync(_membershipRepository.GetByGroupAsync(groupId));
-        List<UserProfile> users = await ServiceHelper.WithTimeoutAsync(_userRepository.GetAllAsync());
+
+        // Phase 5: the full user list is kept for 30 minutes (see UserListCache), not read on every visit.
+        List<UserProfile> users = await ServiceHelper.WithTimeoutAsync(_userCache.GetAllAsync(false));
 
         HashSet<string> memberIds = new HashSet<string>();
         for (int i = 0; i < members.Count; i++)

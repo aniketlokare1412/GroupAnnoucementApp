@@ -97,6 +97,14 @@ public partial class AnnouncementsViewModel : BaseViewModel
     // Called by the page every time it appears (so the list is fresh after posting or editing).
     public async Task LoadAsync()
     {
+        using (PerfTimer.Start("Announcements.Load"))
+        {
+            await LoadUntimedAsync();
+        }
+    }
+
+    private async Task LoadUntimedAsync()
+    {
         if (_session.CurrentProfile == null)
         {
             await _navigation.GoToAsync(Routes.Splash);

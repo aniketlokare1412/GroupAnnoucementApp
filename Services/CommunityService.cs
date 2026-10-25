@@ -10,15 +10,22 @@ public class CommunityService : ICommunityService
     private readonly ISessionService _session;
     private readonly ICommunityRepository _communityRepository;
     private readonly ISuperCommunityRepository _superRepository;
+    private readonly IDirectoryService _directoryService;
+
+    // Home's refresh runs every 20 seconds. The structure rarely changes, so a copy up to 60 seconds old is fine
+    // (the screens also keep their own longer cache for the headings).
+    private const int DirectoryMaxAgeSeconds = 60;
 
     public CommunityService(
         ISessionService session,
         ICommunityRepository communityRepository,
-        ISuperCommunityRepository superRepository)
+        ISuperCommunityRepository superRepository,
+        IDirectoryService directoryService)
     {
         _session = session;
         _communityRepository = communityRepository;
         _superRepository = superRepository;
+        _directoryService = directoryService;
     }
 
     public async Task<OperationResult<CommunityDirectory>> GetDirectoryAsync()
@@ -30,6 +37,17 @@ public class CommunityService : ICommunityService
 
         try
         {
+            // Phase 1: one read of the directory document instead of two collection reads.
+            // Falls back to the collections while the directory has not been built.
+            DirectorySnapshot? snapshot = await _directoryService.GetAsync(DirectoryMaxAgeSeconds);
+            if (snapshot != null)
+            {
+                CommunityDirectory fromDirectory = new CommunityDirectory();
+                fromDirectory.Communities = snapshot.CopyCommunities();
+                fromDirectory.SuperCommunities = snapshot.CopySuperCommunities();
+                return OperationResult<CommunityDirectory>.Success(fromDirectory);
+            }
+
             Task<List<Community>> communitiesTask = _communityRepository.GetAllAsync();
             Task<List<SuperCommunity>> supersTask = _superRepository.GetAllAsync();
             await ServiceHelper.WithTimeoutAsync(Task.WhenAll(communitiesTask, supersTask));

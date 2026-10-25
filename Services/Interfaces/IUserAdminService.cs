@@ -8,7 +8,11 @@ namespace GroupAnnouncementApp.Services.Interfaces;
 public interface IUserAdminService
 {
     // All users, sorted by name.
-    Task<OperationResult<List<UserProfile>>> GetAllUsersAsync();
+    // Phase 5: kept in memory for 30 minutes; forceRefresh (pull-to-refresh) reads every user again.
+    Task<OperationResult<List<UserProfile>>> GetAllUsersAsync(bool forceRefresh = false);
+
+    // The user count of the last full read (kept on the phone), null when never read. Costs no reads.
+    int? LastKnownUserCount();
 
     Task<OperationResult> SetActiveAsync(string uid, bool isActive);
 

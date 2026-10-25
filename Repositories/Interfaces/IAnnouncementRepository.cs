@@ -1,4 +1,5 @@
-﻿using GroupAnnouncementApp.Models;
+using GroupAnnouncementApp.Models;
+using GroupAnnouncementApp.Repositories;
 
 namespace GroupAnnouncementApp.Repositories.Interfaces;
 
@@ -27,4 +28,13 @@ public interface IAnnouncementRepository
 
     // Removes the document for good (used to drop older announcements when a new one is posted).
     Task DeleteAsync(string groupId, string id);
+
+    // Phase 4: adds the create / delete to a batch instead of sending it.
+    void QueueCreate(FirestoreBatch batch, string groupId, string id, Announcement announcement);
+
+    void QueueDelete(FirestoreBatch batch, string groupId, string id);
+
+    // True when some announcement (in any group) still points at this shared file. 1 read.
+    // Needs the collection group index on announcements.sharedFileId (see firestore.indexes.json).
+    Task<bool> ExistsWithSharedFileAsync(string fileId);
 }

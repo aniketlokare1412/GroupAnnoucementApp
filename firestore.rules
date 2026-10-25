@@ -155,6 +155,106 @@ service cloud.firestore {
         && d.addedAt == request.time;
     }
 
+    // ---------- attachments and outages: validation ----------
+    function isValidAttachment() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'contentType', 'size', 'data', 'createdBy'])
+        && d.keys().hasAll(['name', 'contentType', 'size', 'data', 'createdBy'])
+        && d.name is string && d.name.size() > 0 && d.name.size() <= 255
+        && d.contentType is string && d.contentType.size() <= 150
+        && d.size is int && d.size >= 0 && d.size <= 204800
+        && d.data is string && d.data.size() <= 280000
+        && d.createdBy == request.auth.uid;
+    }
+
+    function isValidOutage(groupId) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['groupId', 'status', 'startMs', 'endMs', 'publishAtMs', 'cancelledAtMs', 'createdBy', 'createdAt'])
+        && d.keys().hasAll(['groupId', 'status', 'startMs', 'endMs', 'publishAtMs', 'createdBy', 'createdAt'])
+        && d.groupId == groupId
+        && d.status in ['Scheduled', 'Cancelled']
+        && d.startMs is int && d.endMs is int && d.publishAtMs is int
+        && d.get('cancelledAtMs', 0) is int
+        && d.createdBy is string && d.createdBy.size() <= 128;
+    }
+
+    // ---------- communities/{communityId} and superCommunities/{superCommunityId} ----------
+    // Communities group existing groups (many-to-many). A community sits under at most one
+    // super community (superCommunityId, empty = none). They can never be deleted.
+    // Keep the limits in sync with Helpers/CommunityLimits.cs.
+    function isValidCommunityText(d) {
+      return d.name is string && d.name.size() > 0 && d.name.size() <= 60
+        && d.description is string && d.description.size() <= 300;
+    }
+
+    // A positive whole number without a leading zero, 1 to 12 digits.
+    function isValidCommunityNumber(n) {
+      return n is string && n.size() >= 1 && n.size() <= 12 && n.matches('^[1-9][0-9]*$');
+    }
+
+    function isValidGroupIdList(l) {
+      return l is list && l.size() <= 500;
+    }
+
+    // Empty (no super community) or the id of a super community that exists.
+    function isValidSuperRef(id) {
+      return id is string
+        && (id == '' || (id.size() <= 64 && exists(/databases/$(database)/documents/superCommunities/$(id))));
+    }
+
+    function isValidNewCommunity() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'description', 'number', 'groupIds', 'superCommunityId', 'createdBy', 'createdAt'])
+        && d.keys().hasAll(['name', 'description', 'number', 'groupIds', 'superCommunityId', 'createdBy', 'createdAt'])
+        && isValidCommunityText(d)
+        && isValidCommunityNumber(d.number)
+        && isValidGroupIdList(d.groupIds)
+        && isValidSuperRef(d.superCommunityId)
+        && d.createdBy == request.auth.uid
+        && d.createdAt == request.time;
+    }
+
+    function isValidCommunityUpdate() {
+      let d = request.resource.data;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'number', 'groupIds', 'superCommunityId'])
+        && isValidCommunityText(d)
+        && isValidCommunityNumber(d.number)
+        && isValidGroupIdList(d.groupIds)
+        && isValidSuperRef(d.superCommunityId);
+    }
+
+    function isValidNewSuperCommunity() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['name', 'description', 'number', 'createdBy', 'createdAt'])
+        && d.keys().hasAll(['name', 'description', 'number', 'createdBy', 'createdAt'])
+        && isValidCommunityText(d)
+        && isValidCommunityNumber(d.number)
+        && d.createdBy == request.auth.uid
+        && d.createdAt == request.time;
+    }
+
+    function isValidSuperCommunityUpdate() {
+      let d = request.resource.data;
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'description', 'number'])
+        && isValidCommunityText(d)
+        && isValidCommunityNumber(d.number);
+    }
+
+    // Any active user may read them: members see them as headings above their groups.
+    match /communities/{communityId} {
+      allow read: if isAdmin() || isActiveUser();
+      allow create: if isAdmin() && isValidNewCommunity();
+      allow update: if isAdmin() && isValidCommunityUpdate();
+      allow delete: if false;
+    }
+
+    match /superCommunities/{superCommunityId} {
+      allow read: if isAdmin() || isActiveUser();
+      allow create: if isAdmin() && isValidNewSuperCommunity();
+      allow update: if isAdmin() && isValidSuperCommunityUpdate();
+      allow delete: if false;
+    }
+
     // ---------- groups/{groupId}/announcements/{announcementId} ----------
     // Keep the length limits in sync with Helpers/AnnouncementLimits.cs.
     function isValidAnnouncementText(d) {
@@ -164,9 +264,15 @@ service cloud.firestore {
 
     function isValidNewAnnouncement(groupId) {
       let d = request.resource.data;
-      return d.keys().hasOnly(['groupId', 'batchId', 'title', 'message', 'isActive', 'isEdited', 'createdBy', 'createdAt'])
+      return d.keys().hasOnly(['groupId', 'batchId', 'title', 'message', 'status', 'resolveMinutes', 'completedAtMs', 'attachmentName', 'attachmentKind', 'sharedFileId', 'isActive', 'isEdited', 'createdBy', 'createdAt'])
         && d.keys().hasAll(['groupId', 'batchId', 'title', 'message', 'isActive', 'isEdited', 'createdBy', 'createdAt'])
         && isValidAnnouncementText(d)
+        && d.get('status', 'Active') == 'Active'
+        && d.get('resolveMinutes', 0) is int && d.get('resolveMinutes', 0) >= 0 && d.get('resolveMinutes', 0) <= 100000
+        && d.get('completedAtMs', 0) is int
+        && d.get('attachmentName', '') is string && d.get('attachmentName', '').size() <= 255
+        && d.get('attachmentKind', '') in ['', 'image', 'file']
+        && d.get('sharedFileId', '') is string && d.get('sharedFileId', '').size() <= 64
         && d.groupId == groupId
         && d.batchId is string && d.batchId.size() <= 64
         && d.isActive == true
@@ -175,14 +281,16 @@ service cloud.firestore {
         && d.createdAt == request.time;
     }
 
-    // Only title, message, isActive and isEdited may change (groupId, batchId, createdBy and
-    // createdAt are fixed). Changing the title or message must also set isEdited to true,
+    // Only title, message, isActive, isEdited and the completion fields (status, completedAtMs)
+    // may change (groupId, batchId, createdBy, createdAt, resolveMinutes and the attachment are fixed). Changing the title or message must also set isEdited to true,
     // so the "Edited" marker cannot be skipped.
     function isValidAnnouncementUpdate() {
       let d = request.resource.data;
       let changed = request.resource.data.diff(resource.data).affectedKeys();
-      return changed.hasOnly(['title', 'message', 'isActive', 'isEdited'])
+      return changed.hasOnly(['title', 'message', 'isActive', 'isEdited', 'status', 'completedAtMs'])
         && isValidAnnouncementText(d)
+        && d.get('status', 'Active') in ['Active', 'Completed']
+        && d.get('completedAtMs', 0) is int
         && d.isActive is bool
         && d.isEdited is bool
         && (!changed.hasAny(['title', 'message']) || d.isEdited == true);
@@ -235,6 +343,51 @@ service cloud.firestore {
         // Deleted for good only by an admin, when a newer announcement replaces it
         // (only the latest announcement of a group is kept).
         allow delete: if isAdmin();
+
+        // The optional file of an announcement (older announcements only: since Phase 4 a file is stored once
+        // in sharedAttachments/{fileId}). The file is stored as base64 text in "data"
+        // (max 200 KB). Written by an admin, read by admins and members of the group.
+        match /attachments/{fileId} {
+          allow read: if isAdmin()
+                      || (isActiveUser()
+                          && groupIsActive(groupId)
+                          && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)));
+          allow create: if isAdmin() && groupIsActive(groupId) && isValidAttachment();
+          allow update: if false;
+          allow delete: if isAdmin();
+        }
+
+        // "Panic" presses. One document per press, named <uid>_<time in ms>, so a member can press again
+        // (the app waits 5 minutes between presses). Admins read all of them and clear them when the
+        // announcement is replaced. A member can only read their own presses (the app asks for userId == own uid).
+        match /panics/{pressId} {
+          allow read: if isAdmin()
+                      || (isActiveUser() && resource.data.userId == request.auth.uid);
+          allow create: if isActiveUser()
+                        && (pressId == request.auth.uid || pressId.matches(request.auth.uid + '_[0-9]+'))
+                        && groupIsActive(groupId)
+                        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid))
+                        && request.resource.data.keys().hasOnly(['userId', 'createdAt'])
+                        && request.resource.data.userId == request.auth.uid
+                        && request.resource.data.createdAt == request.time;
+          allow update: if false;
+          allow delete: if isAdmin();
+        }
+      }
+
+      // One planned outage per group (groups/{groupId}/outages/current).
+      match /outages/{outageId} {
+        allow read: if isAdmin()
+                    || (isActiveUser()
+                        && groupIsActive(groupId)
+                        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)));
+        allow create: if isAdmin() && groupIsActive(groupId) && isValidOutage(groupId)
+                      && request.resource.data.createdAt == request.time;
+        // Saving again replaces the outage; cancelling only changes status and cancelledAtMs.
+        allow update: if isAdmin() && isValidOutage(groupId)
+                      && (request.resource.data.createdAt == request.time
+                          || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAtMs']));
+        allow delete: if isAdmin();
       }
     }
 
@@ -242,6 +395,125 @@ service cloud.firestore {
     // Each user can only ever read their own membership documents this way.
     match /{path=**}/members/{memberUid} {
       allow read: if isActiveUser() && resource.data.userId == request.auth.uid;
+    }
+
+    // ---------- directory/{main|admin} (Phase 1) ----------
+    // The group / community / super community lists as JSON text in one field, rebuilt by an admin after
+    // every change (and by the "Rebuild directory" button on the admin Account tab). Members read these
+    // instead of one document per group.
+    //   directory/main  : ACTIVE groups, communities, super communities. Any active user reads it
+    //                     (members could already read exactly this data from the old collections).
+    //   directory/admin : INACTIVE groups. Admins only.
+    // Only admins write, always the same three fields.
+    function isValidDirectoryDoc() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['data', 'version', 'updatedAt'])
+        && d.keys().hasAll(['data', 'version', 'updatedAt'])
+        && d.data is string && d.data.size() <= 950000
+        && d.version == 1
+        && d.updatedAt == request.time;
+    }
+
+    match /directory/main {
+      allow read: if isActiveUser();
+      allow create, update: if isAdmin() && isValidDirectoryDoc();
+      allow delete: if false;
+    }
+
+    match /directory/admin {
+      allow read: if isAdmin();
+      allow create, update: if isAdmin() && isValidDirectoryDoc();
+      allow delete: if false;
+    }
+
+    // ---------- userGroups/{uid} (Phase 2) ----------
+    // The ids of the groups a user is a member of, so Home needs no collection group query.
+    // The user reads and writes their own list (join / leave); an admin writes it when adding or
+    // removing a member. Owner checks first, so a member's own read costs no extra lookups.
+    match /userGroups/{uid} {
+      allow get: if isOwner(uid) || isAdmin();
+      allow list: if false;
+      allow create, update: if (isOwner(uid) || isAdmin())
+        && request.resource.data.keys().hasOnly(['groupIds', 'updatedAt'])
+        && request.resource.data.groupIds is list
+        && request.resource.data.groupIds.size() <= 500
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
+    // ---------- groupFeed/{groupId} (Phase 2) ----------
+    // What a member's Home card shows for one group (latest announcement + planned outage), written by
+    // admins when they post, edit, complete or delete a message or change an outage. Members of the
+    // group (and admins) read it with a live listener.
+    // The membership check costs one billed read when a listener starts (not per change).
+    // Cheaper but looser alternative for 'get': isActiveUser() (any active user who knows a group id could read it).
+    match /groupFeed/{groupId} {
+      allow get: if isAdmin()
+        || (isSignedIn() && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)));
+      allow list: if false;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'groupId', 'aId', 'aTitle', 'aMessage', 'aStatus', 'aResolveMinutes', 'aCompletedAtMs',
+          'aAttachmentName', 'aAttachmentKind', 'aFileId', 'aEdited', 'aAt', 'aAtMs',
+          'oStatus', 'oStartMs', 'oEndMs', 'oPublishAtMs', 'oCancelledAtMs', 'version'])
+        && request.resource.data.groupId == groupId
+        && request.resource.data.aTitle is string && request.resource.data.aTitle.size() <= 100
+        && request.resource.data.aMessage is string && request.resource.data.aMessage.size() <= 2000;
+      allow delete: if false;
+    }
+
+    // ---------- groupStats/{groupId} (Phase 3) ----------
+    // What the admin Home and the Groups tab need per group: panic counts, last posted time, completed flag.
+    // Admins read (one document, or the whole collection with the live listener) and write it.
+    // A member can do exactly ONE thing: add 1 to panicCount or noticePanicCount of a group they belong
+    // to (the app does this right after saving the panic press). Nothing else may change.
+    // A member reading it costs 1 read + 1 membership lookup per press (needed to know the current number).
+    function isValidGroupStats() {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['panicCount', 'noticePanicCount', 'lastPostedAtMs', 'isCompleted', 'hasAnnouncement', 'version'])
+        && d.keys().hasAll(['panicCount', 'noticePanicCount', 'lastPostedAtMs', 'isCompleted', 'hasAnnouncement'])
+        && d.panicCount is int && d.panicCount >= 0
+        && d.noticePanicCount is int && d.noticePanicCount >= 0
+        && d.lastPostedAtMs is int && d.lastPostedAtMs >= 0
+        && d.isCompleted is bool
+        && d.hasAnnouncement is bool;
+    }
+
+    function isPanicIncrement(groupId) {
+      let before = resource.data;
+      let after = request.resource.data;
+      let changed = after.diff(before).affectedKeys();
+      return isActiveUser()
+        && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid))
+        && ((changed.hasOnly(['panicCount']) && after.panicCount == before.panicCount + 1)
+            || (changed.hasOnly(['noticePanicCount']) && after.noticePanicCount == before.noticePanicCount + 1));
+    }
+
+    match /groupStats/{groupId} {
+      allow get: if isAdmin()
+        || (isActiveUser() && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)));
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidGroupStats();
+      allow update: if (isAdmin() && isValidGroupStats()) || isPanicIncrement(groupId);
+      allow delete: if false;
+    }
+
+    // ---------- sharedAttachments/{fileId} (Phase 4) ----------
+    // The file of a broadcast, stored ONCE (base64 text, max 200 KB) and used by the announcements of all the
+    // groups it was posted to (announcement.sharedFileId / feed.aFileId). The id is a random 32-character value, so
+    // only people who got it through a feed or announcement they may read can ask for it. Any active user reads one
+    // document by id; there is no listing. Admins create it before posting and delete it when no announcement uses it.
+    match /sharedAttachments/{fileId} {
+      allow get: if isActiveUser();
+      allow list: if false;
+      allow create: if isAdmin() && isValidAttachment();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // Collection group query "does any announcement still use this shared file?" (admins only, 1 read).
+    match /{path=**}/announcements/{announcementId} {
+      allow read: if isAdmin();
     }
 
     // ---------- Everything else is denied until a feature adds a rule ----------

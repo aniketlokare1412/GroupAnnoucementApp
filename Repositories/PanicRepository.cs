@@ -1,3 +1,4 @@
+using GroupAnnouncementApp.Helpers;
 using GroupAnnouncementApp.Models;
 using GroupAnnouncementApp.Repositories.Interfaces;
 using Plugin.Firebase.Firestore;
@@ -20,6 +21,7 @@ public class PanicRepository : IPanicRepository
         // One document per press (uid + time), so a member can press again after the cooldown.
         string pressId = uid + "_" + DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         IDocumentReference document = _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + pressId);
+        FirestoreMeter.Write("Panic.CreateAsync");
         return document.SetDataAsync(press);
     }
 
@@ -27,6 +29,7 @@ public class PanicRepository : IPanicRepository
     {
         IDocumentReference document = _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + uid);
         IDocumentSnapshot<PanicPress> snapshot = await document.GetDocumentSnapshotAsync<PanicPress>();
+        FirestoreMeter.Read("Panic.ExistsAsync", 1);
         return snapshot.Data != null;
     }
 
@@ -34,6 +37,7 @@ public class PanicRepository : IPanicRepository
     {
         IQuery query = _firestore.GetCollection(CollectionPath(groupId, announcementId)).WhereEqualsTo("userId", uid);
         IQuerySnapshot<PanicPress> snapshot = await query.GetDocumentsAsync<PanicPress>();
+        FirestoreMeter.Read("Panic.LastPressAsync", snapshot.Documents.Count());
 
         DateTimeOffset? latest = null;
         foreach (IDocumentSnapshot<PanicPress> document in snapshot.Documents)
@@ -59,6 +63,7 @@ public class PanicRepository : IPanicRepository
     {
         ICollectionReference collection = _firestore.GetCollection(CollectionPath(groupId, announcementId));
         IQuerySnapshot<PanicPress> snapshot = await collection.GetDocumentsAsync<PanicPress>();
+        FirestoreMeter.Read("Panic.CountAsync", snapshot.Documents.Count());
         return snapshot.Documents.Count();
     }
 
@@ -66,13 +71,27 @@ public class PanicRepository : IPanicRepository
     {
         ICollectionReference collection = _firestore.GetCollection(CollectionPath(groupId, announcementId));
         IQuerySnapshot<PanicPress> snapshot = await collection.GetDocumentsAsync<PanicPress>();
+        FirestoreMeter.Read("Panic.DeleteAllAsync", snapshot.Documents.Count());
+        // Repeated presses can add up to many documents: delete them side by side, 25 at a time.
+        List<Task> deletions = new List<Task>();
         foreach (IDocumentSnapshot<PanicPress> document in snapshot.Documents)
         {
             PanicPress? press = document.Data;
             if (press != null)
             {
-                await _firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + press.Id).DeleteDocumentAsync();
+                FirestoreMeter.Delete("Panic.DeleteAllAsync");
+                deletions.Add(_firestore.GetDocument(CollectionPath(groupId, announcementId) + "/" + press.Id).DeleteDocumentAsync());
+                if (deletions.Count >= 25)
+                {
+                    await Task.WhenAll(deletions);
+                    deletions.Clear();
+                }
             }
+        }
+
+        if (deletions.Count > 0)
+        {
+            await Task.WhenAll(deletions);
         }
     }
 

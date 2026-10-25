@@ -11,4 +11,11 @@ public interface IAttachmentRepository
     Task<AttachmentDocument?> GetAsync(string groupId, string announcementId);
 
     Task DeleteAsync(string groupId, string announcementId);
+
+    // Phase 4: one file per broadcast, sharedAttachments/{fileId}.
+    Task CreateSharedAsync(string fileId, AttachmentDocument file);
+
+    Task<AttachmentDocument?> GetSharedAsync(string fileId);
+
+    Task DeleteSharedAsync(string fileId);
 }

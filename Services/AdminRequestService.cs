@@ -9,6 +9,7 @@ public class AdminRequestService : IAdminRequestService
 {
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
+    private readonly IUserListCache _userCache;
     private readonly IAdminRequestRepository _requestRepository;
     private readonly IUserRepository _userRepository;
 
@@ -16,8 +17,10 @@ public class AdminRequestService : IAdminRequestService
         ISessionService session,
         IAuthService authService,
         IAdminRequestRepository requestRepository,
-        IUserRepository userRepository)
+        IUserRepository userRepository,
+        IUserListCache userCache)
     {
+        _userCache = userCache;
         _session = session;
         _authService = authService;
         _requestRepository = requestRepository;
@@ -114,6 +117,7 @@ public class AdminRequestService : IAdminRequestService
         try
         {
             await ServiceHelper.WithTimeoutAsync(_userRepository.SetUserTypeAsync(uid, UserTypes.Admin));
+            _userCache.Patch(uid, null, UserTypes.Admin);
         }
         catch (Exception ex)
         {

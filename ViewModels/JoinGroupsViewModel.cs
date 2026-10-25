@@ -89,6 +89,14 @@ public partial class JoinGroupsViewModel : BaseViewModel
     // Called by the page every time it appears.
     public async Task LoadAsync()
     {
+        using (PerfTimer.Start("Join.Load"))
+        {
+            await LoadUntimedAsync();
+        }
+    }
+
+    private async Task LoadUntimedAsync()
+    {
         if (_session.CurrentProfile == null || _session.IsAdmin)
         {
             // Discover is a tab now (not a pushed page), so there is nothing to go back to.

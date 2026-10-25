@@ -93,10 +93,16 @@ public sealed class MemberAnnouncementItem : ObservableObject
         get { return _extras != null; }
     }
 
+    // The status row (Work in progress, timer ...) is for real announcements; the 5-minute notice only has the panic button.
+    public bool HasStatusRow
+    {
+        get { return _extras != null && !_isNotice; }
+    }
+
     // Stripe colour: red = work in progress, amber = time is up (or planned outage), green = completed / restored.
     public Color AccentColor
     {
-        get { return _extras != null ? _extras.AccentColor : _fallbackAccent; }
+        get { return _extras != null && !_isNotice ? _extras.AccentColor : _fallbackAccent; }
     }
 
     private void OnExtrasChanged(object? sender, PropertyChangedEventArgs e)
@@ -106,6 +112,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
 
     private string _fileGroupId = string.Empty;
     private string _fileAnnouncementId = string.Empty;
+    private string _sharedFileId = string.Empty;
 
     public string FileLabel
     {
@@ -117,6 +124,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
     {
         _fileGroupId = groupId;
         _fileAnnouncementId = announcementId;
+        _sharedFileId = announcement.SharedFileId;
         HasImage = announcement.AttachmentKind == "image";
         HasFile = announcement.AttachmentKind == "file";
 
@@ -125,7 +133,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
             FileName = string.IsNullOrEmpty(announcement.AttachmentName) ? "Attachment" : announcement.AttachmentName;
             if (attachments != null)
             {
-                OpenFileCommand = new AsyncRelayCommand(() => AttachmentOpener.OpenAsync(attachments, groupId, announcementId));
+                OpenFileCommand = new AsyncRelayCommand(() => AttachmentOpener.OpenAsync(attachments, groupId, announcementId, announcement.SharedFileId));
             }
         }
     }
@@ -138,7 +146,9 @@ public sealed class MemberAnnouncementItem : ObservableObject
             return;
         }
 
-        OperationResult<AttachmentFile> result = await attachments.GetAsync(_fileGroupId, _fileAnnouncementId);
+        OperationResult<AttachmentFile> result = string.IsNullOrEmpty(_sharedFileId)
+            ? await attachments.GetAsync(_fileGroupId, _fileAnnouncementId)
+            : await attachments.GetSharedAsync(_sharedFileId);
         if (!result.IsSuccess || result.Value == null)
         {
             return;

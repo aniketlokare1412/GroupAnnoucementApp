@@ -53,6 +53,7 @@ public sealed class AnnouncementListItem : ObservableObject
 
     private string _fileGroupId = string.Empty;
     private string _fileAnnouncementId = string.Empty;
+    private string _sharedFileId = string.Empty;
 
     public string FileLabel
     {
@@ -64,6 +65,7 @@ public sealed class AnnouncementListItem : ObservableObject
     {
         _fileGroupId = groupId;
         _fileAnnouncementId = announcementId;
+        _sharedFileId = announcement.SharedFileId;
         HasImage = announcement.AttachmentKind == "image";
         HasFile = announcement.AttachmentKind == "file";
 
@@ -72,7 +74,7 @@ public sealed class AnnouncementListItem : ObservableObject
             FileName = string.IsNullOrEmpty(announcement.AttachmentName) ? "Attachment" : announcement.AttachmentName;
             if (attachments != null)
             {
-                OpenFileCommand = new AsyncRelayCommand(() => AttachmentOpener.OpenAsync(attachments, groupId, announcementId));
+                OpenFileCommand = new AsyncRelayCommand(() => AttachmentOpener.OpenAsync(attachments, groupId, announcementId, announcement.SharedFileId));
             }
         }
     }
@@ -85,7 +87,9 @@ public sealed class AnnouncementListItem : ObservableObject
             return;
         }
 
-        OperationResult<AttachmentFile> result = await attachments.GetAsync(_fileGroupId, _fileAnnouncementId);
+        OperationResult<AttachmentFile> result = string.IsNullOrEmpty(_sharedFileId)
+            ? await attachments.GetAsync(_fileGroupId, _fileAnnouncementId)
+            : await attachments.GetSharedAsync(_sharedFileId);
         if (!result.IsSuccess || result.Value == null)
         {
             return;

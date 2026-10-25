@@ -638,7 +638,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                     return;
                 }
 
-                OperationResult<PublishResult> result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment, resolveMinutes);
+                OperationResult<PublishResult> result;
+                using (PerfTimer.Start("Post.Publish (" + groupIds.Count + " groups)"))
+                {
+                    result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment, resolveMinutes);
+                }
+
                 if (!result.IsSuccess)
                 {
                     ErrorMessage = result.ErrorMessage;

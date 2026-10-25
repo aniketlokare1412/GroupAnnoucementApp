@@ -10,12 +10,21 @@ public class PanicService : IPanicService
     private readonly IAuthService _authService;
     private readonly IPanicRepository _panicRepository;
     private readonly IAnnouncementRepository _announcementRepository;
+    private readonly IGroupStatsService _statsService;
+    private readonly IAdminStatsWatcher _statsWatcher;
+
+    // Groups that had no stats document: worked out the old way once and remembered for this session.
+    private readonly Dictionary<string, GroupActivity> _repaired = new Dictionary<string, GroupActivity>();
 
     public PanicService(
         IAuthService authService,
         IPanicRepository panicRepository,
-        IAnnouncementRepository announcementRepository)
+        IAnnouncementRepository announcementRepository,
+        IGroupStatsService statsService,
+        IAdminStatsWatcher statsWatcher)
     {
+        _statsService = statsService;
+        _statsWatcher = statsWatcher;
         _authService = authService;
         _panicRepository = panicRepository;
         _announcementRepository = announcementRepository;
@@ -39,6 +48,11 @@ public class PanicService : IPanicService
             }
 
             await ServiceHelper.WithTimeoutAsync(_panicRepository.CreateAsync(groupId, announcementId, uid));
+
+            // Phase 3: the press is remembered on this phone (for the 5-minute wait on the card) and added to the
+            // group's counter that the admin screens read. The counter is best effort and never fails the press.
+            PanicMemory.Set(uid, groupId, announcementId, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
+            _ = _statsService.PanicPressedAsync(groupId, announcementId);
             return OperationResult.Success();
         }
         catch (Exception ex)
@@ -78,7 +92,15 @@ public class PanicService : IPanicService
 
         try
         {
+            // Phase 3: this phone usually knows already (it asked once for this announcement): no read.
+            long knownMs;
+            if (PanicMemory.TryGet(uid, groupId, announcementId, out knownMs))
+            {
+                return OperationResult<DateTimeOffset?>.Success(knownMs > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(knownMs) : (DateTimeOffset?)null);
+            }
+
             DateTimeOffset? last = await ServiceHelper.WithTimeoutAsync(_panicRepository.LastPressAsync(groupId, announcementId, uid));
+            PanicMemory.Set(uid, groupId, announcementId, last == null ? 0 : last.Value.ToUnixTimeMilliseconds());
             return OperationResult<DateTimeOffset?>.Success(last);
         }
         catch (Exception ex)
@@ -117,13 +139,73 @@ public class PanicService : IPanicService
 
     public async Task<Dictionary<string, GroupActivity>> GetLatestActivityAsync(List<string> groupIds)
     {
-        List<Task<GroupActivity>> tasks = new List<Task<GroupActivity>>();
-        for (int i = 0; i < groupIds.Count; i++)
+        // Phase 3: the live stats listener already holds every group's numbers (no reads). Before the new rules
+        // are deployed it cannot start, and the old way below is used.
+        bool live = false;
+        try
         {
-            tasks.Add(LatestActivityAsync(groupIds[i]));
+            live = await _statsWatcher.EnsureStartedAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("STATS LIVE START ERROR: " + ex);
         }
 
-        await Task.WhenAll(tasks);
+        if (!live)
+        {
+            return await GetLatestActivityOldWayAsync(groupIds);
+        }
+
+        Dictionary<string, GroupActivity> known = _statsWatcher.Snapshot();
+        Dictionary<string, GroupActivity> result = new Dictionary<string, GroupActivity>();
+        List<string> missing = new List<string>();
+        for (int i = 0; i < groupIds.Count; i++)
+        {
+            GroupActivity? item;
+            if (known.TryGetValue(groupIds[i], out item))
+            {
+                result[groupIds[i]] = item;
+            }
+            else if (_repaired.TryGetValue(groupIds[i], out item))
+            {
+                result[groupIds[i]] = item;
+            }
+            else
+            {
+                missing.Add(groupIds[i]);
+            }
+        }
+
+        // A group without a stats document (not rebuilt yet): worked out the old way once and the document is
+        // created for next time. Every group is in here only until "Rebuild stats" has been run (or it was posted to).
+        if (missing.Count > 0)
+        {
+            Dictionary<string, GroupActivity> computed = await GetLatestActivityOldWayAsync(missing);
+            for (int i = 0; i < missing.Count; i++)
+            {
+                result[missing[i]] = computed[missing[i]];
+                _repaired[missing[i]] = computed[missing[i]];
+                _ = _statsService.RepairGroupAsync(missing[i]);
+            }
+        }
+
+        return result;
+    }
+
+    private async Task<Dictionary<string, GroupActivity>> GetLatestActivityOldWayAsync(List<string> groupIds)
+    {
+        // With 200 groups this must not start 400 requests at once: at most 10 groups are read at a time.
+        List<Task<GroupActivity>> tasks = new List<Task<GroupActivity>>();
+        using (SemaphoreSlim gate = new SemaphoreSlim(10))
+        {
+            for (int i = 0; i < groupIds.Count; i++)
+            {
+                string groupId = groupIds[i];
+                tasks.Add(LimitedActivityAsync(gate, groupId));
+            }
+
+            await Task.WhenAll(tasks);
+        }
 
         Dictionary<string, GroupActivity> result = new Dictionary<string, GroupActivity>();
         for (int i = 0; i < groupIds.Count; i++)
@@ -132,6 +214,19 @@ public class PanicService : IPanicService
         }
 
         return result;
+    }
+
+    private async Task<GroupActivity> LimitedActivityAsync(SemaphoreSlim gate, string groupId)
+    {
+        await gate.WaitAsync();
+        try
+        {
+            return await LatestActivityAsync(groupId);
+        }
+        finally
+        {
+            gate.Release();
+        }
     }
 
     // The newest announcement of one group: its panic count, when it was posted and whether it is completed.
@@ -152,14 +247,17 @@ public class PanicService : IPanicService
                 }
             }
 
+            // With no open announcement the members see the 5-minute notice: its panic presses count.
             if (latest == null)
             {
+                activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
                 return activity;
             }
 
             activity.LastPostedAt = latest.CreatedAt == default ? DateTimeOffset.UtcNow : latest.CreatedAt;
             activity.IsCompleted = latest.Status == AnnouncementStatus.Completed;
-            activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, latest.Id));
+            string countedId = activity.IsCompleted ? PanicLimits.NoticeAnnouncementId : latest.Id;
+            activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, countedId));
             return activity;
         }
         catch (Exception ex)

@@ -18,4 +18,8 @@ public interface IMembershipService
     Task<OperationResult> JoinGroupAsync(string groupId);
 
     Task<OperationResult> LeaveGroupAsync(string groupId);
+
+    // Phase 2: re-checks the member's group list against the members collection and repairs it
+    // (for example after a join whose second write failed). Costs one read per membership: used on pull-to-refresh only.
+    Task<OperationResult> ReconcileGroupsAsync();
 }

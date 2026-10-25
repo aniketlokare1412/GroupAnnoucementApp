@@ -11,4 +11,9 @@ public sealed class GroupActivity
 
     // The newest announcement is marked completed (its panic presses no longer need attention).
     public bool IsCompleted { get; set; }
+
+    // The raw counters of the stats document (Phase 4: posting skips the panic clean-up when they are 0).
+    public bool HasAnnouncement { get; set; }
+    public int AnnouncementPanicCount { get; set; }
+    public int NoticePanicCount { get; set; }
 }

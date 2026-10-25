@@ -4,11 +4,116 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
     xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    xmlns:views="clr-namespace:GroupAnnouncementApp.Views"
     xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.UsersPage"
     x:DataType="vm:UsersViewModel"
     Title="Users"
     Shell.NavBarIsVisible="False">
+
+    <ContentPage.Resources>
+        <!-- Smooth scrolling: rows never change after they are built, so every row binding is OneTime (no change
+             tracking per row), and a row has only the views it needs (one initials tile, at most two badges). -->
+
+        <!-- Active user -->
+        <DataTemplate x:Key="ActiveUserRow" x:DataType="vm:UserListItem">
+            <Border Style="{StaticResource RowCard}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" SemanticProperties.Description="{Binding CardLabel, Mode=OneTime}">
+
+                    <Border Grid.Column="0" Style="{StaticResource InitialsTile}">
+                        <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials, Mode=OneTime}" />
+                    </Border>
+
+                    <!-- Name first, badges right after it. The name shrinks (and truncates) before the badges do. -->
+                    <FlexLayout Grid.Column="1" Direction="Row" AlignItems="Center">
+                        <Label
+                            FlexLayout.Shrink="1"
+                            Style="{StaticResource CardTitle}"
+                            Text="{Binding Name, Mode=OneTime}"
+                            LineBreakMode="TailTruncation"
+                            MaxLines="1"
+                            VerticalOptions="Center" />
+                        <HorizontalStackLayout FlexLayout.Shrink="0" Margin="6,0,0,0" Spacing="4" VerticalOptions="Center">
+                            <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsAdmin, Mode=OneTime}" AutomationProperties.IsInAccessibleTree="False">
+                                <Label Style="{StaticResource BadgeVioletText}" Text="Admin" />
+                            </Border>
+                            <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsSelf, Mode=OneTime}" AutomationProperties.IsInAccessibleTree="False">
+                                <Label Style="{StaticResource BadgeNeutralText}" Text="You" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </FlexLayout>
+
+                    <!-- Icon actions (none on your own card) -->
+                    <HorizontalStackLayout Grid.Column="2" Spacing="4" VerticalOptions="Center" IsVisible="{Binding CanManage, Mode=OneTime}">
+                        <Button
+                            Style="{StaticResource IconButtonViolet}"
+                            Text="{x:Static h:Icons.AddModerator}"
+                            Command="{Binding ToggleAdminCommand, Mode=OneTime}"
+                            IsVisible="{Binding CanMakeAdmin, Mode=OneTime}"
+                            SemanticProperties.Description="{Binding MakeAdminLabel, Mode=OneTime}" />
+                        <Button
+                            Style="{StaticResource IconButtonDanger}"
+                            Text="{x:Static h:Icons.RemoveModerator}"
+                            Command="{Binding ToggleAdminCommand, Mode=OneTime}"
+                            IsVisible="{Binding CanRemoveAdmin, Mode=OneTime}"
+                            SemanticProperties.Description="{Binding RemoveAdminLabel, Mode=OneTime}" />
+                    </HorizontalStackLayout>
+
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <!-- Deactivated user: muted tile and the Inactive badge -->
+        <DataTemplate x:Key="InactiveUserRow" x:DataType="vm:UserListItem">
+            <Border Style="{StaticResource RowCard}">
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" SemanticProperties.Description="{Binding CardLabel, Mode=OneTime}">
+
+                    <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}">
+                        <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials, Mode=OneTime}" />
+                    </Border>
+
+                    <FlexLayout Grid.Column="1" Direction="Row" AlignItems="Center">
+                        <Label
+                            FlexLayout.Shrink="1"
+                            Style="{StaticResource CardTitle}"
+                            Text="{Binding Name, Mode=OneTime}"
+                            LineBreakMode="TailTruncation"
+                            MaxLines="1"
+                            VerticalOptions="Center" />
+                        <HorizontalStackLayout FlexLayout.Shrink="0" Margin="6,0,0,0" Spacing="4" VerticalOptions="Center">
+                            <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsAdmin, Mode=OneTime}" AutomationProperties.IsInAccessibleTree="False">
+                                <Label Style="{StaticResource BadgeVioletText}" Text="Admin" />
+                            </Border>
+                            <Border Style="{StaticResource BadgeDanger}" AutomationProperties.IsInAccessibleTree="False">
+                                <Label Style="{StaticResource BadgeDangerText}" Text="Inactive" />
+                            </Border>
+                        </HorizontalStackLayout>
+                    </FlexLayout>
+
+                    <HorizontalStackLayout Grid.Column="2" Spacing="4" VerticalOptions="Center" IsVisible="{Binding CanManage, Mode=OneTime}">
+                        <Button
+                            Style="{StaticResource IconButtonViolet}"
+                            Text="{x:Static h:Icons.AddModerator}"
+                            Command="{Binding ToggleAdminCommand, Mode=OneTime}"
+                            IsVisible="{Binding CanMakeAdmin, Mode=OneTime}"
+                            SemanticProperties.Description="{Binding MakeAdminLabel, Mode=OneTime}" />
+                        <Button
+                            Style="{StaticResource IconButtonDanger}"
+                            Text="{x:Static h:Icons.RemoveModerator}"
+                            Command="{Binding ToggleAdminCommand, Mode=OneTime}"
+                            IsVisible="{Binding CanRemoveAdmin, Mode=OneTime}"
+                            SemanticProperties.Description="{Binding RemoveAdminLabel, Mode=OneTime}" />
+                    </HorizontalStackLayout>
+
+                </Grid>
+            </Border>
+        </DataTemplate>
+
+        <views:UserRowTemplateSelector
+            x:Key="UserRowSelector"
+            ActiveTemplate="{StaticResource ActiveUserRow}"
+            InactiveTemplate="{StaticResource InactiveUserRow}" />
+    </ContentPage.Resources>
 
     <!-- Admin Users tab. Same header style as Home and Groups (the nav bar is hidden). -->
     <Grid>
@@ -46,76 +151,13 @@
                 <RefreshView Command="{Binding RefreshCommand}" IsRefreshing="{Binding IsRefreshing}">
                     <CollectionView
                         ItemsSource="{Binding Users}"
+                        ItemTemplate="{StaticResource UserRowSelector}"
+                        ItemSizingStrategy="MeasureFirstItem"
                         SelectionMode="None"
                         Margin="16,0">
                         <CollectionView.ItemsLayout>
                             <LinearItemsLayout Orientation="Vertical" ItemSpacing="6" />
                         </CollectionView.ItemsLayout>
-
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate x:DataType="vm:UserListItem">
-                                <Border Style="{StaticResource RowCard}">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-
-                                        <!-- Who: initials, name + chips, contact lines -->
-                                        <Grid
-                                            Grid.Column="0"
-                                            ColumnDefinitions="Auto,*"
-                                            ColumnSpacing="10"
-                                            SemanticProperties.Description="{Binding CardLabel}">
-
-                                            <Border Grid.Column="0" Style="{StaticResource InitialsTile}" IsVisible="{Binding IsActive}">
-                                                <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
-                                            </Border>
-                                            <Border Grid.Column="0" Style="{StaticResource InitialsTileMuted}" IsVisible="{Binding IsDeactivated}">
-                                                <Label Style="{StaticResource InitialsTextMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
-                                            </Border>
-
-                                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
-                                                <!-- Name first, chips right after it. The name shrinks (and truncates) before the chips do. -->
-                                                <FlexLayout Direction="Row" AlignItems="Center">
-                                                    <Label
-                                                        FlexLayout.Shrink="1"
-                                                        Style="{StaticResource CardTitle}"
-                                                        Text="{Binding Name}"
-                                                        LineBreakMode="TailTruncation"
-                                                        MaxLines="1"
-                                                        VerticalOptions="Center" />
-                                                    <HorizontalStackLayout FlexLayout.Shrink="0" Margin="6,0,0,0" Spacing="4" VerticalOptions="Center">
-                                                        <Border Style="{StaticResource BadgeViolet}" IsVisible="{Binding IsAdmin}" AutomationProperties.IsInAccessibleTree="False">
-                                                            <Label Style="{StaticResource BadgeVioletText}" Text="Admin" />
-                                                        </Border>
-                                                        <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsSelf}" AutomationProperties.IsInAccessibleTree="False">
-                                                            <Label Style="{StaticResource BadgeNeutralText}" Text="You" />
-                                                        </Border>
-                                                        <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding IsDeactivated}" AutomationProperties.IsInAccessibleTree="False">
-                                                            <Label Style="{StaticResource BadgeDangerText}" Text="Inactive" />
-                                                        </Border>
-                                                    </HorizontalStackLayout>
-                                                </FlexLayout>
-                                            </VerticalStackLayout>
-                                        </Grid>
-
-                                        <!-- Icon actions (none on your own card) -->
-                                        <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center" IsVisible="{Binding CanManage}">
-                                            <Button
-                                                Style="{StaticResource IconButtonViolet}"
-                                                Text="{x:Static h:Icons.AddModerator}"
-                                                Command="{Binding ToggleAdminCommand}"
-                                                IsVisible="{Binding CanMakeAdmin}"
-                                                SemanticProperties.Description="{Binding MakeAdminLabel}" />
-                                            <Button
-                                                Style="{StaticResource IconButtonDanger}"
-                                                Text="{x:Static h:Icons.RemoveModerator}"
-                                                Command="{Binding ToggleAdminCommand}"
-                                                IsVisible="{Binding CanRemoveAdmin}"
-                                                SemanticProperties.Description="{Binding RemoveAdminLabel}" />
-                                        </HorizontalStackLayout>
-
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
 
                         <CollectionView.Footer>
                             <Grid HeightRequest="12" />

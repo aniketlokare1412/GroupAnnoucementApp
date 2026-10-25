@@ -10,9 +10,11 @@ public class OutageService : IOutageService
     private readonly ISessionService _session;
     private readonly IAuthService _authService;
     private readonly IOutageRepository _outageRepository;
+    private readonly IFeedService _feed;
 
-    public OutageService(ISessionService session, IAuthService authService, IOutageRepository outageRepository)
+    public OutageService(ISessionService session, IAuthService authService, IOutageRepository outageRepository, IFeedService feed)
     {
+        _feed = feed;
         _session = session;
         _authService = authService;
         _outageRepository = outageRepository;
@@ -57,6 +59,7 @@ public class OutageService : IOutageService
             outage.CreatedBy = uid;
 
             await ServiceHelper.WithTimeoutAsync(_outageRepository.SetAsync(groupId, outage));
+            await _feed.OutageScheduledAsync(groupId, outage);
             return OperationResult.Success();
         }
         catch (Exception ex)
@@ -83,6 +86,7 @@ public class OutageService : IOutageService
             }
 
             await ServiceHelper.WithTimeoutAsync(_outageRepository.CancelAsync(groupId, nowMs));
+            await _feed.OutageCancelledAsync(groupId, nowMs);
             return OperationResult.Success();
         }
         catch (Exception ex)
@@ -118,6 +122,7 @@ public class OutageService : IOutageService
             }
 
             await ServiceHelper.WithTimeoutAsync(_outageRepository.DeleteAsync(groupId));
+            await _feed.OutageRemovedAsync(groupId);
             return OperationResult.Success();
         }
         catch (Exception ex)
