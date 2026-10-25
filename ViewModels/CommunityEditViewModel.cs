@@ -53,13 +53,17 @@ public partial class CommunityEditViewModel : BaseViewModel
     [ObservableProperty]
     private string _linkHint = string.Empty;
 
+    // True when there is no super community yet (a community cannot be saved without one).
+    [ObservableProperty]
+    private bool _hasNoSupers;
+
     [ObservableProperty]
     private bool _hasNoOptions;
 
     [ObservableProperty]
     private string _noOptionsText = string.Empty;
 
-    // Index into SuperChoices. 0 = "None".
+    // Index into SuperChoices. -1 = not chosen yet (a community must have a super community).
     [ObservableProperty]
     private int _selectedSuperIndex;
 
@@ -127,7 +131,7 @@ public partial class CommunityEditViewModel : BaseViewModel
         else
         {
             LinkHeading = "Communities in this super community";
-            LinkHint = "Tap to add or remove communities. A community can sit under only one super community, so picking one that is already elsewhere moves it here.";
+            LinkHint = "Tap to add communities. A community always keeps a super community: ones already here stay ticked, and picking one that sits under another super community moves it here.";
             NoOptionsText = "No communities yet. Create communities first, then add them here.";
         }
 
@@ -182,16 +186,17 @@ public partial class CommunityEditViewModel : BaseViewModel
 
         _supers = supersResult.Value ?? new List<SuperCommunity>();
         SuperChoices.Clear();
-        SuperChoices.Add("None");
-        int selectedIndex = 0;
+        int selectedIndex = -1;
         for (int i = 0; i < _supers.Count; i++)
         {
             SuperChoices.Add(_supers[i].Name + " (" + _supers[i].Number + ")");
             if (community != null && community.SuperCommunityId == _supers[i].Id)
             {
-                selectedIndex = i + 1;
+                selectedIndex = i;
             }
         }
+
+        HasNoSupers = _supers.Count == 0;
 
         HashSet<string> chosen = new HashSet<string>(community != null ? community.GroupIds : new List<string>());
         Options.Clear();
@@ -258,7 +263,7 @@ public partial class CommunityEditViewModel : BaseViewModel
                 hint = superNames.TryGetValue(community.SuperCommunityId, out otherName!) ? "in " + otherName : "in another super community";
             }
 
-            Options.Add(SelectableOptionItem.Create(community.Id, community.Name, community.Number, hint, isHere));
+            Options.Add(SelectableOptionItem.Create(community.Id, community.Name, community.Number, hint, isHere, isHere));
         }
 
         HasNoOptions = Options.Count == 0;
@@ -292,9 +297,18 @@ public partial class CommunityEditViewModel : BaseViewModel
             if (IsCommunity)
             {
                 string superId = string.Empty;
-                if (SelectedSuperIndex > 0 && SelectedSuperIndex <= _supers.Count)
+                if (SelectedSuperIndex >= 0 && SelectedSuperIndex < _supers.Count)
                 {
-                    superId = _supers[SelectedSuperIndex - 1].Id;
+                    superId = _supers[SelectedSuperIndex].Id;
+                }
+
+                // Every community sits under exactly one super community.
+                if (string.IsNullOrEmpty(superId))
+                {
+                    ErrorMessage = HasNoSupers
+                        ? "Create a super community first, then add this community to it."
+                        : "Please choose a super community.";
+                    return;
                 }
 
                 if (IsEditing)

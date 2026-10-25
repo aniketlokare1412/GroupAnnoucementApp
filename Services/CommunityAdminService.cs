@@ -173,6 +173,11 @@ public class CommunityAdminService : ICommunityAdminService
         string superId = superCommunityId ?? string.Empty;
 
         string? problem = CheckCanModify("communities") ?? ValidateFields("community", cleanName, cleanDescription, cleanNumber);
+        if (problem == null && string.IsNullOrEmpty(superId))
+        {
+            problem = "Please choose a super community.";
+        }
+
         if (problem != null)
         {
             return OperationResult.Fail(problem);
@@ -239,6 +244,11 @@ public class CommunityAdminService : ICommunityAdminService
         if (problem == null)
         {
             problem = ValidateFields("community", cleanName, cleanDescription, cleanNumber);
+        }
+
+        if (problem == null && string.IsNullOrEmpty(superId))
+        {
+            problem = "Please choose a super community.";
         }
 
         if (problem != null)
@@ -421,14 +431,11 @@ public class CommunityAdminService : ICommunityAdminService
             bool shouldBeIn = wanted.Contains(community.Id);
             bool isIn = community.SuperCommunityId == superId;
 
+            // A community always keeps a super community: communities are only ever moved to this one, never cleared.
             string? newValue = null;
             if (shouldBeIn && !isIn)
             {
                 newValue = superId;
-            }
-            else if (!shouldBeIn && isIn)
-            {
-                newValue = string.Empty;
             }
 
             if (newValue == null)

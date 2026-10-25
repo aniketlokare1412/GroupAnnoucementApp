@@ -7,13 +7,10 @@ using GroupAnnouncementApp.Services.Interfaces;
 
 namespace GroupAnnouncementApp.ViewModels;
 
-// Full-screen picker for who an announcement or outage goes to. Built for a few hundred groups:
-//   * search box (name or number), three tabs: Groups | Communities | Super communities
-//   * tick a community or super community to tick all of its active groups
-//   * "Select all results" ticks everything the search shows, "Selected only" shows what is ticked
-//   * Done hands the ticked group ids back; going back keeps the old selection.
-// Whatever is ticked is always a set of group ids, so a group ticked through a community and
-// through the Groups tab is the same tick.
+// The audience picker: who gets the announcement. Two independent tabs, only the tab you finish on counts:
+//  - Groups: search and tick any active group.
+//  - Communities: choose ONE super community, then tick its communities. The groups below are the active groups of
+//    the ticked communities (each group once) and cannot be edited.
 public partial class AudiencePickerViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
@@ -22,46 +19,41 @@ public partial class AudiencePickerViewModel : BaseViewModel
     private readonly ICommunityService _communityService;
 
     private List<AudienceRow> _groupRows = new List<AudienceRow>();
-    private List<AudienceRow> _communityRows = new List<AudienceRow>();
-    private List<AudienceRow> _superRows = new List<AudienceRow>();
     private HashSet<string> _selected = new HashSet<string>();
+    private Dictionary<string, AudienceGroup> _activeGroups = new Dictionary<string, AudienceGroup>();
+    private CommunityDirectory? _directory;
+    private List<SuperCommunity> _supers = new List<SuperCommunity>();
+    private HashSet<string> _communityIds = new HashSet<string>();
+    private HashSet<string> _hierarchyGroupIds = new HashSet<string>();
     private int _totalGroups;
     private bool _isLoaded;
     private bool _isFinished;
+    private bool _suppressSuperChange;
 
-    // The rows of the tab that is showing, after search and "selected only".
+    // Groups tab rows.
     public ObservableCollection<AudienceRow> Rows { get; } = new ObservableCollection<AudienceRow>();
 
-    // 0 = Groups, 1 = Communities, 2 = Super communities.
+    // Communities tab: super community dropdown, community tick list, read-only groups.
+    public ObservableCollection<string> SuperChoices { get; } = new ObservableCollection<string>();
+    public ObservableCollection<CommunityOptionRow> CommunityOptions { get; } = new ObservableCollection<CommunityOptionRow>();
+    public ObservableCollection<HierarchyGroupRow> HierarchyGroups { get; } = new ObservableCollection<HierarchyGroupRow>();
+
+    // 0 = Groups, 1 = Communities.
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsGroupsSegment))]
     [NotifyPropertyChangedFor(nameof(IsNotGroupsSegment))]
-    [NotifyPropertyChangedFor(nameof(IsCommunitiesSegment))]
-    [NotifyPropertyChangedFor(nameof(IsNotCommunitiesSegment))]
-    [NotifyPropertyChangedFor(nameof(IsSuperSegment))]
-    [NotifyPropertyChangedFor(nameof(IsNotSuperSegment))]
+    [NotifyPropertyChangedFor(nameof(IsHierarchySegment))]
+    [NotifyPropertyChangedFor(nameof(IsNotHierarchySegment))]
     private int _segment;
 
     public bool IsGroupsSegment => Segment == 0;
     public bool IsNotGroupsSegment => Segment != 0;
-    public bool IsCommunitiesSegment => Segment == 1;
-    public bool IsNotCommunitiesSegment => Segment != 1;
-    public bool IsSuperSegment => Segment == 2;
-    public bool IsNotSuperSegment => Segment != 2;
+    public bool IsHierarchySegment => Segment == 1;
+    public bool IsNotHierarchySegment => Segment != 1;
 
     [ObservableProperty]
     private string _searchText = string.Empty;
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedOnlyText))]
-    private bool _selectedOnly;
-
-    public string SelectedOnlyText
-    {
-        get { return SelectedOnly ? "Show all" : "Selected only"; }
-    }
-
-    // "12 of 250 groups selected".
     [ObservableProperty]
     private string _summaryText = string.Empty;
 
@@ -80,6 +72,43 @@ public partial class AudiencePickerViewModel : BaseViewModel
     [ObservableProperty]
     private bool _showLoading;
 
+    // -1 = no super community chosen.
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSuperSelected))]
+    private int _selectedSuperIndex = -1;
+
+    public bool HasSuperSelected => SelectedSuperIndex >= 0 && SelectedSuperIndex < _supers.Count;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PanelRotation))]
+    private bool _isCommunityPanelOpen;
+
+    public double PanelRotation => IsCommunityPanelOpen ? 90 : 0;
+
+    [ObservableProperty]
+    private string _communitiesButtonText = "Choose a super community first";
+
+    [ObservableProperty]
+    private bool _hasNoCommunities;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(AllCommunitiesOff))]
+    private bool _allCommunitiesOn;
+
+    public bool AllCommunitiesOff => !AllCommunitiesOn;
+
+    [ObservableProperty]
+    private string _hierarchyHeading = string.Empty;
+
+    [ObservableProperty]
+    private bool _hasNoHierarchyGroups;
+
+    [ObservableProperty]
+    private string _hierarchyEmptyTitle = string.Empty;
+
+    [ObservableProperty]
+    private string _hierarchyEmptyHint = string.Empty;
+
     public AudiencePickerViewModel(
         INavigationService navigation,
         ISessionService session,
@@ -97,17 +126,49 @@ public partial class AudiencePickerViewModel : BaseViewModel
         Rebuild();
     }
 
+    // Switching between Groups and Communities starts over: nothing stays picked from the other tab.
     partial void OnSegmentChanged(int value)
     {
+        if (_isLoaded)
+        {
+            ResetChoices();
+        }
+
         Rebuild();
+        UpdateSummary();
     }
 
-    partial void OnSelectedOnlyChanged(bool value)
+    private void ResetChoices()
     {
-        Rebuild();
+        _selected.Clear();
+        SearchText = string.Empty;
+        _communityIds.Clear();
+
+        _suppressSuperChange = true;
+        SelectedSuperIndex = -1;
+        _suppressSuperChange = false;
+
+        IsCommunityPanelOpen = false;
+        BuildCommunityOptions();
+        RebuildHierarchyGroups();
+        RefreshStates();
+        ErrorMessage = null;
     }
 
-    // Called by the page every time it appears. Builds the rows once.
+    // A different super community: its communities replace the old ones and nothing is ticked.
+    partial void OnSelectedSuperIndexChanged(int value)
+    {
+        if (_suppressSuperChange || !_isLoaded)
+        {
+            return;
+        }
+
+        _communityIds.Clear();
+        BuildCommunityOptions();
+        RebuildHierarchyGroups();
+        IsCommunityPanelOpen = CommunityOptions.Count > 0;
+    }
+
     public async Task LoadAsync()
     {
         if (!_session.IsAdmin)
@@ -124,7 +185,6 @@ public partial class AudiencePickerViewModel : BaseViewModel
         AudienceRequest? request = _picker.Pending;
         if (request == null)
         {
-            // Nothing asked for this page (for example the app was restored on it): leave.
             await _navigation.GoToAsync("..");
             return;
         }
@@ -135,16 +195,15 @@ public partial class AudiencePickerViewModel : BaseViewModel
 
         try
         {
-            _selected = new HashSet<string>(request.Selected);
             _totalGroups = request.Groups.Count;
 
             Action<AudienceRow> onToggle = ToggleRow;
             List<AudienceRow> groupRows = new List<AudienceRow>();
-            HashSet<string> activeIds = new HashSet<string>();
+            _activeGroups = new Dictionary<string, AudienceGroup>();
             for (int i = 0; i < request.Groups.Count; i++)
             {
                 AudienceGroup group = request.Groups[i];
-                activeIds.Add(group.Id);
+                _activeGroups[group.Id] = group;
                 List<string> ids = new List<string>();
                 ids.Add(group.Id);
                 groupRows.Add(AudienceRow.Create(group.Id, group.Name, group.Number, true, CommunityText.NumberText(group.Number), ids, onToggle));
@@ -153,22 +212,48 @@ public partial class AudiencePickerViewModel : BaseViewModel
             groupRows.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
             _groupRows = groupRows;
 
-            // Communities are optional: if they cannot be loaded the Groups tab still works.
-            _communityRows = new List<AudienceRow>();
-            _superRows = new List<AudienceRow>();
             OperationResult<CommunityDirectory> result = await _communityService.GetDirectoryAsync();
             if (result.IsSuccess && result.Value != null)
             {
-                BuildCommunityRows(result.Value, activeIds, onToggle);
+                _directory = result.Value;
+                _supers = new List<SuperCommunity>(_directory.SuperCommunities);
+                _supers.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+                for (int i = 0; i < _supers.Count; i++)
+                {
+                    SuperChoices.Add(_supers[i].Name + " (" + _supers[i].Number + ")");
+                }
             }
             else
             {
                 ErrorMessage = "Communities could not be loaded, so only single groups can be chosen right now.";
             }
 
+            _selected = new HashSet<string>(request.Selected);
+
+            // Open on the tab the admin tapped. Not loaded yet, so this does not clear anything.
+            Segment = request.Segment == 1 ? 1 : 0;
+
+            // Communities tab opened again: show the super community and communities that were chosen before.
+            AudienceHierarchyState? before = request.Hierarchy;
+            if (Segment == 1 && before != null && _directory != null)
+            {
+                int index = _supers.FindIndex(x => x.Id == before.SuperCommunityId);
+                if (index >= 0)
+                {
+                    _communityIds = new HashSet<string>(before.CommunityIds);
+                    _suppressSuperChange = true;
+                    SelectedSuperIndex = index;
+                    _suppressSuperChange = false;
+                    BuildCommunityOptions();
+                }
+            }
+
+            RebuildHierarchyGroups();
+
             _isLoaded = true;
             RefreshStates();
             Rebuild();
+            UpdateSummary();
         }
         finally
         {
@@ -177,51 +262,8 @@ public partial class AudiencePickerViewModel : BaseViewModel
         }
     }
 
-    private void BuildCommunityRows(CommunityDirectory directory, HashSet<string> activeIds, Action<AudienceRow> onToggle)
-    {
-        for (int i = 0; i < directory.Communities.Count; i++)
-        {
-            Community community = directory.Communities[i];
-            List<string> ids = KeepActive(community.GroupIds, activeIds);
-            if (ids.Count == 0)
-            {
-                continue;
-            }
+    // ---------- Groups tab ----------
 
-            _communityRows.Add(AudienceRow.Create(community.Id, community.Name, community.Number, false, CommunityText.Count(ids.Count, "group", "groups"), ids, onToggle));
-        }
-
-        for (int i = 0; i < directory.SuperCommunities.Count; i++)
-        {
-            SuperCommunity superCommunity = directory.SuperCommunities[i];
-            List<string> ids = KeepActive(directory.GroupIdsOfSuper(superCommunity.Id), activeIds);
-            if (ids.Count == 0)
-            {
-                continue;
-            }
-
-            _superRows.Add(AudienceRow.Create(superCommunity.Id, superCommunity.Name, superCommunity.Number, false, CommunityText.Count(ids.Count, "group", "groups"), ids, onToggle));
-        }
-    }
-
-    // Only active groups are in the picker, and only those can receive something.
-    private static List<string> KeepActive(List<string> ids, HashSet<string> activeIds)
-    {
-        List<string> kept = new List<string>();
-        for (int i = 0; i < ids.Count; i++)
-        {
-            if (activeIds.Contains(ids[i]) && !kept.Contains(ids[i]))
-            {
-                kept.Add(ids[i]);
-            }
-        }
-
-        return kept;
-    }
-
-    // ---------- ticking ----------
-
-    // A row that is fully ticked is unticked; anything else ticks all of its groups.
     private void ToggleRow(AudienceRow row)
     {
         if (row.State == 2)
@@ -239,7 +281,7 @@ public partial class AudiencePickerViewModel : BaseViewModel
             }
         }
 
-        AfterSelectionChanged();
+        RefreshStates();
     }
 
     [RelayCommand]
@@ -253,40 +295,36 @@ public partial class AudiencePickerViewModel : BaseViewModel
             }
         }
 
-        AfterSelectionChanged();
+        RefreshStates();
     }
 
+    // Clears the tab you are on.
     [RelayCommand]
     private void Clear()
     {
-        _selected.Clear();
-        AfterSelectionChanged();
-    }
+        if (Segment == 1)
+        {
+            _communityIds.Clear();
+            for (int i = 0; i < CommunityOptions.Count; i++)
+            {
+                CommunityOptions[i].IsOn = false;
+            }
 
-    [RelayCommand]
-    private void ToggleSelectedOnly()
-    {
-        SelectedOnly = !SelectedOnly;
+            RebuildHierarchyGroups();
+            return;
+        }
+
+        _selected.Clear();
+        RefreshStates();
     }
 
     [RelayCommand]
     private void SelectSegment(string? index)
     {
         int value;
-        if (int.TryParse(index, out value) && value >= 0 && value <= 2)
+        if (int.TryParse(index, out value) && value >= 0 && value <= 1)
         {
             Segment = value;
-        }
-    }
-
-    private void AfterSelectionChanged()
-    {
-        RefreshStates();
-
-        // With "Selected only" a row that was just unticked must leave the list.
-        if (SelectedOnly)
-        {
-            Rebuild();
         }
     }
 
@@ -297,22 +335,8 @@ public partial class AudiencePickerViewModel : BaseViewModel
             _groupRows[i].Refresh(_selected);
         }
 
-        for (int i = 0; i < _communityRows.Count; i++)
-        {
-            _communityRows[i].Refresh(_selected);
-        }
-
-        for (int i = 0; i < _superRows.Count; i++)
-        {
-            _superRows[i].Refresh(_selected);
-        }
-
-        int count = _selected.Count;
-        SummaryText = count + " of " + CommunityText.Count(_totalGroups, "group", "groups") + " selected";
-        DoneText = count == 0 ? "Done" : "Done  -  " + CommunityText.Count(count, "group", "groups");
+        UpdateSummary();
     }
-
-    // ---------- showing the rows ----------
 
     private void Rebuild()
     {
@@ -321,18 +345,12 @@ public partial class AudiencePickerViewModel : BaseViewModel
             return;
         }
 
-        List<AudienceRow> source = Segment == 1 ? _communityRows : Segment == 2 ? _superRows : _groupRows;
         string term = (SearchText ?? string.Empty).Trim();
 
         Rows.Clear();
-        for (int i = 0; i < source.Count; i++)
+        for (int i = 0; i < _groupRows.Count; i++)
         {
-            AudienceRow row = source[i];
-            if (SelectedOnly && row.State == 0)
-            {
-                continue;
-            }
-
+            AudienceRow row = _groupRows[i];
             if (term.Length > 0
                 && row.Name.IndexOf(term, StringComparison.OrdinalIgnoreCase) < 0
                 && row.Number.IndexOf(term, StringComparison.OrdinalIgnoreCase) < 0)
@@ -349,21 +367,15 @@ public partial class AudiencePickerViewModel : BaseViewModel
             return;
         }
 
-        string what = Segment == 1 ? "communities" : Segment == 2 ? "super communities" : "groups";
-        if (SelectedOnly)
-        {
-            EmptyTitle = "Nothing selected here";
-            EmptyHint = "Tap Show all to see every " + what + " again.";
-        }
-        else if (term.Length > 0)
+        if (term.Length > 0)
         {
             EmptyTitle = "No matches";
             EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
-        else if (source.Count == 0)
+        else if (_groupRows.Count == 0)
         {
-            EmptyTitle = Segment == 0 ? "No active groups" : "No " + what + " with active groups";
-            EmptyHint = Segment == 0 ? "Create or activate a group first." : "Add active groups to a " + (Segment == 1 ? "community" : "super community") + " first.";
+            EmptyTitle = "No active groups";
+            EmptyHint = "Create or activate a group first.";
         }
         else
         {
@@ -372,17 +384,253 @@ public partial class AudiencePickerViewModel : BaseViewModel
         }
     }
 
-    // ---------- leaving ----------
+    // ---------- Communities tab ----------
+
+    // The communities of the chosen super community (and only those), A to Z.
+    private void BuildCommunityOptions()
+    {
+        CommunityOptions.Clear();
+        AllCommunitiesOn = false;
+
+        if (_directory == null || !HasSuperSelected)
+        {
+            HasNoCommunities = false;
+            UpdateCommunitiesButton();
+            return;
+        }
+
+        List<Community> communities = new List<Community>(_directory.CommunitiesOfSuper(_supers[SelectedSuperIndex].Id));
+        communities.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+        for (int i = 0; i < communities.Count; i++)
+        {
+            Community community = communities[i];
+            int count = ActiveGroupIdsOf(community).Count;
+            string detail = CommunityText.NumberText(community.Number) + " - " + CommunityText.Count(count, "group", "groups");
+            CommunityOptions.Add(CommunityOptionRow.Create(community.Id, community.Name, detail, _communityIds.Contains(community.Id), ToggleCommunity));
+        }
+
+        HasNoCommunities = CommunityOptions.Count == 0;
+        UpdateCommunitiesButton();
+    }
+
+    private List<string> ActiveGroupIdsOf(Community community)
+    {
+        List<string> ids = new List<string>();
+        for (int i = 0; i < community.GroupIds.Count; i++)
+        {
+            string id = community.GroupIds[i];
+            if (_activeGroups.ContainsKey(id) && !ids.Contains(id))
+            {
+                ids.Add(id);
+            }
+        }
+
+        return ids;
+    }
+
+    private void ToggleCommunity(CommunityOptionRow row)
+    {
+        if (row.IsOn)
+        {
+            _communityIds.Remove(row.Id);
+            row.IsOn = false;
+        }
+        else
+        {
+            _communityIds.Add(row.Id);
+            row.IsOn = true;
+        }
+
+        RebuildHierarchyGroups();
+    }
+
+    [RelayCommand]
+    private void SelectAllCommunities()
+    {
+        bool turnOn = !AllCommunitiesOn;
+        for (int i = 0; i < CommunityOptions.Count; i++)
+        {
+            CommunityOptions[i].IsOn = turnOn;
+            if (turnOn)
+            {
+                _communityIds.Add(CommunityOptions[i].Id);
+            }
+            else
+            {
+                _communityIds.Remove(CommunityOptions[i].Id);
+            }
+        }
+
+        RebuildHierarchyGroups();
+    }
+
+    [RelayCommand]
+    private void ToggleCommunityPanel()
+    {
+        if (HasSuperSelected)
+        {
+            IsCommunityPanelOpen = !IsCommunityPanelOpen;
+        }
+    }
+
+    // The groups of all ticked communities, each group once, read-only.
+    private void RebuildHierarchyGroups()
+    {
+        HashSet<string> ids = new HashSet<string>();
+        int ticked = 0;
+        for (int i = 0; i < CommunityOptions.Count; i++)
+        {
+            if (!CommunityOptions[i].IsOn || _directory == null)
+            {
+                continue;
+            }
+
+            ticked++;
+            Community? community = _directory.FindCommunity(CommunityOptions[i].Id);
+            if (community == null)
+            {
+                continue;
+            }
+
+            List<string> groupIds = ActiveGroupIdsOf(community);
+            for (int j = 0; j < groupIds.Count; j++)
+            {
+                ids.Add(groupIds[j]);
+            }
+        }
+
+        _hierarchyGroupIds = ids;
+
+        List<AudienceGroup> groups = new List<AudienceGroup>();
+        foreach (string id in ids)
+        {
+            groups.Add(_activeGroups[id]);
+        }
+
+        groups.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
+
+        HierarchyGroups.Clear();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            HierarchyGroups.Add(HierarchyGroupRow.Create(groups[i].Name, CommunityText.NumberText(groups[i].Number)));
+        }
+
+        AllCommunitiesOn = CommunityOptions.Count > 0 && ticked == CommunityOptions.Count;
+        HierarchyHeading = "Groups that will get the message (" + groups.Count + ")";
+
+        HasNoHierarchyGroups = groups.Count == 0;
+        if (!HasSuperSelected)
+        {
+            HierarchyEmptyTitle = "Choose a super community";
+            HierarchyEmptyHint = "Pick a super community, then tick the communities that should get the message.";
+        }
+        else if (HasNoCommunities)
+        {
+            HierarchyEmptyTitle = "No communities here yet";
+            HierarchyEmptyHint = "This super community has no communities. Add communities to it first.";
+        }
+        else if (ticked == 0)
+        {
+            HierarchyEmptyTitle = "No community ticked";
+            HierarchyEmptyHint = "Open the Communities list above and tick the ones that should get the message.";
+        }
+        else
+        {
+            HierarchyEmptyTitle = "No active groups";
+            HierarchyEmptyHint = "The ticked communities have no active groups.";
+        }
+
+        UpdateCommunitiesButton();
+        UpdateSummary();
+    }
+
+    private void UpdateCommunitiesButton()
+    {
+        if (!HasSuperSelected)
+        {
+            CommunitiesButtonText = "Choose a super community first";
+            return;
+        }
+
+        if (HasNoCommunities)
+        {
+            CommunitiesButtonText = "No communities in this super community";
+            return;
+        }
+
+        int ticked = 0;
+        for (int i = 0; i < CommunityOptions.Count; i++)
+        {
+            if (CommunityOptions[i].IsOn)
+            {
+                ticked++;
+            }
+        }
+
+        CommunitiesButtonText = ticked == 0
+            ? "Choose communities"
+            : CommunityText.Count(ticked, "community", "communities") + " selected";
+    }
+
+    // ---------- shared ----------
+
+    private void UpdateSummary()
+    {
+        int count;
+        if (Segment == 1)
+        {
+            count = _hierarchyGroupIds.Count;
+            SummaryText = CommunityText.Count(count, "group", "groups") + " from " + CommunityText.Count(_communityIds.Count, "community", "communities");
+        }
+        else
+        {
+            count = _selected.Count;
+            SummaryText = count + " of " + CommunityText.Count(_totalGroups, "group", "groups") + " selected";
+        }
+
+        DoneText = count == 0 ? "Done" : "Done  -  " + CommunityText.Count(count, "group", "groups");
+    }
 
     [RelayCommand]
     private async Task DoneAsync()
     {
+        // Only the tab you are on counts. At least one group is needed to go on.
+        int chosenCount = Segment == 1 ? _hierarchyGroupIds.Count : _selected.Count;
+        if (chosenCount == 0)
+        {
+            ErrorMessage = "Choose at least one group.";
+            return;
+        }
+
+        ErrorMessage = null;
         _isFinished = true;
-        _picker.Complete(new HashSet<string>(_selected));
+
+        HashSet<string> result;
+        AudienceHierarchyState? state = null;
+        if (Segment == 1)
+        {
+            result = new HashSet<string>(_hierarchyGroupIds);
+            if (result.Count > 0 && HasSuperSelected)
+            {
+                state = new AudienceHierarchyState();
+                state.SuperCommunityId = _supers[SelectedSuperIndex].Id;
+                state.CommunityIds = new HashSet<string>(_communityIds);
+                state.GroupIds = new HashSet<string>(result);
+            }
+        }
+        else
+        {
+            result = new HashSet<string>(_selected);
+        }
+
+        _picker.RememberHierarchy(state);
+
+        // Close this page first, then hand over the choice: the next page opens only after this one is gone.
         await _navigation.GoToAsync("..");
+        _picker.Complete(result);
     }
 
-    // The page calls this when it disappears. Going back without Done keeps the old selection.
     public void OnClosed()
     {
         if (!_isFinished)

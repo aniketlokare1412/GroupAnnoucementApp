@@ -109,6 +109,8 @@ public partial class GroupsViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isRefreshing;
 
+    private readonly IAudiencePickerService _audiencePicker;
+
     public GroupsViewModel(
         INavigationService navigation,
         ISessionService session,
@@ -116,8 +118,10 @@ public partial class GroupsViewModel : BaseViewModel
         IDialogService dialogs,
         IToastService toasts,
         IPanicService panicService,
-        ICommunityAdminService communityService)
+        ICommunityAdminService communityService,
+        IAudiencePickerService audiencePicker)
     {
+        _audiencePicker = audiencePicker;
         _communityService = communityService;
         _panicService = panicService;
         _navigation = navigation;
@@ -301,7 +305,7 @@ public partial class GroupsViewModel : BaseViewModel
     [RelayCommand]
     private Task NewAnnouncementAsync()
     {
-        return _navigation.GoToAsync(Routes.AnnouncementEdit);
+        return _audiencePicker.StartAsync(Routes.AnnouncementEdit);
     }
 
     private async Task OpenAnnouncementsAsync(GroupListItem item)

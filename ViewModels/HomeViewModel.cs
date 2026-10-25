@@ -129,6 +129,8 @@ public partial class HomeViewModel : BaseViewModel
     [ObservableProperty]
     private bool _isRefreshing;
 
+    private readonly IAudiencePickerService _audiencePicker;
+
     public HomeViewModel(
         INavigationService navigation,
         ISessionService session,
@@ -144,8 +146,10 @@ public partial class HomeViewModel : BaseViewModel
         IOutageService outageService,
         ICommunityService communityService,
         IMemberFeedService memberFeed,
-        IAdminStatsWatcher statsWatcher)
+        IAdminStatsWatcher statsWatcher,
+        IAudiencePickerService audiencePicker)
     {
+        _audiencePicker = audiencePicker;
         _statsWatcher = statsWatcher;
         _memberFeed = memberFeed;
         _communityService = communityService;
@@ -389,7 +393,7 @@ public partial class HomeViewModel : BaseViewModel
 
         // A completed message disappears and the 5-minute notice comes back.
         Announcement? latest = state.Latest;
-        if (latest != null && latest.Status != AnnouncementStatus.Completed)
+        if (latest != null && latest.Status != AnnouncementStatus.Completed && !MessageExpiry.IsExpired(latest, now))
         {
             MemberAnnouncementItem card = MemberAnnouncementItem.From(group, latest, _attachments);
             card.Extras = new AnnouncementExtras(group.Id, latest, false, _announcementService, _panicService, _dialogs, _toasts);
@@ -417,6 +421,7 @@ public partial class HomeViewModel : BaseViewModel
             text.Append(state.Latest.Id).Append('|').Append(state.Latest.Status).Append('|').Append(state.Latest.Title).Append('|').Append(state.Latest.Message);
             text.Append('|').Append(state.Latest.IsEdited).Append(state.Latest.ResolveMinutes).Append(state.Latest.AttachmentName);
             text.Append('|').Append(state.Latest.CreatedAt.ToUnixTimeMilliseconds());
+            text.Append(MessageExpiry.IsExpired(state.Latest, now) ? "|expired" : "|live");
         }
 
         text.Append('#');
@@ -1239,13 +1244,13 @@ public partial class HomeViewModel : BaseViewModel
     [RelayCommand]
     private Task NewOutageAsync()
     {
-        return _navigation.GoToAsync(Routes.OutageEdit);
+        return _audiencePicker.StartAsync(Routes.OutageEdit);
     }
 
     [RelayCommand]
     private Task NewPostAsync()
     {
-        return _navigation.GoToAsync(Routes.AnnouncementEdit);
+        return _audiencePicker.StartAsync(Routes.AnnouncementEdit);
     }
 
     private async Task OpenAnnouncementsAsync(HomeGroupItem item)

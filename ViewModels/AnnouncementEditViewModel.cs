@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GroupAnnouncementApp.Helpers;
@@ -12,8 +10,9 @@ namespace GroupAnnouncementApp.ViewModels;
 //   announcementedit                                   -> new announcement, pick ONE OR MORE groups
 //   announcementedit?groupId=..&groupName=..           -> new announcement for that one group
 //   announcementedit?groupId=..&groupName=..&announcementId=..  -> edit an existing announcement
-// In "pick groups" mode one summary card opens the full-screen audience picker, where the admin can search
-// and tick single groups, communities or super communities. Each group still receives its own copy.
+// In "pick groups" mode the page opens straight away. Its "who is this for" section shows "N groups selected" and
+// two pills, Groups and Communities. A pill (or the card) opens the full-screen audience picker on that tab; Done brings
+// the choice back to this page, and going back from the picker changes nothing. Each group still receives its own copy.
 // Cancel is the back arrow. After a successful save the page goes back and a toast confirms it.
 [QueryProperty(nameof(GroupId), "groupId")]
 [QueryProperty(nameof(GroupName), "groupName")]
@@ -27,12 +26,11 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private readonly IAudiencePickerService _audiencePicker;
     private readonly IToastService _toasts;
 
-    private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
     private bool _isLoaded;
     private bool _isSaving;
 
-    // The cards of the "Post to" picker (filtered by the search box).
-    public ObservableCollection<SelectableGroupItem> Groups { get; } = new ObservableCollection<SelectableGroupItem>();
+    // The audience chosen on this page (through the picker).
+    private readonly AudienceSelection _audience;
 
 
     // Set by Shell from the route.
@@ -72,18 +70,29 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     [NotifyPropertyChangedFor(nameof(ShowEditSpinner))]
     private bool _isPickerVisible;
 
-    [ObservableProperty]
-    private string _searchText = string.Empty;
-
+    // The "who is this for" section: the card text and the two pills.
     [ObservableProperty]
     private string _selectedCountText = "No groups selected";
+
+    [ObservableProperty]
+    private string _audienceCaption = "Choose Groups or Communities below";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoSelection))]
     private bool _hasSelection;
 
+    // Pill states: lit up only for the tab the current choice was made in.
     [ObservableProperty]
-    private bool _hasNoGroups;
+    private bool _isGroupsOn;
+
+    [ObservableProperty]
+    private bool _isGroupsOff = true;
+
+    [ObservableProperty]
+    private bool _isCommunitiesOn;
+
+    [ObservableProperty]
+    private bool _isCommunitiesOff = true;
 
     [ObservableProperty]
     private string _title = string.Empty;
@@ -369,15 +378,10 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         _groupService = groupService;
         _audiencePicker = audiencePicker;
         _toasts = toasts;
+        _audience = new AudienceSelection(groupService, audiencePicker);
 
         TitleCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxTitleLength);
         MessageCountText = BuildCountText(string.Empty, AnnouncementLimits.MaxMessageLength);
-    }
-
-    // Runs automatically whenever the search text changes.
-    partial void OnSearchTextChanged(string value)
-    {
-        ApplyFilter();
     }
 
     partial void OnTitleChanged(string value)
@@ -420,8 +424,11 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
         else
         {
+            // New announcement for several groups: the page opens at once, the audience is chosen here.
             TitleText = "New announcement";
-            await LoadGroupPickerAsync();
+            IsPickerVisible = true;
+            RefreshAudience();
+            _isLoaded = true;
         }
     }
 
@@ -463,114 +470,36 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
     }
 
-    private async Task LoadGroupPickerAsync()
-    {
-        IsPickerVisible = true;
-        IsBusy = true;
-        ShowLoading = true;
-        ShowRetry = false;
-        ErrorMessage = null;
-
-        try
-        {
-            OperationResult<List<AnnouncementGroup>> result = await _groupService.GetAllGroupsAsync();
-            if (!result.IsSuccess)
-            {
-                ErrorMessage = result.ErrorMessage;
-                ShowRetry = true;
-                return;
-            }
-
-            for (int i = 0; i < _allItems.Count; i++)
-            {
-                _allItems[i].PropertyChanged -= OnItemPropertyChanged;
-            }
-
-            _allItems = new List<SelectableGroupItem>();
-            List<AnnouncementGroup> groups = result.Value ?? new List<AnnouncementGroup>();
-            for (int i = 0; i < groups.Count; i++)
-            {
-                // Announcements can only be posted to ACTIVE groups.
-                if (groups[i].IsActive)
-                {
-                    SelectableGroupItem item = SelectableGroupItem.FromGroup(groups[i]);
-                    item.PropertyChanged += OnItemPropertyChanged;
-                    _allItems.Add(item);
-                }
-            }
-
-            _isLoaded = true;
-            ApplyFilter();
-            UpdateSelectedCount();
-        }
-        finally
-        {
-            IsBusy = false;
-            ShowLoading = false;
-        }
-    }
-
-    // Opens the full-screen picker (search, communities, super communities). Done ticks the chosen groups here.
-    // Going back from the picker keeps the selection as it was.
-    [RelayCommand]
-    private async Task ChooseGroupsAsync()
-    {
-        if (IsBusy || !_isLoaded)
-        {
-            return;
-        }
-
-        List<AudienceGroup> groups = new List<AudienceGroup>();
-        HashSet<string> selected = new HashSet<string>();
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            AudienceGroup group = new AudienceGroup();
-            group.Id = _allItems[i].Id;
-            group.Name = _allItems[i].Name;
-            group.Number = _allItems[i].Number;
-            groups.Add(group);
-
-            if (_allItems[i].IsSelected)
-            {
-                selected.Add(_allItems[i].Id);
-            }
-        }
-
-        HashSet<string>? result = await _audiencePicker.PickAsync(groups, selected);
-        if (result == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            _allItems[i].IsSelected = result.Contains(_allItems[i].Id);
-        }
-    }
-
     [RelayCommand]
     private Task RetryAsync()
     {
         return LoadAsync();
     }
 
-    // Ticks every group that is currently shown (so a search narrows what "Select all" does).
+    // The Groups / Communities pills: open the picker on that tab.
     [RelayCommand]
-    private void SelectAll()
+    private async Task ChooseAudienceAsync(string? tab)
     {
-        for (int i = 0; i < Groups.Count; i++)
+        if (IsBusy || !_isLoaded)
         {
-            Groups[i].IsSelected = true;
+            return;
         }
+
+        ErrorMessage = null;
+        string? problem = await _audience.ChooseAsync(tab == "1" ? 1 : 0);
+        if (problem != null)
+        {
+            ErrorMessage = problem;
+        }
+
+        RefreshAudience();
     }
 
+    // The "N groups selected" card: opens the picker on the tab the choice came from.
     [RelayCommand]
-    private void ClearSelection()
+    private Task EditAudienceAsync()
     {
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            _allItems[i].IsSelected = false;
-        }
+        return ChooseAudienceAsync(_audience.Kind == 1 ? "1" : "0");
     }
 
     // Does nothing until loading has finished, so a failed load can never be saved over.
@@ -623,18 +552,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                 }
                 else
                 {
-                    for (int i = 0; i < _allItems.Count; i++)
-                    {
-                        if (_allItems[i].IsSelected)
-                        {
-                            groupIds.Add(_allItems[i].Id);
-                        }
-                    }
+                    groupIds.AddRange(_audience.GroupIds);
                 }
 
                 if (groupIds.Count == 0)
                 {
-                    ErrorMessage = "Select at least one group.";
+                    ErrorMessage = "Choose who this is for: tap Groups or Communities.";
                     return;
                 }
 
@@ -685,29 +608,13 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private void ShowPartialFailure(PublishResult published, int totalCount)
     {
         List<string> failedNames = new List<string>();
-        List<SelectableGroupItem> kept = new List<SelectableGroupItem>();
-
-        for (int i = 0; i < _allItems.Count; i++)
+        for (int i = 0; i < published.FailedGroupIds.Count; i++)
         {
-            SelectableGroupItem item = _allItems[i];
-
-            if (published.PostedGroupIds.Contains(item.Id))
-            {
-                item.PropertyChanged -= OnItemPropertyChanged;
-                continue;
-            }
-
-            if (published.FailedGroupIds.Contains(item.Id))
-            {
-                failedNames.Add(item.Name);
-            }
-
-            kept.Add(item);
+            failedNames.Add(_audience.NameOf(published.FailedGroupIds[i]));
         }
 
-        _allItems = kept;
-        ApplyFilter();
-        UpdateSelectedCount();
+        _audience.RemoveGroups(published.PostedGroupIds);
+        RefreshAudience();
 
         string text = "Posted to " + published.PostedGroupIds.Count + " of " + totalCount + " groups. "
             + "Not posted to: " + string.Join(", ", failedNames) + ". ";
@@ -728,46 +635,16 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         HasTarget = true;
     }
 
-    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    // Shows the chosen audience on the card, lights the right pill and updates the main button.
+    private void RefreshAudience()
     {
-        if (e.PropertyName == nameof(SelectableGroupItem.IsSelected))
-        {
-            UpdateSelectedCount();
-        }
-    }
-
-    private int CountSelected()
-    {
-        int count = 0;
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            if (_allItems[i].IsSelected)
-            {
-                count++;
-            }
-        }
-
-        return count;
-    }
-
-    private void UpdateSelectedCount()
-    {
-        int count = CountSelected();
-        HasSelection = count > 0;
-
-        if (count == 0)
-        {
-            SelectedCountText = "No groups selected";
-        }
-        else if (count == 1)
-        {
-            SelectedCountText = "1 group selected";
-        }
-        else
-        {
-            SelectedCountText = count + " groups selected";
-        }
-
+        SelectedCountText = _audience.CountText;
+        AudienceCaption = _audience.CaptionText;
+        HasSelection = _audience.Count > 0;
+        IsGroupsOn = HasSelection && _audience.Kind == 0;
+        IsGroupsOff = !IsGroupsOn;
+        IsCommunitiesOn = HasSelection && _audience.Kind == 1;
+        IsCommunitiesOff = !IsCommunitiesOn;
         RefreshButtonText();
     }
 
@@ -788,7 +665,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
         if (IsPickerVisible)
         {
-            int count = CountSelected();
+            int count = _audience.Count;
             if (count == 0)
             {
                 PrimaryButtonText = "Publish";
@@ -806,22 +683,6 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         }
 
         PrimaryButtonText = "Publish";
-    }
-
-    private void ApplyFilter()
-    {
-        string term = (SearchText ?? string.Empty).Trim();
-
-        Groups.Clear();
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            if (term.Length == 0 || _allItems[i].Name.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0 || _allItems[i].Number.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                Groups.Add(_allItems[i]);
-            }
-        }
-
-        HasNoGroups = _isLoaded && IsPickerVisible && Groups.Count == 0;
     }
 
     private static string BuildCountText(string? text, int max)

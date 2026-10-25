@@ -57,13 +57,14 @@
                 <VerticalStackLayout Spacing="10">
                     <Label Style="{StaticResource FieldLabel}" Text="Send to" />
 
-                    <!-- One line with the count; tap it to choose groups, communities or super communities -->
+                    <!-- Who gets it. The card shows the choice; the pills open the picker on that tab.
+                         Going back from the picker keeps the old choice. -->
                     <Border
                         Style="{StaticResource RowCard}"
                         SemanticProperties.Description="{Binding SelectedCountText}"
-                        SemanticProperties.Hint="Opens the group picker">
+                        SemanticProperties.Hint="Opens the list to change who gets this">
                         <Border.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding ChooseGroupsCommand}" />
+                            <TapGestureRecognizer Command="{Binding EditAudienceCommand}" />
                         </Border.GestureRecognizers>
                         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
                             <Border Grid.Column="0" Style="{StaticResource IconTileCyan}" VerticalOptions="Center">
@@ -71,11 +72,39 @@
                             </Border>
                             <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                 <Label Style="{StaticResource CardTitle}" Text="{Binding SelectedCountText}" />
-                                <Label Style="{StaticResource Caption}" Text="Tap to choose groups, communities or super communities" LineBreakMode="TailTruncation" MaxLines="1" />
+                                <Label Style="{StaticResource Caption}" Text="{Binding AudienceCaption}" LineBreakMode="TailTruncation" MaxLines="1" />
                             </VerticalStackLayout>
-                            <Label Grid.Column="2" Style="{StaticResource IconMuted}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.ChevronRight}" />
+                            <Label Grid.Column="2" Style="{StaticResource IconMuted}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.ChevronRight}" />
                         </Grid>
                     </Border>
+
+                    <HorizontalStackLayout Spacing="8" HorizontalOptions="Center">
+
+                    <Grid SemanticProperties.Description="Groups" SemanticProperties.Hint="Choose single groups">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ChooseAudienceCommand}" CommandParameter="0" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsGroupsOff}">
+                            <Label Style="{StaticResource GroupPillText}" Text="Groups" />
+                        </Border>
+                        <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsOn}">
+                            <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
+                        </Border>
+                    </Grid>
+
+                    <Grid SemanticProperties.Description="Communities" SemanticProperties.Hint="Choose a super community and its communities">
+                        <Grid.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ChooseAudienceCommand}" CommandParameter="1" />
+                        </Grid.GestureRecognizers>
+                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsCommunitiesOff}">
+                            <Label Style="{StaticResource GroupPillText}" Text="Communities" />
+                        </Border>
+                        <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsCommunitiesOn}">
+                            <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
+                        </Border>
+                    </Grid>
+
+                    </HorizontalStackLayout>
                 </VerticalStackLayout>
 
             </VerticalStackLayout>

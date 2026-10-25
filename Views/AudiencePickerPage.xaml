@@ -7,15 +7,46 @@
     xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.AudiencePickerPage"
     x:DataType="vm:AudiencePickerViewModel"
-    Title="Choose groups">
+    Title="Who is this for?">
 
-    <!-- Who gets it: search, three tabs, tick-rows. Built for a few hundred groups (the list scrolls, the header stays).
-         Ticking a community or super community ticks all of its active groups. Done confirms; the back arrow cancels. -->
+    <!-- Who gets it: two independent tabs, only the tab you finish on counts.
+         Groups: search and tick any active group.
+         Communities: one super community, then its communities (tick list), and below the groups that will get it (read-only).
+         Done confirms; the back arrow cancels. -->
     <Grid RowDefinitions="Auto,*,Auto">
 
         <VerticalStackLayout Grid.Row="0" Padding="16,10,16,6" Spacing="8">
 
-            <Border Style="{StaticResource SearchBorder}">
+            <HorizontalStackLayout Spacing="8">
+
+                <Grid SemanticProperties.Description="Groups" SemanticProperties.Hint="Choose single groups">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="0" />
+                    </Grid.GestureRecognizers>
+                    <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsSegment}">
+                        <Label Style="{StaticResource GroupPillText}" Text="Groups" />
+                    </Border>
+                    <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsSegment}">
+                        <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
+                    </Border>
+                </Grid>
+
+                <Grid SemanticProperties.Description="Communities" SemanticProperties.Hint="Choose a super community and its communities">
+                    <Grid.GestureRecognizers>
+                        <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="1" />
+                    </Grid.GestureRecognizers>
+                    <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotHierarchySegment}">
+                        <Label Style="{StaticResource GroupPillText}" Text="Communities" />
+                    </Border>
+                    <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsHierarchySegment}">
+                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
+                    </Border>
+                </Grid>
+
+            </HorizontalStackLayout>
+
+            <!-- Groups tab: search -->
+            <Border Style="{StaticResource SearchBorder}" IsVisible="{Binding IsGroupsSegment}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                     <Label Grid.Column="0" Style="{StaticResource SearchIcon}" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.Search}" />
                     <Entry
@@ -28,49 +59,90 @@
                 </Grid>
             </Border>
 
-            <ScrollView Orientation="Horizontal" HorizontalScrollBarVisibility="Never">
-                <HorizontalStackLayout Spacing="8">
+            <!-- Communities tab: the two dropdowns -->
+            <VerticalStackLayout Spacing="6" IsVisible="{Binding IsHierarchySegment}">
 
-                    <Grid SemanticProperties.Description="Groups" SemanticProperties.Hint="Shows single groups">
+                <Label Style="{StaticResource FieldLabel}" Text="Super community" />
+                <Border Style="{StaticResource FieldBorder}">
+                    <Picker
+                        Title="Choose a super community"
+                        ItemsSource="{Binding SuperChoices}"
+                        SelectedIndex="{Binding SelectedSuperIndex}"
+                        IsEnabled="{Binding IsNotBusy}"
+                        SemanticProperties.Description="Super community" />
+                </Border>
+
+                <Label Style="{StaticResource FieldLabel}" Text="Communities" />
+                <Border Style="{StaticResource FieldBorder}">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="40"
+                          SemanticProperties.Description="Communities list"
+                          SemanticProperties.Hint="Opens or closes the list of communities">
                         <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="0" />
+                            <TapGestureRecognizer Command="{Binding ToggleCommunityPanelCommand}" />
                         </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsSegment}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Groups" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsSegment}">
-                            <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
-                        </Border>
+                        <Label Grid.Column="0" Style="{StaticResource CardTitle}" FontSize="14" VerticalOptions="Center"
+                               Text="{Binding CommunitiesButtonText}" LineBreakMode="TailTruncation" MaxLines="1" />
+                        <Label Grid.Column="1" Style="{StaticResource Icon}" VerticalOptions="Center"
+                               AutomationProperties.IsInAccessibleTree="False"
+                               Rotation="{Binding PanelRotation}"
+                               Text="{x:Static h:Icons.ChevronRight}" />
                     </Grid>
+                </Border>
 
-                    <Grid SemanticProperties.Description="Communities" SemanticProperties.Hint="Shows communities">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="1" />
-                        </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotCommunitiesSegment}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Communities" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsCommunitiesSegment}">
-                            <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
-                        </Border>
-                    </Grid>
+                <!-- The tick list: opens under the field, scrolls when there are many communities -->
+                <Border Style="{StaticResource FieldBorder}" IsVisible="{Binding IsCommunityPanelOpen}" Padding="10,2">
+                    <ScrollView MaximumHeightRequest="220">
+                        <VerticalStackLayout Spacing="0">
 
-                    <Grid SemanticProperties.Description="Super communities" SemanticProperties.Hint="Shows super communities">
-                        <Grid.GestureRecognizers>
-                            <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="2" />
-                        </Grid.GestureRecognizers>
-                        <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotSuperSegment}">
-                            <Label Style="{StaticResource GroupPillText}" Text="Super communities" />
-                        </Border>
-                        <Border Style="{StaticResource GroupPillOnPink}" IsVisible="{Binding IsSuperSegment}">
-                            <Label Style="{StaticResource GroupPillTextOnPink}" Text="Super communities" />
-                        </Border>
-                    </Grid>
+                            <Label Style="{StaticResource Caption}" Padding="0,10" IsVisible="{Binding HasNoCommunities}"
+                                   Text="This super community has no communities yet." />
 
-                </HorizontalStackLayout>
-            </ScrollView>
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Padding="0,8" MinimumHeightRequest="44"
+                                  SemanticProperties.Description="Select all communities">
+                                <Grid.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding SelectAllCommunitiesCommand}" />
+                                </Grid.GestureRecognizers>
+                                <Label Grid.Column="0" Style="{StaticResource CardTitle}" FontSize="14" VerticalOptions="Center" Text="Select all communities" />
+                                <Border Grid.Column="1" Style="{StaticResource SelectRing}" IsVisible="{Binding AllCommunitiesOff}" AutomationProperties.IsInAccessibleTree="False" />
+                                <Border Grid.Column="1" Style="{StaticResource SelectRingOn}" IsVisible="{Binding AllCommunitiesOn}" AutomationProperties.IsInAccessibleTree="False">
+                                    <Label Style="{StaticResource SelectCheck}" Text="{x:Static h:Icons.Check}" />
+                                </Border>
+                            </Grid>
 
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="2">
+                            <VerticalStackLayout BindableLayout.ItemsSource="{Binding CommunityOptions}">
+                                <BindableLayout.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:CommunityOptionRow">
+                                        <VerticalStackLayout Spacing="0"
+                                                             SemanticProperties.Description="{Binding CardLabel}"
+                                                             SemanticProperties.Hint="Double tap to select or unselect">
+                                            <BoxView Style="{StaticResource Hairline}" />
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Padding="0,8" MinimumHeightRequest="48">
+                                                <Grid.GestureRecognizers>
+                                                    <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                                </Grid.GestureRecognizers>
+                                                <VerticalStackLayout Grid.Column="0" Spacing="0" VerticalOptions="Center">
+                                                    <Label Style="{StaticResource CardTitle}" FontSize="14" Text="{Binding Name}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                    <Label Style="{StaticResource Caption}" Text="{Binding Detail}" LineBreakMode="TailTruncation" MaxLines="1" />
+                                                </VerticalStackLayout>
+                                                <Border Grid.Column="1" Style="{StaticResource SelectRing}" IsVisible="{Binding IsOff}" AutomationProperties.IsInAccessibleTree="False" />
+                                                <Border Grid.Column="1" Style="{StaticResource SelectRingOn}" IsVisible="{Binding IsOn}" AutomationProperties.IsInAccessibleTree="False">
+                                                    <Label Style="{StaticResource SelectCheck}" Text="{x:Static h:Icons.Check}" />
+                                                </Border>
+                                            </Grid>
+                                        </VerticalStackLayout>
+                                    </DataTemplate>
+                                </BindableLayout.ItemTemplate>
+                            </VerticalStackLayout>
+
+                        </VerticalStackLayout>
+                    </ScrollView>
+                </Border>
+
+                <Label Style="{StaticResource FieldLabel}" Text="{Binding HierarchyHeading}" Margin="0,4,0,0" />
+
+            </VerticalStackLayout>
+
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="2">
                 <Label
                     Grid.Column="0"
                     Style="{StaticResource Caption}"
@@ -78,9 +150,8 @@
                     VerticalOptions="Center"
                     LineBreakMode="TailTruncation"
                     MaxLines="1" />
-                <Button Grid.Column="1" Style="{StaticResource LinkButtonBlue}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every row the list shows" />
-                <Button Grid.Column="2" Style="{StaticResource LinkButtonViolet}" Text="{Binding SelectedOnlyText}" Command="{Binding ToggleSelectedOnlyCommand}" IsEnabled="{Binding IsNotBusy}" />
-                <Button Grid.Column="3" Style="{StaticResource LinkButtonDanger}" Text="Clear" Command="{Binding ClearCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Unticks everything" />
+                <Button Grid.Column="1" Style="{StaticResource LinkButtonBlue}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsVisible="{Binding IsGroupsSegment}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every group the list shows" />
+                <Button Grid.Column="2" Style="{StaticResource LinkButtonDanger}" Text="Clear" Command="{Binding ClearCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Unticks everything on this tab" />
             </Grid>
 
             <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
@@ -91,8 +162,10 @@
 
         <Grid Grid.Row="1">
 
+            <!-- Groups tab: tick rows -->
             <CollectionView
                 ItemsSource="{Binding Rows}"
+                IsVisible="{Binding IsGroupsSegment}"
                 SelectionMode="None"
                 Margin="16,0">
                 <CollectionView.ItemsLayout>
@@ -101,7 +174,6 @@
 
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="vm:AudienceRow">
-                        <!-- One line per row: name and detail on the left, the tick on the right. A thin line below. -->
                         <VerticalStackLayout
                             Spacing="0"
                             SemanticProperties.Description="{Binding CardLabel}"
@@ -125,7 +197,6 @@
                                         MaxLines="1" />
                                 </VerticalStackLayout>
 
-                                <!-- Tick: empty ring, a dash (some of its groups), or a check (all) -->
                                 <Border Grid.Column="1" Style="{StaticResource SelectRing}" IsVisible="{Binding IsNone}" AutomationProperties.IsInAccessibleTree="False" />
                                 <Border Grid.Column="1" Style="{StaticResource SelectRingOn}" IsVisible="{Binding IsSome}" AutomationProperties.IsInAccessibleTree="False">
                                     <Label Style="{StaticResource SelectCheck}" Text="{x:Static h:Icons.Remove}" />
@@ -157,6 +228,60 @@
                         <Label
                             Style="{StaticResource Caption}"
                             Text="{Binding EmptyHint}"
+                            HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </CollectionView.EmptyView>
+            </CollectionView>
+
+            <!-- Communities tab: the groups that will get the message (read-only) -->
+            <CollectionView
+                ItemsSource="{Binding HierarchyGroups}"
+                IsVisible="{Binding IsHierarchySegment}"
+                SelectionMode="None"
+                Margin="16,0">
+                <CollectionView.ItemsLayout>
+                    <LinearItemsLayout Orientation="Vertical" ItemSpacing="0" />
+                </CollectionView.ItemsLayout>
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="vm:HierarchyGroupRow">
+                        <VerticalStackLayout Spacing="0">
+                            <VerticalStackLayout Padding="0,8" MinimumHeightRequest="48" Spacing="0" VerticalOptions="Center">
+                                <Label
+                                    Style="{StaticResource CardTitle}"
+                                    FontSize="14"
+                                    Text="{Binding Name}"
+                                    LineBreakMode="TailTruncation"
+                                    MaxLines="1" />
+                                <Label
+                                    Style="{StaticResource Caption}"
+                                    Text="{Binding Detail}"
+                                    LineBreakMode="TailTruncation"
+                                    MaxLines="1" />
+                            </VerticalStackLayout>
+                            <BoxView Style="{StaticResource Hairline}" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+
+                <CollectionView.Footer>
+                    <Grid HeightRequest="12" />
+                </CollectionView.Footer>
+
+                <CollectionView.EmptyView>
+                    <VerticalStackLayout
+                        x:DataType="vm:AudiencePickerViewModel"
+                        IsVisible="{Binding HasNoHierarchyGroups}"
+                        Spacing="8"
+                        Padding="0,24,0,0"
+                        HorizontalOptions="Center">
+                        <Border Style="{StaticResource EmptyIconTile}">
+                            <Label Style="{StaticResource EmojiIcon}" FontSize="27" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F;" />
+                        </Border>
+                        <Label Style="{StaticResource CardTitle}" Text="{Binding HierarchyEmptyTitle}" HorizontalOptions="Center" />
+                        <Label
+                            Style="{StaticResource Caption}"
+                            Text="{Binding HierarchyEmptyHint}"
                             HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </CollectionView.EmptyView>

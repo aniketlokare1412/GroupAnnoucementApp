@@ -45,13 +45,21 @@ public partial class SelectableOptionItem : ObservableObject
         get { return IsSelected ? PillText + ", selected" : PillText + ", not selected"; }
     }
 
+    // A locked pill stays ticked and cannot be unticked (a community must always keep its super community).
+    public bool IsLocked { get; private set; }
+
     [RelayCommand]
     private void Toggle()
     {
+        if (IsLocked)
+        {
+            return;
+        }
+
         IsSelected = !IsSelected;
     }
 
-    public static SelectableOptionItem Create(string id, string title, string number, string hint, bool isSelected)
+    public static SelectableOptionItem Create(string id, string title, string number, string hint, bool isSelected, bool isLocked = false)
     {
         SelectableOptionItem item = new SelectableOptionItem();
         item.Id = id;
@@ -59,6 +67,7 @@ public partial class SelectableOptionItem : ObservableObject
         item.Number = number;
         item.Hint = hint;
         item.IsSelected = isSelected;
+        item.IsLocked = isLocked;
         return item;
     }
 }

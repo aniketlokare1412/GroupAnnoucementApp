@@ -14,9 +14,22 @@ public class AudiencePickerService : IAudiencePickerService
         _navigation = navigation;
     }
 
+    // New announcement / New outage: the form opens first. The admin chooses the audience on the form.
+    public Task StartAsync(string route)
+    {
+        return _navigation.GoToAsync(route);
+    }
+
     public AudienceRequest? Pending { get; private set; }
 
-    public async Task<HashSet<string>?> PickAsync(List<AudienceGroup> groups, HashSet<string> selected)
+    public AudienceHierarchyState? LastHierarchy { get; private set; }
+
+    public void RememberHierarchy(AudienceHierarchyState? state)
+    {
+        LastHierarchy = state;
+    }
+
+    public async Task<HashSet<string>?> PickAsync(List<AudienceGroup> groups, HashSet<string> selected, int segment, AudienceHierarchyState? hierarchy)
     {
         // One picker at a time (a double tap must not open two).
         if (_completion != null)
@@ -30,7 +43,10 @@ public class AudiencePickerService : IAudiencePickerService
         AudienceRequest request = new AudienceRequest();
         request.Groups = groups;
         request.Selected = new HashSet<string>(selected);
+        request.Segment = segment == 1 ? 1 : 0;
+        request.Hierarchy = hierarchy;
         Pending = request;
+        LastHierarchy = null;
 
         try
         {

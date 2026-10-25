@@ -1,5 +1,3 @@
-using System.Collections.ObjectModel;
-using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using GroupAnnouncementApp.Helpers;
@@ -9,7 +7,8 @@ using GroupAnnouncementApp.Services.Interfaces;
 namespace GroupAnnouncementApp.ViewModels;
 
 // Admin: plan an outage for one or more groups. The date, the from and to time, and when members
-// should start seeing the message (now, or later).
+// should start seeing the message (now, or later). The page opens straight away; its "Send to" section shows
+// "N groups selected" and the Groups / Communities pills that open the audience picker.
 public partial class OutageEditViewModel : BaseViewModel
 {
     private readonly INavigationService _navigation;
@@ -19,10 +18,10 @@ public partial class OutageEditViewModel : BaseViewModel
     private readonly IAudiencePickerService _audiencePicker;
     private readonly IToastService _toasts;
 
-    private List<SelectableGroupItem> _allItems = new List<SelectableGroupItem>();
     private bool _isLoaded;
 
-    public ObservableCollection<SelectableGroupItem> Groups { get; } = new ObservableCollection<SelectableGroupItem>();
+    // The audience chosen on this page (through the picker).
+    private readonly AudienceSelection _audience;
 
     [ObservableProperty]
     private DateTime _outageDate = DateTime.Today.AddDays(1);
@@ -44,17 +43,24 @@ public partial class OutageEditViewModel : BaseViewModel
     [ObservableProperty]
     private TimeSpan _publishTime = new TimeSpan(9, 0, 0);
 
-    [ObservableProperty]
-    private string _searchText = string.Empty;
-
+    // The "Send to" section: the card text and the two pills.
     [ObservableProperty]
     private string _selectedCountText = "No groups selected";
 
     [ObservableProperty]
-    private bool _showLoading;
+    private string _audienceCaption = "Choose Groups or Communities below";
 
     [ObservableProperty]
-    private bool _hasNoGroups;
+    private bool _isGroupsOn;
+
+    [ObservableProperty]
+    private bool _isGroupsOff = true;
+
+    [ObservableProperty]
+    private bool _isCommunitiesOn;
+
+    [ObservableProperty]
+    private bool _isCommunitiesOff = true;
 
     public bool ShowPublishLater => !PublishNow;
 
@@ -72,11 +78,7 @@ public partial class OutageEditViewModel : BaseViewModel
         _groupService = groupService;
         _audiencePicker = audiencePicker;
         _toasts = toasts;
-    }
-
-    partial void OnSearchTextChanged(string value)
-    {
-        ApplyFilter();
+        _audience = new AudienceSelection(groupService, audiencePicker);
     }
 
     // Called by the page every time it appears.
@@ -88,101 +90,40 @@ public partial class OutageEditViewModel : BaseViewModel
             return;
         }
 
-        if (_isLoaded || IsBusy)
+        if (_isLoaded)
         {
             return;
         }
 
-        IsBusy = true;
-        ShowLoading = true;
-        ErrorMessage = null;
-
-        try
-        {
-            OperationResult<List<AnnouncementGroup>> result = await _groupService.GetAllGroupsAsync();
-            if (!result.IsSuccess)
-            {
-                ErrorMessage = result.ErrorMessage;
-                return;
-            }
-
-            _allItems = new List<SelectableGroupItem>();
-            List<AnnouncementGroup> groups = result.Value ?? new List<AnnouncementGroup>();
-            for (int i = 0; i < groups.Count; i++)
-            {
-                if (groups[i].IsActive)
-                {
-                    SelectableGroupItem item = SelectableGroupItem.FromGroup(groups[i]);
-                    item.PropertyChanged += OnItemPropertyChanged;
-                    _allItems.Add(item);
-                }
-            }
-
-            _isLoaded = true;
-            ApplyFilter();
-            UpdateSelectedCount();
-        }
-        finally
-        {
-            IsBusy = false;
-            ShowLoading = false;
-        }
+        // The page opens at once; the audience is chosen here with the Groups / Communities pills.
+        RefreshAudience();
+        _isLoaded = true;
     }
 
-    // Opens the full-screen picker: single groups, communities or super communities (search included).
-    // Going back from the picker keeps the selection as it was.
+    // The Groups / Communities pills: open the picker on that tab.
     [RelayCommand]
-    private async Task ChooseGroupsAsync()
+    private async Task ChooseAudienceAsync(string? tab)
     {
         if (IsBusy || !_isLoaded)
         {
             return;
         }
 
-        List<AudienceGroup> groups = new List<AudienceGroup>();
-        HashSet<string> selected = new HashSet<string>();
-        for (int i = 0; i < _allItems.Count; i++)
+        ErrorMessage = null;
+        string? problem = await _audience.ChooseAsync(tab == "1" ? 1 : 0);
+        if (problem != null)
         {
-            AudienceGroup group = new AudienceGroup();
-            group.Id = _allItems[i].Id;
-            group.Name = _allItems[i].Name;
-            group.Number = _allItems[i].Number;
-            groups.Add(group);
-
-            if (_allItems[i].IsSelected)
-            {
-                selected.Add(_allItems[i].Id);
-            }
+            ErrorMessage = problem;
         }
 
-        HashSet<string>? result = await _audiencePicker.PickAsync(groups, selected);
-        if (result == null)
-        {
-            return;
-        }
-
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            _allItems[i].IsSelected = result.Contains(_allItems[i].Id);
-        }
+        RefreshAudience();
     }
 
+    // The "N groups selected" card: opens the picker on the tab the choice came from.
     [RelayCommand]
-    private void SelectAll()
+    private Task EditAudienceAsync()
     {
-        for (int i = 0; i < Groups.Count; i++)
-        {
-            Groups[i].IsSelected = true;
-        }
-    }
-
-    [RelayCommand]
-    private void ClearSelection()
-    {
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            _allItems[i].IsSelected = false;
-        }
+        return ChooseAudienceAsync(_audience.Kind == 1 ? "1" : "0");
     }
 
     [RelayCommand]
@@ -195,18 +136,10 @@ public partial class OutageEditViewModel : BaseViewModel
 
         ErrorMessage = null;
 
-        List<SelectableGroupItem> chosen = new List<SelectableGroupItem>();
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            if (_allItems[i].IsSelected)
-            {
-                chosen.Add(_allItems[i]);
-            }
-        }
-
+        List<string> chosen = new List<string>(_audience.GroupIds);
         if (chosen.Count == 0)
         {
-            ErrorMessage = "Choose at least one group.";
+            ErrorMessage = "Choose who this is for: tap Groups or Communities.";
             return;
         }
 
@@ -238,21 +171,25 @@ public partial class OutageEditViewModel : BaseViewModel
         try
         {
             List<string> failed = new List<string>();
+            List<string> done = new List<string>();
             for (int i = 0; i < chosen.Count; i++)
             {
-                OperationResult result = await _outageService.ScheduleAsync(chosen[i].Id, start, end, publishAt);
+                OperationResult result = await _outageService.ScheduleAsync(chosen[i], start, end, publishAt);
                 if (result.IsSuccess)
                 {
-                    chosen[i].IsSelected = false;
+                    done.Add(chosen[i]);
                 }
                 else
                 {
-                    failed.Add(chosen[i].Name + ": " + result.ErrorMessage);
+                    failed.Add(_audience.NameOf(chosen[i]) + ": " + result.ErrorMessage);
                 }
             }
 
             if (failed.Count > 0)
             {
+                // The groups that already have the outage are dropped, so Schedule again only retries the rest.
+                _audience.RemoveGroups(done);
+                RefreshAudience();
                 ErrorMessage = string.Join("\n", failed);
                 return;
             }
@@ -272,42 +209,15 @@ public partial class OutageEditViewModel : BaseViewModel
         }
     }
 
-    private void OnItemPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    // Shows the chosen audience on the card and lights the right pill.
+    private void RefreshAudience()
     {
-        if (e.PropertyName == nameof(SelectableGroupItem.IsSelected))
-        {
-            UpdateSelectedCount();
-        }
-    }
-
-    private void UpdateSelectedCount()
-    {
-        int count = 0;
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            if (_allItems[i].IsSelected)
-            {
-                count++;
-            }
-        }
-
-        SelectedCountText = count == 0 ? "No groups selected" : (count == 1 ? "1 group selected" : count + " groups selected");
-    }
-
-    private void ApplyFilter()
-    {
-        string term = (SearchText ?? string.Empty).Trim();
-        Groups.Clear();
-        for (int i = 0; i < _allItems.Count; i++)
-        {
-            if (term.Length == 0
-                || _allItems[i].Name.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0
-                || _allItems[i].Number.IndexOf(term, StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                Groups.Add(_allItems[i]);
-            }
-        }
-
-        HasNoGroups = _isLoaded && Groups.Count == 0;
+        SelectedCountText = _audience.CountText;
+        AudienceCaption = _audience.CaptionText;
+        bool has = _audience.Count > 0;
+        IsGroupsOn = has && _audience.Kind == 0;
+        IsGroupsOff = !IsGroupsOn;
+        IsCommunitiesOn = has && _audience.Kind == 1;
+        IsCommunitiesOff = !IsCommunitiesOn;
     }
 }

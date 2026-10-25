@@ -55,16 +55,21 @@
                     </Border>
                 </VerticalStackLayout>
 
-                <!-- Communities only: the one super community it sits under (optional) -->
+                <!-- Communities only: the one super community it sits under (required) -->
                 <VerticalStackLayout Spacing="6" IsVisible="{Binding IsCommunity}">
-                    <Label Style="{StaticResource FieldLabel}" Text="Super community (optional)" />
+                    <Label Style="{StaticResource FieldLabel}" Text="Super community" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Picker
+                            Title="Choose a super community"
                             ItemsSource="{Binding SuperChoices}"
                             SelectedIndex="{Binding SelectedSuperIndex}"
                             IsEnabled="{Binding IsNotBusy}"
                             SemanticProperties.Description="Super community" />
                     </Border>
+                    <Label
+                        Style="{StaticResource Caption}"
+                        Text="There is no super community yet. Create one first, then add communities to it."
+                        IsVisible="{Binding HasNoSupers}" />
                 </VerticalStackLayout>
 
                 <!-- Groups (for a community) or communities (for a super community) -->
