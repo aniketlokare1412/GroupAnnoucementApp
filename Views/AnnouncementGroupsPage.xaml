@@ -5,16 +5,16 @@
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
     x:Class="GroupAnnouncementApp.Views.AnnouncementGroupsPage"
     x:DataType="vm:AnnouncementGroupsViewModel"
-    Title="Group announcements">
+    Title="DTC announcements">
 
     <Grid RowDefinitions="Auto,Auto,Auto,*,Auto" Padding="16" RowSpacing="8">
 
         <SearchBar
             Grid.Row="0"
-            Placeholder="Search groups"
+            Placeholder="Search DTCs"
             Text="{Binding SearchText}" />
 
-        <Label Grid.Row="1" Text="Tap a group to see and manage its announcements." Style="{StaticResource Caption}" />
+        <Label Grid.Row="1" Text="Tap a DTC to see and manage its announcements." Style="{StaticResource Caption}" />
 
         <Label
             Grid.Row="2"
@@ -33,14 +33,14 @@
                     <DataTemplate x:DataType="vm:GroupListItem">
                         <VerticalStackLayout Padding="8,10" Spacing="2">
                             <Label Text="{Binding Name}" FontAttributes="Bold" />
-                            <Label Text="Inactive group" Style="{StaticResource ErrorText}" IsVisible="{Binding IsInactive}" />
+                            <Label Text="Inactive DTC" Style="{StaticResource ErrorText}" IsVisible="{Binding IsInactive}" />
                         </VerticalStackLayout>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
 
             <Label
-                Text="No groups found."
+                Text="No DTCs found."
                 IsVisible="{Binding HasNoGroups}"
                 HorizontalOptions="Center"
                 VerticalOptions="Center" />

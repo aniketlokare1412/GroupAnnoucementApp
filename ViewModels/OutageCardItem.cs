@@ -30,7 +30,7 @@ public sealed class OutageCardItem
         DateTimeOffset now = DateTimeOffset.UtcNow;
 
         OutageCardItem item = new OutageCardItem();
-        item.Title = cancelled ? "Outage cancelled" : "Planned outage";
+        item.Title = cancelled ? "Shut Down cancelled" : "Planned Shut Down";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
         item.AccentColor = Color.FromArgb(cancelled ? "#65A30D" : "#F59E0B");
 

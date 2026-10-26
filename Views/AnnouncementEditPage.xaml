@@ -177,27 +177,27 @@
 
                 <HorizontalStackLayout Spacing="8" HorizontalOptions="Center" IsVisible="{Binding IsPickerVisible}">
 
-                <Grid SemanticProperties.Description="Groups" SemanticProperties.Hint="Choose single groups">
+                <Grid SemanticProperties.Description="DTCs" SemanticProperties.Hint="Choose single DTCs">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ChooseAudienceCommand}" CommandParameter="0" />
                     </Grid.GestureRecognizers>
                     <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsGroupsOff}">
-                        <Label Style="{StaticResource GroupPillText}" Text="Groups" />
+                        <Label Style="{StaticResource GroupPillText}" Text="DTCs" />
                     </Border>
                     <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsOn}">
-                        <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
+                        <Label Style="{StaticResource GroupPillTextOnBlue}" Text="DTCs" />
                     </Border>
                 </Grid>
 
-                <Grid SemanticProperties.Description="Communities" SemanticProperties.Hint="Choose a super community and its communities">
+                <Grid SemanticProperties.Description="AB Switches" SemanticProperties.Hint="Choose a Feeder and its AB Switches">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ChooseAudienceCommand}" CommandParameter="1" />
                     </Grid.GestureRecognizers>
                     <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsCommunitiesOff}">
-                        <Label Style="{StaticResource GroupPillText}" Text="Communities" />
+                        <Label Style="{StaticResource GroupPillText}" Text="AB Switches" />
                     </Border>
                     <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsCommunitiesOn}">
-                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
+                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="AB Switches" />
                     </Border>
                 </Grid>
 

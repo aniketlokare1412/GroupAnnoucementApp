@@ -72,10 +72,10 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
     // The "who is this for" section: the card text and the two pills.
     [ObservableProperty]
-    private string _selectedCountText = "No groups selected";
+    private string _selectedCountText = "No DTCs selected";
 
     [ObservableProperty]
-    private string _audienceCaption = "Choose Groups or Communities below";
+    private string _audienceCaption = "Choose DTCs or AB Switches below";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoSelection))]
@@ -436,7 +436,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     {
         if (string.IsNullOrEmpty(GroupId))
         {
-            ErrorMessage = "Unknown group.";
+            ErrorMessage = "Unknown DTC.";
             return;
         }
 
@@ -557,12 +557,12 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
                 if (groupIds.Count == 0)
                 {
-                    ErrorMessage = "Choose who this is for: tap Groups or Communities.";
+                    ErrorMessage = "Choose who this is for: tap DTCs or AB Switches.";
                     return;
                 }
 
                 OperationResult<PublishResult> result;
-                using (PerfTimer.Start("Post.Publish (" + groupIds.Count + " groups)"))
+                using (PerfTimer.Start("Post.Publish (" + groupIds.Count + " DTCs)"))
                 {
                     result = await _announcementService.PublishAsync(Title, Message, groupIds, _attachment, resolveMinutes);
                 }
@@ -577,7 +577,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
                 if (published.FailedGroupIds.Count == 0)
                 {
                     leavePage = true;
-                    toastText = groupIds.Count == 1 ? "Announcement posted" : "Posted to " + groupIds.Count + " groups";
+                    toastText = groupIds.Count == 1 ? "Announcement posted" : "Posted to " + groupIds.Count + " DTCs";
                 }
                 else
                 {
@@ -616,21 +616,21 @@ public partial class AnnouncementEditViewModel : BaseViewModel
         _audience.RemoveGroups(published.PostedGroupIds);
         RefreshAudience();
 
-        string text = "Posted to " + published.PostedGroupIds.Count + " of " + totalCount + " groups. "
+        string text = "Posted to " + published.PostedGroupIds.Count + " of " + totalCount + " DTCs. "
             + "Not posted to: " + string.Join(", ", failedNames) + ". ";
         if (!string.IsNullOrEmpty(published.ErrorMessage))
         {
             text = text + published.ErrorMessage + " ";
         }
 
-        text = text + "Tap Publish to try the remaining groups again.";
+        text = text + "Tap Publish to try the remaining DTCs again.";
         NoticeMessage = text;
     }
 
     private void SetTarget(string caption, string? name)
     {
         TargetCaption = caption;
-        TargetName = string.IsNullOrWhiteSpace(name) ? "This group" : name;
+        TargetName = string.IsNullOrWhiteSpace(name) ? "This DTC" : name;
         TargetInitials = InitialsHelper.From(name);
         HasTarget = true;
     }
@@ -672,11 +672,11 @@ public partial class AnnouncementEditViewModel : BaseViewModel
             }
             else if (count == 1)
             {
-                PrimaryButtonText = "Publish to 1 group";
+                PrimaryButtonText = "Publish to 1 DTC";
             }
             else
             {
-                PrimaryButtonText = "Publish to " + count + " groups";
+                PrimaryButtonText = "Publish to " + count + " DTCs";
             }
 
             return;

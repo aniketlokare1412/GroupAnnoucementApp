@@ -10,7 +10,7 @@
     <!-- Member Home: type a group number, the matching group appears with a Join button. No group list. -->
     <VerticalStackLayout Spacing="8">
 
-        <Label Style="{StaticResource SectionLabel}" Text="Join a group" />
+        <Label Style="{StaticResource SectionLabel}" Text="Join a DTC" />
 
         <Border Style="{StaticResource SearchBorder}">
             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
@@ -18,11 +18,11 @@
                 <Entry
                     Grid.Column="1"
                     Style="{StaticResource SearchEntry}"
-                    Placeholder="Enter group number"
+                    Placeholder="Enter DTC number"
                     Keyboard="Numeric"
                     ReturnType="Search"
                     Text="{Binding SearchText}"
-                    SemanticProperties.Description="Group number" />
+                    SemanticProperties.Description="DTC number" />
             </Grid>
         </Border>
 

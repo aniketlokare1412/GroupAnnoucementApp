@@ -19,27 +19,27 @@
 
             <HorizontalStackLayout Spacing="8">
 
-                <Grid SemanticProperties.Description="Groups" SemanticProperties.Hint="Choose single groups">
+                <Grid SemanticProperties.Description="DTCs" SemanticProperties.Hint="Choose single DTCs">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="0" />
                     </Grid.GestureRecognizers>
                     <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotGroupsSegment}">
-                        <Label Style="{StaticResource GroupPillText}" Text="Groups" />
+                        <Label Style="{StaticResource GroupPillText}" Text="DTCs" />
                     </Border>
                     <Border Style="{StaticResource GroupPillOnBlue}" IsVisible="{Binding IsGroupsSegment}">
-                        <Label Style="{StaticResource GroupPillTextOnBlue}" Text="Groups" />
+                        <Label Style="{StaticResource GroupPillTextOnBlue}" Text="DTCs" />
                     </Border>
                 </Grid>
 
-                <Grid SemanticProperties.Description="Communities" SemanticProperties.Hint="Choose a super community and its communities">
+                <Grid SemanticProperties.Description="AB Switches" SemanticProperties.Hint="Choose a Feeder and its AB Switches">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding SelectSegmentCommand}" CommandParameter="1" />
                     </Grid.GestureRecognizers>
                     <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsNotHierarchySegment}">
-                        <Label Style="{StaticResource GroupPillText}" Text="Communities" />
+                        <Label Style="{StaticResource GroupPillText}" Text="AB Switches" />
                     </Border>
                     <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsHierarchySegment}">
-                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Communities" />
+                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="AB Switches" />
                     </Border>
                 </Grid>
 
@@ -62,21 +62,21 @@
             <!-- Communities tab: the two dropdowns -->
             <VerticalStackLayout Spacing="6" IsVisible="{Binding IsHierarchySegment}">
 
-                <Label Style="{StaticResource FieldLabel}" Text="Super community" />
+                <Label Style="{StaticResource FieldLabel}" Text="Feeder" />
                 <Border Style="{StaticResource FieldBorder}">
                     <Picker
-                        Title="Choose a super community"
+                        Title="Choose a Feeder"
                         ItemsSource="{Binding SuperChoices}"
                         SelectedIndex="{Binding SelectedSuperIndex}"
                         IsEnabled="{Binding IsNotBusy}"
-                        SemanticProperties.Description="Super community" />
+                        SemanticProperties.Description="Feeder" />
                 </Border>
 
-                <Label Style="{StaticResource FieldLabel}" Text="Communities" />
+                <Label Style="{StaticResource FieldLabel}" Text="AB Switches" />
                 <Border Style="{StaticResource FieldBorder}">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8" MinimumHeightRequest="40"
-                          SemanticProperties.Description="Communities list"
-                          SemanticProperties.Hint="Opens or closes the list of communities">
+                          SemanticProperties.Description="AB Switches list"
+                          SemanticProperties.Hint="Opens or closes the list of AB Switches">
                         <Grid.GestureRecognizers>
                             <TapGestureRecognizer Command="{Binding ToggleCommunityPanelCommand}" />
                         </Grid.GestureRecognizers>
@@ -95,14 +95,14 @@
                         <VerticalStackLayout Spacing="0">
 
                             <Label Style="{StaticResource Caption}" Padding="0,10" IsVisible="{Binding HasNoCommunities}"
-                                   Text="This super community has no communities yet." />
+                                   Text="This Feeder has no AB Switches yet." />
 
                             <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Padding="0,8" MinimumHeightRequest="44"
-                                  SemanticProperties.Description="Select all communities">
+                                  SemanticProperties.Description="Select all AB Switches">
                                 <Grid.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding SelectAllCommunitiesCommand}" />
                                 </Grid.GestureRecognizers>
-                                <Label Grid.Column="0" Style="{StaticResource CardTitle}" FontSize="14" VerticalOptions="Center" Text="Select all communities" />
+                                <Label Grid.Column="0" Style="{StaticResource CardTitle}" FontSize="14" VerticalOptions="Center" Text="Select all AB Switches" />
                                 <Border Grid.Column="1" Style="{StaticResource SelectRing}" IsVisible="{Binding AllCommunitiesOff}" AutomationProperties.IsInAccessibleTree="False" />
                                 <Border Grid.Column="1" Style="{StaticResource SelectRingOn}" IsVisible="{Binding AllCommunitiesOn}" AutomationProperties.IsInAccessibleTree="False">
                                     <Label Style="{StaticResource SelectCheck}" Text="{x:Static h:Icons.Check}" />
@@ -150,7 +150,7 @@
                     VerticalOptions="Center"
                     LineBreakMode="TailTruncation"
                     MaxLines="1" />
-                <Button Grid.Column="1" Style="{StaticResource LinkButtonBlue}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsVisible="{Binding IsGroupsSegment}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every group the list shows" />
+                <Button Grid.Column="1" Style="{StaticResource LinkButtonBlue}" Text="Select all results" Command="{Binding SelectAllResultsCommand}" IsVisible="{Binding IsGroupsSegment}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Ticks every DTC the list shows" />
                 <Button Grid.Column="2" Style="{StaticResource LinkButtonDanger}" Text="Clear" Command="{Binding ClearCommand}" IsEnabled="{Binding IsNotBusy}" SemanticProperties.Hint="Unticks everything on this tab" />
             </Grid>
 

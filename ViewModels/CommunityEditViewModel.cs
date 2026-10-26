@@ -32,7 +32,7 @@ public partial class CommunityEditViewModel : BaseViewModel
     private string? _communityId;
 
     [ObservableProperty]
-    private string _titleText = "New community";
+    private string _titleText = "New AB Switch";
 
     [ObservableProperty]
     private string _name = string.Empty;
@@ -119,20 +119,20 @@ public partial class CommunityEditViewModel : BaseViewModel
         }
 
         IsCommunity = !string.Equals(Kind, KindSuper, StringComparison.OrdinalIgnoreCase);
-        string noun = IsCommunity ? "community" : "super community";
+        string noun = IsCommunity ? "AB Switch" : "Feeder";
         TitleText = (IsEditing ? "Edit " : "New ") + noun;
 
         if (IsCommunity)
         {
-            LinkHeading = "Groups in this community";
-            LinkHint = "Tap to add or remove groups. A group can be in several communities.";
-            NoOptionsText = "No groups yet. Create groups first, then add them here.";
+            LinkHeading = "DTCs in this AB Switch";
+            LinkHint = "Tap to add or remove DTCs. A DTC can be in several AB Switches.";
+            NoOptionsText = "No DTCs yet. Create DTCs first, then add them here.";
         }
         else
         {
-            LinkHeading = "Communities in this super community";
-            LinkHint = "Tap to add communities. A community always keeps a super community: ones already here stay ticked, and picking one that sits under another super community moves it here.";
-            NoOptionsText = "No communities yet. Create communities first, then add them here.";
+            LinkHeading = "AB Switches in this Feeder";
+            LinkHint = "Tap to add AB Switches. An AB Switch always keeps a Feeder: ones already here stay ticked, and picking one that sits under another Feeder moves it here.";
+            NoOptionsText = "No AB Switches yet. Create AB Switches first, then add them here.";
         }
 
         IsBusy = true;
@@ -174,7 +174,7 @@ public partial class CommunityEditViewModel : BaseViewModel
             OperationResult<Community?> result = await _communityService.GetCommunityAsync(CommunityId!);
             if (!result.IsSuccess || result.Value == null)
             {
-                ErrorMessage = result.ErrorMessage ?? "We could not load the community.";
+                ErrorMessage = result.ErrorMessage ?? "We could not load the AB Switch.";
                 return false;
             }
 
@@ -233,7 +233,7 @@ public partial class CommunityEditViewModel : BaseViewModel
             OperationResult<SuperCommunity?> result = await _communityService.GetSuperCommunityAsync(CommunityId!);
             if (!result.IsSuccess || result.Value == null)
             {
-                ErrorMessage = result.ErrorMessage ?? "We could not load the super community.";
+                ErrorMessage = result.ErrorMessage ?? "We could not load the Feeder.";
                 return false;
             }
 
@@ -260,7 +260,7 @@ public partial class CommunityEditViewModel : BaseViewModel
             if (!isHere && !string.IsNullOrEmpty(community.SuperCommunityId))
             {
                 string otherName;
-                hint = superNames.TryGetValue(community.SuperCommunityId, out otherName!) ? "in " + otherName : "in another super community";
+                hint = superNames.TryGetValue(community.SuperCommunityId, out otherName!) ? "in " + otherName : "in another Feeder";
             }
 
             Options.Add(SelectableOptionItem.Create(community.Id, community.Name, community.Number, hint, isHere, isHere));
@@ -306,8 +306,8 @@ public partial class CommunityEditViewModel : BaseViewModel
                 if (string.IsNullOrEmpty(superId))
                 {
                     ErrorMessage = HasNoSupers
-                        ? "Create a super community first, then add this community to it."
-                        : "Please choose a super community.";
+                        ? "Create a Feeder first, then add this AB Switch to it."
+                        : "Please choose a Feeder.";
                     return;
                 }
 

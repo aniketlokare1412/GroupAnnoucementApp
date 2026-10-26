@@ -122,7 +122,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (string.IsNullOrEmpty(GroupId))
         {
-            ErrorMessage = "Unknown group.";
+            ErrorMessage = "Unknown DTC.";
             return;
         }
 
@@ -233,9 +233,9 @@ public partial class AnnouncementsViewModel : BaseViewModel
         }
 
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Cancel outage",
-            "Cancel this planned outage? Members will see an outage-cancelled message instead.",
-            "Cancel outage",
+            "Cancel Shut Down",
+            "Cancel this planned Shut Down? Members will see a Shut Down-cancelled message instead.",
+            "Cancel Shut Down",
             "Keep it");
         if (!confirmed)
         {
@@ -245,11 +245,11 @@ public partial class AnnouncementsViewModel : BaseViewModel
         OperationResult result = await _outageService.CancelAsync(GroupId);
         if (!result.IsSuccess)
         {
-            _toasts.Show(result.ErrorMessage ?? "We could not cancel the outage.");
+            _toasts.Show(result.ErrorMessage ?? "We could not cancel the Shut Down.");
             return;
         }
 
-        _toasts.Show("Outage cancelled");
+        _toasts.Show("Shut Down cancelled");
         await LoadOutageAsync();
     }
 
@@ -357,7 +357,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
         }
 
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Leave group",
+            "Leave DTC",
             "Leave \"" + GroupName + "\"? You will no longer see its announcements. You can join again later.",
             "Leave",
             "Cancel");
@@ -390,7 +390,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (left)
         {
-            string leftName = string.IsNullOrWhiteSpace(GroupName) ? "the group" : GroupName;
+            string leftName = string.IsNullOrWhiteSpace(GroupName) ? "the DTC" : GroupName;
             await _navigation.GoToAsync("..");
 
             // After going back: the previous page shows it (or keeps it until it appears).

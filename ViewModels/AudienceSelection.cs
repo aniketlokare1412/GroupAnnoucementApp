@@ -40,10 +40,10 @@ public sealed class AudienceSelection
         {
             if (Count == 0)
             {
-                return "No groups selected";
+                return "No DTCs selected";
             }
 
-            return Count == 1 ? "1 group selected" : Count + " groups selected";
+            return Count == 1 ? "1 DTC selected" : Count + " DTCs selected";
         }
     }
 
@@ -53,10 +53,10 @@ public sealed class AudienceSelection
         {
             if (Count == 0)
             {
-                return "Choose Groups or Communities below";
+                return "Choose DTCs or AB Switches below";
             }
 
-            return Kind == 1 ? "From Communities - tap to change" : "From Groups - tap to change";
+            return Kind == 1 ? "From AB Switches - tap to change" : "From DTCs - tap to change";
         }
     }
 
@@ -97,7 +97,7 @@ public sealed class AudienceSelection
             OperationResult<List<AnnouncementGroup>> loaded = await _groupService.GetAllGroupsAsync();
             if (!loaded.IsSuccess)
             {
-                return loaded.ErrorMessage ?? "We could not load the groups.";
+                return loaded.ErrorMessage ?? "We could not load the DTCs.";
             }
 
             List<AudienceGroup> groups = new List<AudienceGroup>();
@@ -120,7 +120,7 @@ public sealed class AudienceSelection
 
         if (_active.Count == 0)
         {
-            return "Create or activate a group first.";
+            return "Create or activate a DTC first.";
         }
 
         // Reopening the tab the choice came from shows it again. The other tab starts empty.

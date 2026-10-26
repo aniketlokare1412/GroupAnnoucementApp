@@ -18,7 +18,7 @@
 
         <Label
             Style="{StaticResource PageTitle}"
-            Text="Group Announcements"
+            Text="DTC Announcements"
             HorizontalOptions="Center" />
 
         <ActivityIndicator

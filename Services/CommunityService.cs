@@ -61,12 +61,12 @@ public class CommunityService : ICommunityService
         }
         catch (TimeoutException)
         {
-            return OperationResult<CommunityDirectory>.Fail("Loading communities is taking too long. Please check your connection and try again.");
+            return OperationResult<CommunityDirectory>.Fail("Loading AB Switches is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD COMMUNITIES ERROR: " + ex);
-            return OperationResult<CommunityDirectory>.Fail(ServiceHelper.MapError(ex, "We could not load the communities. Please check your connection and try again."));
+            return OperationResult<CommunityDirectory>.Fail(ServiceHelper.MapError(ex, "We could not load the AB Switches. Please check your connection and try again."));
         }
     }
 }

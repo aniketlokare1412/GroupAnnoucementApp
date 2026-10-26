@@ -119,7 +119,7 @@ public partial class AdminRequestsViewModel : BaseViewModel
 
         string title = approve ? "Make administrator" : "Decline request";
         string message = approve
-            ? "Make " + item.Phone + " an administrator? Administrators can manage users, groups and announcements."
+            ? "Make " + item.Phone + " an administrator? Administrators can manage users, DTCs and announcements."
             : "Decline the request from " + item.Phone + "?";
 
         bool confirmed = await _dialogs.ConfirmAsync(title, message, approve ? "Approve" : "Decline", "Cancel");

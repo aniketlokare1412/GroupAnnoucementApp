@@ -72,12 +72,12 @@ public partial class GroupsViewModel : BaseViewModel
 
     public string HeaderTitle
     {
-        get { return Mode == 1 ? "Communities" : Mode == 2 ? "Super communities" : "Groups"; }
+        get { return Mode == 1 ? "AB Switches" : Mode == 2 ? "Feeders" : "DTCs"; }
     }
 
     public string NewButtonText
     {
-        get { return Mode == 1 ? "New community" : Mode == 2 ? "New super" : "New group"; }
+        get { return Mode == 1 ? "New AB Switch" : Mode == 2 ? "New Feeder" : "New DTC"; }
     }
 
     public string SearchPlaceholder
@@ -368,13 +368,13 @@ public partial class GroupsViewModel : BaseViewModel
             string accept;
             if (newValue)
             {
-                title = "Activate group";
+                title = "Activate DTC";
                 message = "Activate \"" + item.Name + "\"? Members will be able to see it again.";
                 accept = "Activate";
             }
             else
             {
-                title = "Deactivate group";
+                title = "Deactivate DTC";
                 message = "Deactivate \"" + item.Name + "\"? Members will no longer see it. You can activate it again later.";
                 accept = "Deactivate";
             }
@@ -473,7 +473,7 @@ public partial class GroupsViewModel : BaseViewModel
                     }
                 }
 
-                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 community" : count + " communities");
+                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 AB Switch" : count + " AB Switches");
 
                 List<string> insideNames = new List<string>();
                 for (int c = 0; c < _allCommunities.Count; c++)
@@ -499,7 +499,7 @@ public partial class GroupsViewModel : BaseViewModel
                 }
 
                 int count = item.GroupIds == null ? 0 : item.GroupIds.Count;
-                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 group" : count + " groups");
+                string subtitle = "No. " + item.Number + " - " + (count == 1 ? "1 DTC" : count + " DTCs");
 
                 string? superName;
                 if (!string.IsNullOrEmpty(item.SuperCommunityId) && superNames.TryGetValue(item.SuperCommunityId, out superName))
@@ -527,7 +527,7 @@ public partial class GroupsViewModel : BaseViewModel
 
         Communities.ReplaceAll(built);
 
-        string noun = superMode ? "super communities" : "communities";
+        string noun = superMode ? "Feeders" : "communities";
         HasNoGroups = _hasLoaded && Communities.Count == 0;
 
         if (!_hasLoaded)
@@ -542,7 +542,7 @@ public partial class GroupsViewModel : BaseViewModel
         }
         else if (total == 1)
         {
-            SummaryText = superMode ? "1 super community" : "1 community";
+            SummaryText = superMode ? "1 Feeder" : "1 AB Switch";
         }
         else
         {
@@ -551,12 +551,12 @@ public partial class GroupsViewModel : BaseViewModel
 
         if (total == 0)
         {
-            EmptyTitle = superMode ? "No super communities yet" : "No communities yet";
-            EmptyHint = superMode ? "Tap New super to create the first one." : "Tap New community to create the first one.";
+            EmptyTitle = superMode ? "No Feeders yet" : "No AB Switches yet";
+            EmptyHint = superMode ? "Tap New Feeder to create the first one." : "Tap New AB Switch to create the first one.";
         }
         else
         {
-            EmptyTitle = superMode ? "No super communities found" : "No communities found";
+            EmptyTitle = superMode ? "No Feeders found" : "No AB Switches found";
             EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
     }
@@ -623,22 +623,22 @@ public partial class GroupsViewModel : BaseViewModel
 
         if (term.Length > 0)
         {
-            SummaryText = Groups.Count + " of " + _allGroups.Count + " groups";
+            SummaryText = Groups.Count + " of " + _allGroups.Count + " DTCs";
         }
         else
         {
-            string total = _allGroups.Count == 1 ? "1 group" : _allGroups.Count + " groups";
+            string total = _allGroups.Count == 1 ? "1 DTC" : _allGroups.Count + " DTCs";
             SummaryText = total + "  -  " + activeCount + " active";
         }
 
         if (_allGroups.Count == 0)
         {
-            EmptyTitle = "No groups yet";
-            EmptyHint = "Tap New group to create the first one.";
+            EmptyTitle = "No DTCs yet";
+            EmptyHint = "Tap New DTC to create the first one.";
         }
         else
         {
-            EmptyTitle = "No groups found";
+            EmptyTitle = "No DTCs found";
             EmptyHint = "Nothing matches \"" + term + "\". Try a different word.";
         }
     }

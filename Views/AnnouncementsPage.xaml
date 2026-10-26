@@ -39,7 +39,7 @@
                     IsVisible="{Binding IsAdminView}"
                     IsEnabled="{Binding IsNotBusy}"
                     VerticalOptions="Center"
-                    SemanticProperties.Hint="Write an announcement for this group" />
+                    SemanticProperties.Hint="Write an announcement for this DTC" />
 
                 <!-- Member: leave this group -->
                 <Button
@@ -49,8 +49,8 @@
                     Command="{Binding LeaveGroupCommand}"
                     IsVisible="{Binding IsMemberView}"
                     IsEnabled="{Binding IsNotBusy}"
-                    SemanticProperties.Description="Leave group"
-                    SemanticProperties.Hint="You will stop seeing this group's announcements" />
+                    SemanticProperties.Description="Leave DTC"
+                    SemanticProperties.Hint="You will stop seeing this DTC's announcements" />
             </Grid>
 
             <VerticalStackLayout Grid.Row="1" Spacing="8" Margin="16,0,16,8">
@@ -75,16 +75,16 @@
                             <HorizontalStackLayout Spacing="8">
                                 <Button
                                     Style="{StaticResource PillTonal}"
-                                    Text="Cancel outage"
+                                    Text="Cancel Shut Down"
                                     Command="{Binding Outage.CancelCommand}"
                                     IsVisible="{Binding Outage.CanCancel}"
-                                    SemanticProperties.Hint="Members will see an outage-cancelled message instead" />
+                                    SemanticProperties.Hint="Members will see a Shut Down-cancelled message instead" />
                                 <Button
                                     Style="{StaticResource PillDanger}"
                                     Text="Delete message"
                                     Command="{Binding Outage.DeleteCommand}"
                                     IsVisible="{Binding Outage.CanDelete}"
-                                    SemanticProperties.Hint="Removes the cancelled-outage message so members see the regular message" />
+                                    SemanticProperties.Hint="Removes the cancelled-Shut Down message so members see the regular message" />
                             </HorizontalStackLayout>
                         </VerticalStackLayout>
                     </Grid>

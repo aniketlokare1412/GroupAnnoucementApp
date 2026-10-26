@@ -78,7 +78,7 @@ public partial class GroupMembersViewModel : BaseViewModel
 
         if (string.IsNullOrEmpty(GroupId))
         {
-            ErrorMessage = "Unknown group.";
+            ErrorMessage = "Unknown DTC.";
             return;
         }
 
@@ -91,7 +91,7 @@ public partial class GroupMembersViewModel : BaseViewModel
             OperationResult<AnnouncementGroup?> groupResult = await _groupService.GetGroupAsync(GroupId);
             if (!groupResult.IsSuccess || groupResult.Value == null)
             {
-                ErrorMessage = groupResult.ErrorMessage ?? "We could not load the group.";
+                ErrorMessage = groupResult.ErrorMessage ?? "We could not load the DTC.";
                 return;
             }
 
@@ -159,7 +159,7 @@ public partial class GroupMembersViewModel : BaseViewModel
 
             bool confirmed = await _dialogs.ConfirmAsync(
                 "Remove member",
-                "Remove " + item.Name + " from this group? It will disappear from their My groups. They can join again later.",
+                "Remove " + item.Name + " from this DTC? It will disappear from their My DTCs. They can join again later.",
                 "Remove",
                 "Cancel");
             if (!confirmed)

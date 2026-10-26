@@ -814,7 +814,7 @@ public partial class HomeViewModel : BaseViewModel
         // With a few hundred groups Home shows only the first few; "View all" opens the Groups tab.
         int shown = Math.Min(ordered.Count, MaxHomeGroups);
         HasMoreAdminGroups = ordered.Count > shown;
-        ViewAllGroupsText = "View all " + ordered.Count + " groups";
+        ViewAllGroupsText = "View all " + ordered.Count + " DTCs";
 
         // Nothing the cards show has changed (the usual case when coming back from another screen): leave them alone.
         string signature = BuildAdminListSignature(ordered, shown, panicCounts);
@@ -1025,9 +1025,9 @@ public partial class HomeViewModel : BaseViewModel
             return;
         }
 
-        string shownName = string.IsNullOrWhiteSpace(groupName) ? "the group" : groupName;
+        string shownName = string.IsNullOrWhiteSpace(groupName) ? "the DTC" : groupName;
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Leave group",
+            "Leave DTC",
             "Leave \"" + shownName + "\"? You will no longer see its announcements. You can join again later.",
             "Leave",
             "Cancel");
@@ -1167,7 +1167,7 @@ public partial class HomeViewModel : BaseViewModel
 
         if (others.Count > 0)
         {
-            AddSection(string.Empty, "Other groups", others);
+            AddSection(string.Empty, "Other DTCs", others);
         }
     }
 

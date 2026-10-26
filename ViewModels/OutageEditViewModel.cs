@@ -45,10 +45,10 @@ public partial class OutageEditViewModel : BaseViewModel
 
     // The "Send to" section: the card text and the two pills.
     [ObservableProperty]
-    private string _selectedCountText = "No groups selected";
+    private string _selectedCountText = "No DTCs selected";
 
     [ObservableProperty]
-    private string _audienceCaption = "Choose Groups or Communities below";
+    private string _audienceCaption = "Choose DTCs or AB Switches below";
 
     [ObservableProperty]
     private bool _isGroupsOn;
@@ -139,7 +139,7 @@ public partial class OutageEditViewModel : BaseViewModel
         List<string> chosen = new List<string>(_audience.GroupIds);
         if (chosen.Count == 0)
         {
-            ErrorMessage = "Choose who this is for: tap Groups or Communities.";
+            ErrorMessage = "Choose who this is for: tap DTCs or AB Switches.";
             return;
         }
 
@@ -150,7 +150,7 @@ public partial class OutageEditViewModel : BaseViewModel
 
         if (end <= start)
         {
-            ErrorMessage = "The outage must end after it starts.";
+            ErrorMessage = "The Shut Down must end after it starts.";
             return;
         }
 
@@ -162,7 +162,7 @@ public partial class OutageEditViewModel : BaseViewModel
 
         if (publishAt > start)
         {
-            ErrorMessage = "Members must see the message before the outage starts.";
+            ErrorMessage = "Members must see the message before the Shut Down starts.";
             return;
         }
 
@@ -205,7 +205,7 @@ public partial class OutageEditViewModel : BaseViewModel
         {
             // Go back first, then show the toast (the toast waits for the next page).
             await _navigation.GoToAsync("..");
-            _toasts.Show(chosen.Count == 1 ? "Outage scheduled" : "Outage scheduled for " + chosen.Count + " groups");
+            _toasts.Show(chosen.Count == 1 ? "Shut Down scheduled" : "Shut Down scheduled for " + chosen.Count + " DTCs");
         }
     }
 

@@ -251,7 +251,7 @@ public partial class UsersViewModel : BaseViewModel
             {
                 newType = UserTypes.Admin;
                 title = "Make admin";
-                message = "Make " + item.Name + " an administrator? Administrators can manage users, groups and announcements.";
+                message = "Make " + item.Name + " an administrator? Administrators can manage users, DTCs and announcements.";
                 accept = "Make admin";
                 toast = item.Name + " is now an administrator";
             }

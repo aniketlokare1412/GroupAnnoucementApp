@@ -21,7 +21,7 @@
                     AutomationProperties.IsInAccessibleTree="False" />
                 <Label
                     Style="{StaticResource PageTitle}"
-                    Text="Group Announcements"
+                    Text="DTC Announcements"
                     HorizontalOptions="Center"
                     SemanticProperties.HeadingLevel="Level1" />
                 <Label

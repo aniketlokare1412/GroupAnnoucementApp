@@ -54,7 +54,7 @@ public class AnnouncementService : IAnnouncementService
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult<List<Announcement>>.Fail("Unknown group.");
+            return OperationResult<List<Announcement>>.Fail("Unknown DTC.");
         }
 
         try
@@ -162,7 +162,7 @@ public class AnnouncementService : IAnnouncementService
 
         if (targets.Count == 0)
         {
-            return OperationResult<PublishResult>.Fail("Select at least one group.");
+            return OperationResult<PublishResult>.Fail("Select at least one DTC.");
         }
 
         if (!IsOnline())
@@ -178,7 +178,7 @@ public class AnnouncementService : IAnnouncementService
             {
                 if (!IsActiveGroup(allGroups, targets[i]))
                 {
-                    return OperationResult<PublishResult>.Fail("One of the selected groups is no longer active. Refresh the list and try again.");
+                    return OperationResult<PublishResult>.Fail("One of the selected DTCs is no longer active. Refresh the list and try again.");
                 }
             }
 
@@ -600,7 +600,7 @@ public class AnnouncementService : IAnnouncementService
         }
         catch (TimeoutException)
         {
-            post.Error = "Some requests took too long and may still go through. Refresh the group's announcements to check.";
+            post.Error = "Some requests took too long and may still go through. Refresh the DTC's announcements to check.";
         }
         catch (Exception ex)
         {
@@ -719,7 +719,7 @@ public class AnnouncementService : IAnnouncementService
         }
         catch (TimeoutException)
         {
-            outcome.Error = "Some requests took too long and may still go through. Refresh the group's announcements to check.";
+            outcome.Error = "Some requests took too long and may still go through. Refresh the DTC's announcements to check.";
         }
         catch (Exception ex)
         {

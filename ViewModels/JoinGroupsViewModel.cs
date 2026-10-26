@@ -132,7 +132,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
             }
             else
             {
-                NoticeMessage = "We could not check which groups you have already joined. You can still search and join groups.";
+                NoticeMessage = "We could not check which DTCs you have already joined. You can still search and join DTCs.";
             }
 
             // Nice to have: if the communities cannot be loaded, the group simply shows without them.
@@ -182,7 +182,7 @@ public partial class JoinGroupsViewModel : BaseViewModel
             }
 
             bool confirmed = await _dialogs.ConfirmAsync(
-                "Join group",
+                "Join DTC",
                 "Join \"" + item.Name + "\"?",
                 "Join",
                 "Cancel");
@@ -267,14 +267,14 @@ public partial class JoinGroupsViewModel : BaseViewModel
 
         if (term.Length == 0)
         {
-            SummaryText = "Enter a group number to join";
-            EmptyTitle = "Enter a group number";
-            EmptyHint = "Ask your admin for the group number, type it above, then tap Join.";
+            SummaryText = "Enter a DTC number to join";
+            EmptyTitle = "Enter a DTC number";
+            EmptyHint = "Ask your admin for the DTC number, type it above, then tap Join.";
         }
         else
         {
-            SummaryText = Groups.Count == 0 ? string.Empty : "1 group found";
-            EmptyTitle = "No group found";
+            SummaryText = Groups.Count == 0 ? string.Empty : "1 DTC found";
+            EmptyTitle = "No DTC found";
             EmptyHint = "Check the number \"" + term + "\" and try again.";
         }
     }
@@ -313,10 +313,10 @@ public partial class JoinGroupsViewModel : BaseViewModel
     {
         if (searching)
         {
-            return Groups.Count + " of " + _allGroups.Count + " groups";
+            return Groups.Count + " of " + _allGroups.Count + " DTCs";
         }
 
-        string total = _allGroups.Count == 1 ? "1 group" : _allGroups.Count + " groups";
+        string total = _allGroups.Count == 1 ? "1 DTC" : _allGroups.Count + " DTCs";
         if (!_membershipKnown)
         {
             return total;

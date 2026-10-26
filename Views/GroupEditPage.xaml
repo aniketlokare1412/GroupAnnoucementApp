@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
     x:Class="GroupAnnouncementApp.Views.GroupEditPage"
     x:DataType="vm:GroupEditViewModel"
     Title="{Binding TitleText}">
@@ -14,7 +15,7 @@
             <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
 
                 <VerticalStackLayout Spacing="6">
-                    <Label Style="{StaticResource FieldLabel}" Text="Group number" />
+                    <Label Style="{StaticResource FieldLabel}" Text="DTC number" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry
                             Placeholder="Whole number, e.g. 4821"
@@ -23,8 +24,8 @@
                             Text="{Binding Number}"
                             MaxLength="{Binding MaxNumberLength}"
                             IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Group number"
-                            SemanticProperties.Hint="Members type this number to join the group" />
+                            SemanticProperties.Description="DTC number"
+                            SemanticProperties.Hint="Members type this number to join the DTC" />
                     </Border>
                 </VerticalStackLayout>
 
@@ -32,12 +33,12 @@
                     <Label Style="{StaticResource FieldLabel}" Text="Name" />
                     <Border Style="{StaticResource FieldBorder}">
                         <Entry
-                            Placeholder="Group name"
+                            Placeholder="DTC name"
                             ReturnType="Next"
                             Text="{Binding Name}"
                             MaxLength="{Binding MaxNameLength}"
                             IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Group name" />
+                            SemanticProperties.Description="DTC name" />
                     </Border>
                 </VerticalStackLayout>
 
@@ -45,14 +46,65 @@
                     <Label Style="{StaticResource FieldLabel}" Text="Description (optional)" />
                     <Border Style="{StaticResource FieldBorder}" Padding="10,6">
                         <Editor
-                            Placeholder="What is this group for?"
+                            Placeholder="What is this DTC for?"
                             Text="{Binding Description}"
                             MaxLength="{Binding MaxDescriptionLength}"
                             HeightRequest="140"
                             AutoSize="Disabled"
                             IsEnabled="{Binding IsNotBusy}"
-                            SemanticProperties.Description="Group description" />
+                            SemanticProperties.Description="DTC description" />
                     </Border>
+                </VerticalStackLayout>
+
+
+                <!-- New group only: optional placement. First a super community, then (once one is chosen) its communities. -->
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding ShowStructure}">
+                    <Label Style="{StaticResource FieldLabel}" Text="Feeder (optional)" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Picker
+                            Title="None"
+                            ItemsSource="{Binding SuperNames}"
+                            SelectedIndex="{Binding SuperIndex}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Feeder"
+                            SemanticProperties.Hint="Optional. Choose a Feeder to pick its AB Switches below" />
+                    </Border>
+                    <Label Style="{StaticResource Caption}" Text="{Binding StructureNote}" IsVisible="{Binding HasStructureNote}" />
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6" IsVisible="{Binding ShowCommunities}">
+                    <Label Style="{StaticResource FieldLabel}" Text="AB Switches (optional)" />
+                    <Border
+                        Style="{StaticResource FieldBorder}"
+                        SemanticProperties.Description="{Binding CommunitySummary}"
+                        SemanticProperties.Hint="Opens or closes the list of AB Switches. You can tick more than one">
+                        <Border.GestureRecognizers>
+                            <TapGestureRecognizer Command="{Binding ToggleCommunityListCommand}" />
+                        </Border.GestureRecognizers>
+                        <Grid ColumnDefinitions="*,Auto" Padding="0,2">
+                            <Label Grid.Column="0" Style="{StaticResource CardTitle}" Text="{Binding CommunitySummary}" VerticalOptions="Center" />
+                            <Label Grid.Column="1" Style="{StaticResource IconMuted}" VerticalOptions="Center" AutomationProperties.IsInAccessibleTree="False" Text="{x:Static h:Icons.ChevronRight}" />
+                        </Grid>
+                    </Border>
+                    <Label Style="{StaticResource Caption}" Text="This Feeder has no AB Switches yet." IsVisible="{Binding HasNoCommunityOptions}" />
+                    <VerticalStackLayout Spacing="6" IsVisible="{Binding IsCommunityListOpen}" BindableLayout.ItemsSource="{Binding CommunityOptions}">
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="vm:AbSwitchPickItem">
+                                <Border Style="{StaticResource RowCard}" SemanticProperties.Description="{Binding RowLabel}">
+                                    <Border.GestureRecognizers>
+                                        <TapGestureRecognizer Command="{Binding ToggleCommand}" />
+                                    </Border.GestureRecognizers>
+                                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                                        <CheckBox Grid.Column="0" IsChecked="{Binding IsOn, Mode=OneWay}" InputTransparent="True" VerticalOptions="Center" />
+                                        <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                            <Label Style="{StaticResource CardTitle}" Text="{Binding Name}" />
+                                            <Label Style="{StaticResource Caption}" Text="{Binding DetailText}" />
+                                        </VerticalStackLayout>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
 
             </VerticalStackLayout>

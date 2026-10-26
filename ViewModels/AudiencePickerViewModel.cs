@@ -86,7 +86,7 @@ public partial class AudiencePickerViewModel : BaseViewModel
     public double PanelRotation => IsCommunityPanelOpen ? 90 : 0;
 
     [ObservableProperty]
-    private string _communitiesButtonText = "Choose a super community first";
+    private string _communitiesButtonText = "Choose a Feeder first";
 
     [ObservableProperty]
     private bool _hasNoCommunities;
@@ -225,7 +225,7 @@ public partial class AudiencePickerViewModel : BaseViewModel
             }
             else
             {
-                ErrorMessage = "Communities could not be loaded, so only single groups can be chosen right now.";
+                ErrorMessage = "AB Switches could not be loaded, so only single DTCs can be chosen right now.";
             }
 
             _selected = new HashSet<string>(request.Selected);
@@ -374,8 +374,8 @@ public partial class AudiencePickerViewModel : BaseViewModel
         }
         else if (_groupRows.Count == 0)
         {
-            EmptyTitle = "No active groups";
-            EmptyHint = "Create or activate a group first.";
+            EmptyTitle = "No active DTCs";
+            EmptyHint = "Create or activate a DTC first.";
         }
         else
         {
@@ -406,7 +406,7 @@ public partial class AudiencePickerViewModel : BaseViewModel
         {
             Community community = communities[i];
             int count = ActiveGroupIdsOf(community).Count;
-            string detail = CommunityText.NumberText(community.Number) + " - " + CommunityText.Count(count, "group", "groups");
+            string detail = CommunityText.NumberText(community.Number) + " - " + CommunityText.Count(count, "DTC", "DTCs");
             CommunityOptions.Add(CommunityOptionRow.Create(community.Id, community.Name, detail, _communityIds.Contains(community.Id), ToggleCommunity));
         }
 
@@ -517,28 +517,28 @@ public partial class AudiencePickerViewModel : BaseViewModel
         }
 
         AllCommunitiesOn = CommunityOptions.Count > 0 && ticked == CommunityOptions.Count;
-        HierarchyHeading = "Groups that will get the message (" + groups.Count + ")";
+        HierarchyHeading = "DTCs that will get the message (" + groups.Count + ")";
 
         HasNoHierarchyGroups = groups.Count == 0;
         if (!HasSuperSelected)
         {
-            HierarchyEmptyTitle = "Choose a super community";
-            HierarchyEmptyHint = "Pick a super community, then tick the communities that should get the message.";
+            HierarchyEmptyTitle = "Choose a Feeder";
+            HierarchyEmptyHint = "Pick a Feeder, then tick the AB Switches that should get the message.";
         }
         else if (HasNoCommunities)
         {
-            HierarchyEmptyTitle = "No communities here yet";
-            HierarchyEmptyHint = "This super community has no communities. Add communities to it first.";
+            HierarchyEmptyTitle = "No AB Switches here yet";
+            HierarchyEmptyHint = "This Feeder has no AB Switches. Add AB Switches to it first.";
         }
         else if (ticked == 0)
         {
-            HierarchyEmptyTitle = "No community ticked";
-            HierarchyEmptyHint = "Open the Communities list above and tick the ones that should get the message.";
+            HierarchyEmptyTitle = "No AB Switch ticked";
+            HierarchyEmptyHint = "Open the AB Switches list above and tick the ones that should get the message.";
         }
         else
         {
-            HierarchyEmptyTitle = "No active groups";
-            HierarchyEmptyHint = "The ticked communities have no active groups.";
+            HierarchyEmptyTitle = "No active DTCs";
+            HierarchyEmptyHint = "The ticked AB Switches have no active DTCs.";
         }
 
         UpdateCommunitiesButton();
@@ -549,13 +549,13 @@ public partial class AudiencePickerViewModel : BaseViewModel
     {
         if (!HasSuperSelected)
         {
-            CommunitiesButtonText = "Choose a super community first";
+            CommunitiesButtonText = "Choose a Feeder first";
             return;
         }
 
         if (HasNoCommunities)
         {
-            CommunitiesButtonText = "No communities in this super community";
+            CommunitiesButtonText = "No AB Switches in this Feeder";
             return;
         }
 
@@ -569,8 +569,8 @@ public partial class AudiencePickerViewModel : BaseViewModel
         }
 
         CommunitiesButtonText = ticked == 0
-            ? "Choose communities"
-            : CommunityText.Count(ticked, "community", "communities") + " selected";
+            ? "Choose AB Switches"
+            : CommunityText.Count(ticked, "AB Switch", "AB Switches") + " selected";
     }
 
     // ---------- shared ----------
@@ -581,15 +581,15 @@ public partial class AudiencePickerViewModel : BaseViewModel
         if (Segment == 1)
         {
             count = _hierarchyGroupIds.Count;
-            SummaryText = CommunityText.Count(count, "group", "groups") + " from " + CommunityText.Count(_communityIds.Count, "community", "communities");
+            SummaryText = CommunityText.Count(count, "DTC", "DTCs") + " from " + CommunityText.Count(_communityIds.Count, "AB Switch", "AB Switches");
         }
         else
         {
             count = _selected.Count;
-            SummaryText = count + " of " + CommunityText.Count(_totalGroups, "group", "groups") + " selected";
+            SummaryText = count + " of " + CommunityText.Count(_totalGroups, "DTC", "DTCs") + " selected";
         }
 
-        DoneText = count == 0 ? "Done" : "Done  -  " + CommunityText.Count(count, "group", "groups");
+        DoneText = count == 0 ? "Done" : "Done  -  " + CommunityText.Count(count, "DTC", "DTCs");
     }
 
     [RelayCommand]
@@ -599,7 +599,7 @@ public partial class AudiencePickerViewModel : BaseViewModel
         int chosenCount = Segment == 1 ? _hierarchyGroupIds.Count : _selected.Count;
         if (chosenCount == 0)
         {
-            ErrorMessage = "Choose at least one group.";
+            ErrorMessage = "Choose at least one DTC.";
             return;
         }
 

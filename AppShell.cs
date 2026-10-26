@@ -41,7 +41,7 @@ public partial class AppShell : Shell
         Items.Add(CreateTabBar(
             "adminshell",
             CreateContent("adminhome", "Home", "tab_home.png", typeof(HomePage)),
-            CreateContent("admingroups", "Groups", "tab_groups.png", typeof(GroupsPage)),
+            CreateContent("admingroups", "DTCs", "tab_groups.png", typeof(GroupsPage)),
             CreateContent("adminusers", "Users", "tab_users.png", typeof(UsersPage))));
 
         // Member (regular user): one screen, Home (join by group number + announcements), so no tab bar is shown.

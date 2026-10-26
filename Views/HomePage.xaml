@@ -40,8 +40,8 @@
                                                             Command="{Binding LeaveCommand}"
                                                             IsVisible="{Binding ShowLeave}"
                                                             VerticalOptions="Center"
-                                                            SemanticProperties.Description="Leave group"
-                                                            SemanticProperties.Hint="You will stop seeing this group's announcements" />
+                                                            SemanticProperties.Description="Leave DTC"
+                                                            SemanticProperties.Hint="You will stop seeing this DTC's announcements" />
                                                     </Grid>
                                                     </Grid>
 
@@ -160,7 +160,7 @@
 
                         <!-- Counts -->
                         <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
-                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="Groups" SemanticProperties.Hint="Opens the groups list">
+                            <Border Grid.Row="0" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="DTCs" SemanticProperties.Hint="Opens the DTCs list">
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding OpenGroupsTabCommand}" />
                                 </Border.GestureRecognizers>
@@ -170,7 +170,7 @@
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding GroupsCountText}" />
-                                        <Label Style="{StaticResource Caption}" Text="Groups" />
+                                        <Label Style="{StaticResource Caption}" Text="DTCs" />
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
@@ -188,7 +188,7 @@
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="Communities" SemanticProperties.Hint="Opens the communities list">
+                            <Border Grid.Row="1" Grid.Column="0" Style="{StaticResource Card3D}" SemanticProperties.Description="AB Switches" SemanticProperties.Hint="Opens the AB Switches list">
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding OpenCommunitiesTabCommand}" />
                                 </Border.GestureRecognizers>
@@ -198,11 +198,11 @@
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding CommunitiesCountText}" />
-                                        <Label Style="{StaticResource Caption}" Text="Communities" />
+                                        <Label Style="{StaticResource Caption}" Text="AB Switches" />
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
-                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card3D}" SemanticProperties.Description="Super communities" SemanticProperties.Hint="Opens the super communities list">
+                            <Border Grid.Row="1" Grid.Column="1" Style="{StaticResource Card3D}" SemanticProperties.Description="Feeders" SemanticProperties.Hint="Opens the Feeders list">
                                 <Border.GestureRecognizers>
                                     <TapGestureRecognizer Command="{Binding OpenSuperCommunitiesTabCommand}" />
                                 </Border.GestureRecognizers>
@@ -212,7 +212,7 @@
                                     </Border>
                                     <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
                                         <Label Style="{StaticResource StatNumber}" Text="{Binding SuperCommunitiesCountText}" />
-                                        <Label Style="{StaticResource Caption}" Text="Super communities" LineBreakMode="TailTruncation" MaxLines="1" />
+                                        <Label Style="{StaticResource Caption}" Text="Feeders" LineBreakMode="TailTruncation" MaxLines="1" />
                                     </VerticalStackLayout>
                                 </Grid>
                             </Border>
@@ -246,9 +246,9 @@
                                         Style="{StaticResource QuickActionBlue}"
                                         Text="&#x1F465;"
                                         Command="{Binding NewGroupCommand}"
-                                        SemanticProperties.Description="New group"
-                                        SemanticProperties.Hint="Create a group" />
-                                    <Label Style="{StaticResource QuickActionLabel}" Text="New group" />
+                                        SemanticProperties.Description="New DTC"
+                                        SemanticProperties.Hint="Create a DTC" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="New DTC" />
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
                                     <Button
@@ -256,7 +256,7 @@
                                         Text="&#x1F4E2;"
                                         Command="{Binding NewPostCommand}"
                                         SemanticProperties.Description="New post"
-                                        SemanticProperties.Hint="Write an announcement for one or more groups" />
+                                        SemanticProperties.Hint="Write an announcement for one or more DTCs" />
                                     <Label Style="{StaticResource QuickActionLabel}" Text="New post" />
                                 </VerticalStackLayout>
                                 <VerticalStackLayout Spacing="4" WidthRequest="68">
@@ -264,9 +264,9 @@
                                         Style="{StaticResource QuickActionCoral}"
                                         Text="&#x26A1;"
                                         Command="{Binding NewOutageCommand}"
-                                        SemanticProperties.Description="Plan an outage"
-                                        SemanticProperties.Hint="Schedule a planned outage message for one or more groups" />
-                                    <Label Style="{StaticResource QuickActionLabel}" Text="Outage" />
+                                        SemanticProperties.Description="Plan a Shut Down"
+                                        SemanticProperties.Hint="Schedule a planned Shut Down message for one or more DTCs" />
+                                    <Label Style="{StaticResource QuickActionLabel}" Text="Shut Down" />
                                 </VerticalStackLayout>
                             </HorizontalStackLayout>
                         </VerticalStackLayout>
@@ -274,7 +274,7 @@
                         <!-- Every group: tap one to see its announcements -->
                         <VerticalStackLayout Spacing="8">
                             <Grid ColumnDefinitions="*,Auto">
-                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="Groups" VerticalOptions="Center" />
+                                <Label Grid.Column="0" Style="{StaticResource SectionLabel}" Text="DTCs" VerticalOptions="Center" />
                                 <Button
                                     Grid.Column="1"
                                     Style="{StaticResource LinkButton}"
@@ -335,7 +335,7 @@
 
                             <Label
                                 Style="{StaticResource Caption}"
-                                Text="No groups yet. Open the Groups tab to create one."
+                                Text="No DTCs yet. Open the DTCs tab to create one."
                                 IsVisible="{Binding HasNoAdminGroups}" />
                         </VerticalStackLayout>
 
@@ -382,7 +382,7 @@
 
                             <Label
                                 Style="{StaticResource Caption}"
-                                Text="No announcements yet from your groups."
+                                Text="No announcements yet from your DTCs."
                                 IsVisible="{Binding HasNoMemberAnnouncements}" />
                         </VerticalStackLayout>
 

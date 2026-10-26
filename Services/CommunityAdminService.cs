@@ -40,7 +40,7 @@ public class CommunityAdminService : ICommunityAdminService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult<List<Community>>.Fail("You do not have permission to view communities.");
+            return OperationResult<List<Community>>.Fail("You do not have permission to view AB Switches.");
         }
 
         try
@@ -56,12 +56,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult<List<Community>>.Fail("Loading communities is taking too long. Please check your connection and try again.");
+            return OperationResult<List<Community>>.Fail("Loading AB Switches is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD COMMUNITIES ERROR: " + ex);
-            return OperationResult<List<Community>>.Fail(ServiceHelper.MapError(ex, "We could not load the communities. Please check your connection and try again."));
+            return OperationResult<List<Community>>.Fail(ServiceHelper.MapError(ex, "We could not load the AB Switches. Please check your connection and try again."));
         }
     }
 
@@ -69,12 +69,12 @@ public class CommunityAdminService : ICommunityAdminService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult<Community?>.Fail("You do not have permission to view communities.");
+            return OperationResult<Community?>.Fail("You do not have permission to view AB Switches.");
         }
 
         if (string.IsNullOrEmpty(id))
         {
-            return OperationResult<Community?>.Fail("Unknown community.");
+            return OperationResult<Community?>.Fail("Unknown AB Switch.");
         }
 
         try
@@ -82,7 +82,7 @@ public class CommunityAdminService : ICommunityAdminService
             Community? item = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetByIdAsync(id));
             if (item == null)
             {
-                return OperationResult<Community?>.Fail("This community no longer exists.");
+                return OperationResult<Community?>.Fail("This AB Switch no longer exists.");
             }
 
             if (item.GroupIds == null)
@@ -94,12 +94,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult<Community?>.Fail("Loading the community is taking too long. Please check your connection and try again.");
+            return OperationResult<Community?>.Fail("Loading the AB Switch is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD COMMUNITY ERROR: " + ex);
-            return OperationResult<Community?>.Fail(ServiceHelper.MapError(ex, "We could not load the community. Please try again."));
+            return OperationResult<Community?>.Fail(ServiceHelper.MapError(ex, "We could not load the AB Switch. Please try again."));
         }
     }
 
@@ -107,7 +107,7 @@ public class CommunityAdminService : ICommunityAdminService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult<List<SuperCommunity>>.Fail("You do not have permission to view super communities.");
+            return OperationResult<List<SuperCommunity>>.Fail("You do not have permission to view Feeders.");
         }
 
         try
@@ -121,12 +121,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult<List<SuperCommunity>>.Fail("Loading super communities is taking too long. Please check your connection and try again.");
+            return OperationResult<List<SuperCommunity>>.Fail("Loading Feeders is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD SUPER COMMUNITIES ERROR: " + ex);
-            return OperationResult<List<SuperCommunity>>.Fail(ServiceHelper.MapError(ex, "We could not load the super communities. Please check your connection and try again."));
+            return OperationResult<List<SuperCommunity>>.Fail(ServiceHelper.MapError(ex, "We could not load the Feeders. Please check your connection and try again."));
         }
     }
 
@@ -134,12 +134,12 @@ public class CommunityAdminService : ICommunityAdminService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult<SuperCommunity?>.Fail("You do not have permission to view super communities.");
+            return OperationResult<SuperCommunity?>.Fail("You do not have permission to view Feeders.");
         }
 
         if (string.IsNullOrEmpty(id))
         {
-            return OperationResult<SuperCommunity?>.Fail("Unknown super community.");
+            return OperationResult<SuperCommunity?>.Fail("Unknown Feeder.");
         }
 
         try
@@ -147,19 +147,19 @@ public class CommunityAdminService : ICommunityAdminService
             SuperCommunity? item = await ServiceHelper.WithTimeoutAsync(_superRepository.GetByIdAsync(id));
             if (item == null)
             {
-                return OperationResult<SuperCommunity?>.Fail("This super community no longer exists.");
+                return OperationResult<SuperCommunity?>.Fail("This Feeder no longer exists.");
             }
 
             return OperationResult<SuperCommunity?>.Success(item);
         }
         catch (TimeoutException)
         {
-            return OperationResult<SuperCommunity?>.Fail("Loading the super community is taking too long. Please check your connection and try again.");
+            return OperationResult<SuperCommunity?>.Fail("Loading the Feeder is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD SUPER COMMUNITY ERROR: " + ex);
-            return OperationResult<SuperCommunity?>.Fail(ServiceHelper.MapError(ex, "We could not load the super community. Please try again."));
+            return OperationResult<SuperCommunity?>.Fail(ServiceHelper.MapError(ex, "We could not load the Feeder. Please try again."));
         }
     }
 
@@ -172,10 +172,10 @@ public class CommunityAdminService : ICommunityAdminService
         string cleanNumber = (number ?? string.Empty).Trim();
         string superId = superCommunityId ?? string.Empty;
 
-        string? problem = CheckCanModify("communities") ?? ValidateFields("community", cleanName, cleanDescription, cleanNumber);
+        string? problem = CheckCanModify("AB Switches") ?? ValidateFields("AB Switch", cleanName, cleanDescription, cleanNumber);
         if (problem == null && string.IsNullOrEmpty(superId))
         {
-            problem = "Please choose a super community.";
+            problem = "Please choose a Feeder.";
         }
 
         if (problem != null)
@@ -192,7 +192,7 @@ public class CommunityAdminService : ICommunityAdminService
         try
         {
             List<Community> existing = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
-            problem = CheckDuplicates("community", ToKeys(existing), cleanName, cleanNumber, null);
+            problem = CheckDuplicates("AB Switch", ToKeys(existing), cleanName, cleanNumber, null);
             if (problem == null)
             {
                 problem = await CheckSuperExistsAsync(superId);
@@ -219,12 +219,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult.Fail("The request is taking too long. Check the communities list to see whether it was created.");
+            return OperationResult.Fail("The request is taking too long. Check the AB Switches list to see whether it was created.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("CREATE COMMUNITY ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not create the community. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not create the AB Switch. Please try again."));
         }
     }
 
@@ -235,20 +235,20 @@ public class CommunityAdminService : ICommunityAdminService
         string cleanNumber = (number ?? string.Empty).Trim();
         string superId = superCommunityId ?? string.Empty;
 
-        string? problem = CheckCanModify("communities");
+        string? problem = CheckCanModify("AB Switches");
         if (problem == null && string.IsNullOrEmpty(id))
         {
-            problem = "Unknown community.";
+            problem = "Unknown AB Switch.";
         }
 
         if (problem == null)
         {
-            problem = ValidateFields("community", cleanName, cleanDescription, cleanNumber);
+            problem = ValidateFields("AB Switch", cleanName, cleanDescription, cleanNumber);
         }
 
         if (problem == null && string.IsNullOrEmpty(superId))
         {
-            problem = "Please choose a super community.";
+            problem = "Please choose a Feeder.";
         }
 
         if (problem != null)
@@ -261,10 +261,10 @@ public class CommunityAdminService : ICommunityAdminService
             List<Community> existing = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
             if (!ContainsId(existing, id))
             {
-                return OperationResult.Fail("This community no longer exists.");
+                return OperationResult.Fail("This AB Switch no longer exists.");
             }
 
-            problem = CheckDuplicates("community", ToKeys(existing), cleanName, cleanNumber, id);
+            problem = CheckDuplicates("AB Switch", ToKeys(existing), cleanName, cleanNumber, id);
             if (problem == null)
             {
                 problem = await CheckSuperExistsAsync(superId);
@@ -282,12 +282,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult.Fail("The request is taking too long. Check the communities list to see the current details.");
+            return OperationResult.Fail("The request is taking too long. Check the AB Switches list to see the current details.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("UPDATE COMMUNITY ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not save the community. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not save the AB Switch. Please try again."));
         }
     }
 
@@ -299,7 +299,7 @@ public class CommunityAdminService : ICommunityAdminService
         string cleanDescription = (description ?? string.Empty).Trim();
         string cleanNumber = (number ?? string.Empty).Trim();
 
-        string? problem = CheckCanModify("super communities") ?? ValidateFields("super community", cleanName, cleanDescription, cleanNumber);
+        string? problem = CheckCanModify("Feeders") ?? ValidateFields("Feeder", cleanName, cleanDescription, cleanNumber);
         if (problem != null)
         {
             return OperationResult.Fail(problem);
@@ -314,7 +314,7 @@ public class CommunityAdminService : ICommunityAdminService
         try
         {
             List<SuperCommunity> existing = await ServiceHelper.WithTimeoutAsync(_superRepository.GetAllAsync());
-            problem = CheckDuplicates("super community", ToKeys(existing), cleanName, cleanNumber, null);
+            problem = CheckDuplicates("Feeder", ToKeys(existing), cleanName, cleanNumber, null);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -334,12 +334,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult.Fail("The request is taking too long. Check the super communities list to see whether it was created.");
+            return OperationResult.Fail("The request is taking too long. Check the Feeders list to see whether it was created.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("CREATE SUPER COMMUNITY ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not create the super community. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not create the Feeder. Please try again."));
         }
     }
 
@@ -349,15 +349,15 @@ public class CommunityAdminService : ICommunityAdminService
         string cleanDescription = (description ?? string.Empty).Trim();
         string cleanNumber = (number ?? string.Empty).Trim();
 
-        string? problem = CheckCanModify("super communities");
+        string? problem = CheckCanModify("Feeders");
         if (problem == null && string.IsNullOrEmpty(id))
         {
-            problem = "Unknown super community.";
+            problem = "Unknown Feeder.";
         }
 
         if (problem == null)
         {
-            problem = ValidateFields("super community", cleanName, cleanDescription, cleanNumber);
+            problem = ValidateFields("Feeder", cleanName, cleanDescription, cleanNumber);
         }
 
         if (problem != null)
@@ -379,10 +379,10 @@ public class CommunityAdminService : ICommunityAdminService
 
             if (!found)
             {
-                return OperationResult.Fail("This super community no longer exists.");
+                return OperationResult.Fail("This Feeder no longer exists.");
             }
 
-            problem = CheckDuplicates("super community", ToKeys(existing), cleanName, cleanNumber, id);
+            problem = CheckDuplicates("Feeder", ToKeys(existing), cleanName, cleanNumber, id);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -393,12 +393,12 @@ public class CommunityAdminService : ICommunityAdminService
         }
         catch (TimeoutException)
         {
-            return OperationResult.Fail("The request is taking too long. Check the super communities list to see the current details.");
+            return OperationResult.Fail("The request is taking too long. Check the Feeders list to see the current details.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("UPDATE SUPER COMMUNITY ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not save the super community. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not save the Feeder. Please try again."));
         }
     }
 
@@ -456,7 +456,7 @@ public class CommunityAdminService : ICommunityAdminService
 
         if (failed > 0)
         {
-            return OperationResult.Fail("The super community was saved, but " + failed + " community link(s) could not be updated. Please open it again and check the list.");
+            return OperationResult.Fail("The Feeder was saved, but " + failed + " AB Switch link(s) could not be updated. Please open it again and check the list.");
         }
 
         return OperationResult.Success();
@@ -592,7 +592,7 @@ public class CommunityAdminService : ICommunityAdminService
         }
 
         SuperCommunity? found = await ServiceHelper.WithTimeoutAsync(_superRepository.GetByIdAsync(superId));
-        return found == null ? "The chosen super community no longer exists." : null;
+        return found == null ? "The chosen Feeder no longer exists." : null;
     }
 
     // Drops duplicates and ids of groups that do not exist, so a stale picker cannot save junk.
