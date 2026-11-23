@@ -256,8 +256,18 @@ public class PanicService : IPanicService
 
             activity.LastPostedAt = latest.CreatedAt == default ? DateTimeOffset.UtcNow : latest.CreatedAt;
             activity.IsCompleted = latest.Status == AnnouncementStatus.Completed;
-            string countedId = activity.IsCompleted ? PanicLimits.NoticeAnnouncementId : latest.Id;
-            activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, countedId));
+            // Completed: only the notice's reports count. Open: its own reports plus the notice's (members press on the
+            // notice once the message has expired).
+            int noticeCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
+            if (activity.IsCompleted)
+            {
+                activity.PanicCount = noticeCount;
+            }
+            else
+            {
+                activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, latest.Id)) + noticeCount;
+            }
+
             return activity;
         }
         catch (Exception ex)

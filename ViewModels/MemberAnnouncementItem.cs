@@ -191,7 +191,7 @@ public sealed class MemberAnnouncementItem : ObservableObject
 
         MemberAnnouncementItem item = new MemberAnnouncementItem();
         item.ApplyGroup(group);
-        item.Title = cancelled ? "Outage cancelled" : "Planned outage";
+        item.Title = cancelled ? "Shut Down cancelled" : "Planned Shut Down";
         item.Message = cancelled ? OutageText.BuildCancelled(start, end) : OutageText.BuildPlanned(start, end, now);
         item._fallbackAccent = Color.FromArgb(cancelled ? "#65A30D" : "#F59E0B");
         item.CreatedAt = published;

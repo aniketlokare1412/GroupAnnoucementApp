@@ -36,8 +36,8 @@ public partial class AnnouncementsViewModel
         }
 
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Delete outage message",
-            "Delete the cancelled-outage message? Members will see the regular announcement again.",
+            "Delete Shut Down message",
+            "Delete the cancelled-Shut Down message? Members will see the regular announcement again.",
             "Delete",
             "Keep it");
         if (!confirmed)
@@ -48,11 +48,11 @@ public partial class AnnouncementsViewModel
         OperationResult result = await _outageService.DeleteAsync(GroupId);
         if (!result.IsSuccess)
         {
-            _toasts.Show(result.ErrorMessage ?? "We could not delete the outage message.");
+            _toasts.Show(result.ErrorMessage ?? "We could not delete the Shut Down message.");
             return;
         }
 
-        _toasts.Show("Outage message deleted");
+        _toasts.Show("Shut Down message deleted");
         await LoadOutageAsync();
     }
 }

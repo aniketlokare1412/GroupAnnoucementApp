@@ -25,17 +25,17 @@ public class OutageService : IOutageService
         string? uid = _authService.GetCurrentUserId();
         if (uid == null || !_session.IsAdmin)
         {
-            return OperationResult.Fail("Only administrators can schedule an outage.");
+            return OperationResult.Fail("Only administrators can schedule a Shut Down.");
         }
 
         if (end <= start)
         {
-            return OperationResult.Fail("The outage must end after it starts.");
+            return OperationResult.Fail("The Shut Down must end after it starts.");
         }
 
         if (publishAt > start)
         {
-            return OperationResult.Fail("The message must be published before the outage starts.");
+            return OperationResult.Fail("The message must be published before the Shut Down starts.");
         }
 
         long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -46,7 +46,7 @@ public class OutageService : IOutageService
             Outage? existing = await ServiceHelper.WithTimeoutAsync(_outageRepository.GetAsync(groupId));
             if (existing != null && existing.Status == OutageText.Scheduled && existing.EndMs > nowMs)
             {
-                return OperationResult.Fail("This group already has a planned outage. Cancel it first.");
+                return OperationResult.Fail("This DTC already has a planned Shut Down. Cancel it first.");
             }
 
             Outage outage = new Outage();
@@ -65,7 +65,7 @@ public class OutageService : IOutageService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("SCHEDULE OUTAGE ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not schedule the outage. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not schedule the Shut Down. Please try again."));
         }
     }
 
@@ -73,7 +73,7 @@ public class OutageService : IOutageService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult.Fail("Only administrators can cancel an outage.");
+            return OperationResult.Fail("Only administrators can cancel a Shut Down.");
         }
 
         try
@@ -82,7 +82,7 @@ public class OutageService : IOutageService
             long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
             if (existing == null || existing.Status != OutageText.Scheduled || existing.EndMs <= nowMs)
             {
-                return OperationResult.Fail("There is no planned outage to cancel.");
+                return OperationResult.Fail("There is no planned Shut Down to cancel.");
             }
 
             await ServiceHelper.WithTimeoutAsync(_outageRepository.CancelAsync(groupId, nowMs));
@@ -92,7 +92,7 @@ public class OutageService : IOutageService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("CANCEL OUTAGE ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not cancel the outage. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not cancel the Shut Down. Please try again."));
         }
     }
 
@@ -100,12 +100,12 @@ public class OutageService : IOutageService
     {
         if (!_session.IsAdmin)
         {
-            return OperationResult.Fail("Only administrators can delete an outage message.");
+            return OperationResult.Fail("Only administrators can delete a Shut Down message.");
         }
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult.Fail("Unknown group.");
+            return OperationResult.Fail("Unknown DTC.");
         }
 
         try
@@ -113,12 +113,12 @@ public class OutageService : IOutageService
             Outage? existing = await ServiceHelper.WithTimeoutAsync(_outageRepository.GetAsync(groupId));
             if (existing == null)
             {
-                return OperationResult.Fail("There is no outage message to delete.");
+                return OperationResult.Fail("There is no Shut Down message to delete.");
             }
 
             if (existing.Status != OutageText.Cancelled)
             {
-                return OperationResult.Fail("Cancel the outage first, then delete the message.");
+                return OperationResult.Fail("Cancel the Shut Down first, then delete the message.");
             }
 
             await ServiceHelper.WithTimeoutAsync(_outageRepository.DeleteAsync(groupId));
@@ -128,7 +128,7 @@ public class OutageService : IOutageService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("DELETE OUTAGE ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not delete the outage message. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not delete the Shut Down message. Please try again."));
         }
     }
 
@@ -142,7 +142,7 @@ public class OutageService : IOutageService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD OUTAGE ERROR: " + ex);
-            return OperationResult<Outage?>.Fail(ServiceHelper.MapError(ex, "We could not load the outage."));
+            return OperationResult<Outage?>.Fail(ServiceHelper.MapError(ex, "We could not load the Shut Down."));
         }
     }
 }

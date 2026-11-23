@@ -94,7 +94,7 @@ public partial class AudienceRow : ObservableObject
         }
         else
         {
-            DetailText = count == 0 ? _baseDetail : count + " of " + CommunityText.Count(_total, "group", "groups") + " selected";
+            DetailText = count == 0 ? _baseDetail : count + " of " + CommunityText.Count(_total, "DTC", "DTCs") + " selected";
         }
     }
 }

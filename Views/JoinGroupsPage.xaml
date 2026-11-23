@@ -20,7 +20,7 @@
 
                 <VerticalStackLayout Spacing="0">
                     <Label Style="{StaticResource HeroName}" Text="Discover" />
-                    <Label Style="{StaticResource Greeting}" Text="Find groups and join the ones you care about" />
+                    <Label Style="{StaticResource Greeting}" Text="Find DTCs and join the ones you care about" />
                 </VerticalStackLayout>
 
                 <Border Style="{StaticResource SearchBorder}">
@@ -29,10 +29,10 @@
                         <Entry
                             Grid.Column="1"
                             Style="{StaticResource SearchEntry}"
-                            Placeholder="Enter group number"
+                            Placeholder="Enter DTC number"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
-                            SemanticProperties.Description="Group number" />
+                            SemanticProperties.Description="DTC number" />
                     </Grid>
                 </Border>
 

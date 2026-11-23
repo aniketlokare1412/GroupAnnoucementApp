@@ -40,7 +40,7 @@ public sealed class MemberListItem
     // Read by screen readers for the icon-only remove button.
     public string RemoveLabel
     {
-        get { return "Remove " + Name + " from this group"; }
+        get { return "Remove " + Name + " from this DTC"; }
     }
 
     public static MemberListItem FromEntry(GroupMemberEntry entry, Func<MemberListItem, Task> onRemove)

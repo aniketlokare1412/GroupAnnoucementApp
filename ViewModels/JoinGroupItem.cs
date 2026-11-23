@@ -53,7 +53,7 @@ public sealed class JoinGroupItem
 
     public string CardHint
     {
-        get { return IsMember ? "Opens announcements" : "Asks to join this group"; }
+        get { return IsMember ? "Opens announcements" : "Asks to join this DTC"; }
     }
 
     public static JoinGroupItem FromJoinable(

@@ -108,7 +108,7 @@
                         <Label Style="{StaticResource CardTitle}" Text="No users to add" HorizontalOptions="Center" />
                         <Label
                             Style="{StaticResource Caption}"
-                            Text="Everyone is already in this group, or nothing matches your search."
+                            Text="Everyone is already in this DTC, or nothing matches your search."
                             HorizontalTextAlignment="Center" />
                     </VerticalStackLayout>
                 </CollectionView.EmptyView>

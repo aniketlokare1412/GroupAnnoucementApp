@@ -205,7 +205,7 @@ public partial class StructureViewModel : BaseViewModel
             string key = "super:" + super.Id;
             StructureNode superNode = StructureNode.Create(
                 StructureKind.Super, super.Id, key, super.Name, super.Number,
-                CommunityText.Count(inside.Count, "community", "communities"), 0, false);
+                CommunityText.Count(inside.Count, "AB Switch", "AB Switches"), 0, false);
             Wire(superNode);
 
             for (int c = 0; c < inside.Count; c++)
@@ -230,8 +230,8 @@ public partial class StructureViewModel : BaseViewModel
         if (loose.Count > 0)
         {
             StructureNode section = StructureNode.Create(
-                StructureKind.Section, string.Empty, LooseCommunitiesKey, "Communities with no super community", string.Empty,
-                CommunityText.Count(loose.Count, "community", "communities"), 0, false);
+                StructureKind.Section, string.Empty, LooseCommunitiesKey, "AB Switches with no Feeder", string.Empty,
+                CommunityText.Count(loose.Count, "AB Switch", "AB Switches"), 0, false);
             Wire(section);
             for (int c = 0; c < loose.Count; c++)
             {
@@ -254,8 +254,8 @@ public partial class StructureViewModel : BaseViewModel
         if (ungrouped.Count > 0)
         {
             StructureNode section = StructureNode.Create(
-                StructureKind.Section, string.Empty, LooseGroupsKey, "Groups with no community", string.Empty,
-                CommunityText.Count(ungrouped.Count, "group", "groups"), 0, false);
+                StructureKind.Section, string.Empty, LooseGroupsKey, "DTCs with no AB Switch", string.Empty,
+                CommunityText.Count(ungrouped.Count, "DTC", "DTCs"), 0, false);
             Wire(section);
             for (int i = 0; i < ungrouped.Count; i++)
             {
@@ -295,7 +295,7 @@ public partial class StructureViewModel : BaseViewModel
 
         StructureNode node = StructureNode.Create(
             StructureKind.Community, community.Id, key, community.Name, community.Number,
-            CommunityText.Count(members.Count, "group", "groups"), depth, false);
+            CommunityText.Count(members.Count, "DTC", "DTCs"), depth, false);
         Wire(node);
         for (int i = 0; i < members.Count; i++)
         {
@@ -418,7 +418,7 @@ public partial class StructureViewModel : BaseViewModel
         if (_roots.Count == 0)
         {
             EmptyTitle = "Nothing here yet";
-            EmptyHint = "Create groups, communities and super communities in the Groups tab first.";
+            EmptyHint = "Create DTCs, AB Switches and Feeders in the DTCs tab first.";
         }
         else
         {

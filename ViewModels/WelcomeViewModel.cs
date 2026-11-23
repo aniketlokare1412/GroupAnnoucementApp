@@ -38,7 +38,7 @@ public partial class WelcomeViewModel : BaseViewModel
                 return "Admin login. Enter your phone number and password.";
             }
 
-            return "Enter your phone number to see your group announcements.";
+            return "Enter your phone number to see your DTC announcements.";
         }
     }
 

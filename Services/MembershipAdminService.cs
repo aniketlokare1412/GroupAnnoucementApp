@@ -40,7 +40,7 @@ public class MembershipAdminService : IMembershipAdminService
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult<List<GroupMemberEntry>>.Fail("Unknown group.");
+            return OperationResult<List<GroupMemberEntry>>.Fail("Unknown DTC.");
         }
 
         try
@@ -78,7 +78,7 @@ public class MembershipAdminService : IMembershipAdminService
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult<List<UserProfile>>.Fail("Unknown group.");
+            return OperationResult<List<UserProfile>>.Fail("Unknown DTC.");
         }
 
         try
@@ -316,7 +316,7 @@ public class MembershipAdminService : IMembershipAdminService
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return "Unknown group.";
+            return "Unknown DTC.";
         }
 
         // Without a connection Firestore would queue the write and apply it later,

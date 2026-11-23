@@ -18,11 +18,11 @@ public sealed class QuickPickItem
 
     public static QuickPickItem Create(string name, bool isSuper, List<string> activeGroupIds, Action<QuickPickItem> onSelect)
     {
-        string kind = isSuper ? "Super: " : "Community: ";
+        string kind = isSuper ? "Feeder: " : "AB Switch: ";
 
         QuickPickItem item = new QuickPickItem();
         item.PillText = kind + name + " (" + activeGroupIds.Count + ")";
-        item.Label = "Select all " + activeGroupIds.Count + " active groups in " + (isSuper ? "super community " : "community ") + name;
+        item.Label = "Select all " + activeGroupIds.Count + " active DTCs in " + (isSuper ? "Feeder " : "AB Switch ") + name;
         item.GroupIds = activeGroupIds;
         item.SelectCommand = new RelayCommand(() => onSelect(item));
         return item;

@@ -62,6 +62,14 @@ public partial class AnnouncementsViewModel : BaseViewModel
     [ObservableProperty]
     private string _emptyHint = string.Empty;
 
+    // Admin: the panic reports made on the 5-minute notice (members see it after the work was completed, its time was up,
+    // or the message was removed). They are saved on the notice, not on a message, so they get their own line.
+    [ObservableProperty]
+    private bool _hasNoticePanics;
+
+    [ObservableProperty]
+    private string _noticePanicText = string.Empty;
+
     // True only for the very first load, so a refresh or a delete never blanks the screen.
     [ObservableProperty]
     private bool _showLoading;
@@ -122,7 +130,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (string.IsNullOrEmpty(GroupId))
         {
-            ErrorMessage = "Unknown group.";
+            ErrorMessage = "Unknown DTC.";
             return;
         }
 
@@ -141,6 +149,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
         try
         {
             await LoadOutageAsync();
+            await LoadNoticePanicsAsync();
 
             OperationResult<List<Announcement>> result = await _announcementService.GetForGroupAsync(GroupId);
             if (!result.IsSuccess)
@@ -160,6 +169,25 @@ public partial class AnnouncementsViewModel : BaseViewModel
         {
             IsBusy = false;
             ShowLoading = false;
+        }
+    }
+
+    // Admin: how many reports were made on the 5-minute notice of this DTC (a new post clears them).
+    private async Task LoadNoticePanicsAsync()
+    {
+        HasNoticePanics = false;
+        NoticePanicText = string.Empty;
+
+        if (!IsAdminView || string.IsNullOrEmpty(GroupId))
+        {
+            return;
+        }
+
+        OperationResult<int> count = await _panicService.CountAsync(GroupId, PanicLimits.NoticeAnnouncementId);
+        if (count.IsSuccess && count.Value > 0)
+        {
+            HasNoticePanics = true;
+            NoticePanicText = "Panic reports on the 5-minute notice: " + count.Value + " (made after the work was completed or its time was up)";
         }
     }
 
@@ -233,9 +261,9 @@ public partial class AnnouncementsViewModel : BaseViewModel
         }
 
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Cancel outage",
-            "Cancel this planned outage? Members will see an outage-cancelled message instead.",
-            "Cancel outage",
+            "Cancel Shut Down",
+            "Cancel this planned Shut Down? Members will see a Shut Down-cancelled message instead.",
+            "Cancel Shut Down",
             "Keep it");
         if (!confirmed)
         {
@@ -245,11 +273,11 @@ public partial class AnnouncementsViewModel : BaseViewModel
         OperationResult result = await _outageService.CancelAsync(GroupId);
         if (!result.IsSuccess)
         {
-            _toasts.Show(result.ErrorMessage ?? "We could not cancel the outage.");
+            _toasts.Show(result.ErrorMessage ?? "We could not cancel the Shut Down.");
             return;
         }
 
-        _toasts.Show("Outage cancelled");
+        _toasts.Show("Shut Down cancelled");
         await LoadOutageAsync();
     }
 
@@ -357,7 +385,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
         }
 
         bool confirmed = await _dialogs.ConfirmAsync(
-            "Leave group",
+            "Leave DTC",
             "Leave \"" + GroupName + "\"? You will no longer see its announcements. You can join again later.",
             "Leave",
             "Cancel");
@@ -390,7 +418,7 @@ public partial class AnnouncementsViewModel : BaseViewModel
 
         if (left)
         {
-            string leftName = string.IsNullOrWhiteSpace(GroupName) ? "the group" : GroupName;
+            string leftName = string.IsNullOrWhiteSpace(GroupName) ? "the DTC" : GroupName;
             await _navigation.GoToAsync("..");
 
             // After going back: the previous page shows it (or keeps it until it appears).

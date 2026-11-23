@@ -7,7 +7,7 @@
     xmlns:controls="clr-namespace:GroupAnnouncementApp.Controls"
     x:Class="GroupAnnouncementApp.Views.GroupsPage"
     x:DataType="vm:GroupsViewModel"
-    Title="Groups"
+    Title="DTCs"
     Shell.NavBarIsVisible="False">
 
     <!-- Admin Groups tab. Same header style as Home (the nav bar is hidden). -->
@@ -30,7 +30,7 @@
                         Command="{Binding OpenStructureCommand}"
                         IsEnabled="{Binding IsNotBusy}"
                         SemanticProperties.Description="Structure"
-                        SemanticProperties.Hint="Shows super communities, communities and groups as one tree" />
+                        SemanticProperties.Hint="Shows Feeders, AB Switches and DTCs as one tree" />
                     <Button
                         Grid.Column="2"
                         Style="{StaticResource IconButton}"
@@ -38,7 +38,7 @@
                         Command="{Binding NewAnnouncementCommand}"
                         IsEnabled="{Binding IsNotBusy}"
                         SemanticProperties.Description="New post"
-                        SemanticProperties.Hint="Write an announcement for one or more groups" />
+                        SemanticProperties.Hint="Write an announcement for one or more DTCs" />
                     <Button
                         Grid.Column="3"
                         Style="{StaticResource PillBlue}"
@@ -61,37 +61,37 @@
                      One row of three equal segments, so the labels can never wrap or overlap. -->
                 <Border Style="{StaticResource SegmentTrack}">
                     <Grid ColumnDefinitions="*,*,*" ColumnSpacing="2">
-                        <Grid Grid.Column="0" SemanticProperties.Description="Groups" SemanticProperties.Hint="Show groups">
+                        <Grid Grid.Column="0" SemanticProperties.Description="DTCs" SemanticProperties.Hint="Show DTCs">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="0" />
                             </Grid.GestureRecognizers>
                             <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotGroupsMode}">
-                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; Groups" />
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; DTCs" />
                             </Border>
                             <Border Style="{StaticResource SegmentChipOnBlue}" IsVisible="{Binding IsGroupsMode}">
-                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; Groups" />
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F465; DTCs" />
                             </Border>
                         </Grid>
-                        <Grid Grid.Column="1" SemanticProperties.Description="Communities" SemanticProperties.Hint="Show communities">
+                        <Grid Grid.Column="1" SemanticProperties.Description="AB Switches" SemanticProperties.Hint="Show AB Switches">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="1" />
                             </Grid.GestureRecognizers>
                             <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotCommunitiesMode}">
-                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; Communities" />
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; AB Switches" />
                             </Border>
                             <Border Style="{StaticResource SegmentChipOnViolet}" IsVisible="{Binding IsCommunitiesMode}">
-                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; Communities" />
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3D8;&#xFE0F; AB Switches" />
                             </Border>
                         </Grid>
-                        <Grid Grid.Column="2" SemanticProperties.Description="Super communities" SemanticProperties.Hint="Show super communities">
+                        <Grid Grid.Column="2" SemanticProperties.Description="Feeders" SemanticProperties.Hint="Show Feeders">
                             <Grid.GestureRecognizers>
                                 <TapGestureRecognizer Command="{Binding SelectModeCommand}" CommandParameter="2" />
                             </Grid.GestureRecognizers>
                             <Border Style="{StaticResource SegmentChip}" IsVisible="{Binding IsNotSuperMode}">
-                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Super" />
+                                <Label Style="{StaticResource SegmentText}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Feeders" />
                             </Border>
                             <Border Style="{StaticResource SegmentChipOnPink}" IsVisible="{Binding IsSuperMode}">
-                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Super" />
+                                <Label Style="{StaticResource SegmentTextOn}" AutomationProperties.IsInAccessibleTree="False" Text="&#x1F3DB;&#xFE0F; Feeders" />
                             </Border>
                         </Grid>
                     </Grid>
@@ -106,7 +106,7 @@
                             Placeholder="{Binding SearchPlaceholder}"
                             ReturnType="Search"
                             Text="{Binding SearchText}"
-                            SemanticProperties.Description="Search groups" />
+                            SemanticProperties.Description="Search DTCs" />
                     </Grid>
                 </Border>
 

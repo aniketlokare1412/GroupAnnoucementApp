@@ -120,7 +120,7 @@
                                 <Label Style="{StaticResource CardTitle}" Text="No members yet" HorizontalOptions="Center" />
                                 <Label
                                     Style="{StaticResource Caption}"
-                                    Text="Tap Add members to pick people for this group."
+                                    Text="Tap Add members to pick people for this DTC."
                                     HorizontalTextAlignment="Center" />
                             </VerticalStackLayout>
                         </CollectionView.EmptyView>

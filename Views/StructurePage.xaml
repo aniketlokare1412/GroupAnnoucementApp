@@ -52,19 +52,19 @@
             <HorizontalStackLayout Spacing="12">
                 <HorizontalStackLayout Spacing="4">
                     <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource PinkLight}, Dark={StaticResource PinkDark}}" />
-                    <Label Style="{StaticResource Caption}" FontSize="11" Text="Super community" />
+                    <Label Style="{StaticResource Caption}" FontSize="11" Text="Feeder" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
                     <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource IndigoLight}, Dark={StaticResource IndigoDark}}" />
-                    <Label Style="{StaticResource Caption}" FontSize="11" Text="Community" />
+                    <Label Style="{StaticResource Caption}" FontSize="11" Text="AB Switch" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
                     <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource VioletLight}, Dark={StaticResource VioletDark}}" />
-                    <Label Style="{StaticResource Caption}" FontSize="11" Text="Group" />
+                    <Label Style="{StaticResource Caption}" FontSize="11" Text="DTC" />
                 </HorizontalStackLayout>
                 <HorizontalStackLayout Spacing="4">
                     <BoxView WidthRequest="10" HeightRequest="10" CornerRadius="5" VerticalOptions="Center" Color="{AppThemeBinding Light={StaticResource AmberLight}, Dark={StaticResource AmberDark}}" />
-                    <Label Style="{StaticResource Caption}" FontSize="11" Text="No community" />
+                    <Label Style="{StaticResource Caption}" FontSize="11" Text="No AB Switch" />
                 </HorizontalStackLayout>
             </HorizontalStackLayout>
 

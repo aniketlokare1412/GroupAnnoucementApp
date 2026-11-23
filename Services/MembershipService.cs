@@ -41,7 +41,7 @@ public class MembershipService : IMembershipService
         string? uid = GetMemberUid();
         if (uid == null)
         {
-            return OperationResult<List<AnnouncementGroup>>.Fail("Only members can view their groups.");
+            return OperationResult<List<AnnouncementGroup>>.Fail("Only members can view their DTCs.");
         }
 
         try
@@ -81,12 +81,12 @@ public class MembershipService : IMembershipService
         }
         catch (TimeoutException)
         {
-            return OperationResult<List<AnnouncementGroup>>.Fail("Loading your groups is taking too long. Please check your connection and try again.");
+            return OperationResult<List<AnnouncementGroup>>.Fail("Loading your DTCs is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD MY GROUPS ERROR: " + ex);
-            return OperationResult<List<AnnouncementGroup>>.Fail(ServiceHelper.MapError(ex, "We could not load your groups. Please check your connection and try again."));
+            return OperationResult<List<AnnouncementGroup>>.Fail(ServiceHelper.MapError(ex, "We could not load your DTCs. Please check your connection and try again."));
         }
     }
 
@@ -116,7 +116,7 @@ public class MembershipService : IMembershipService
         string? uid = GetMemberUid();
         if (uid == null)
         {
-            return OperationResult<BrowseGroupsResult>.Fail("Only members can join groups.");
+            return OperationResult<BrowseGroupsResult>.Fail("Only members can join DTCs.");
         }
 
         try
@@ -159,12 +159,12 @@ public class MembershipService : IMembershipService
         }
         catch (TimeoutException)
         {
-            return OperationResult<BrowseGroupsResult>.Fail("Loading groups is taking too long. Please check your connection and try again.");
+            return OperationResult<BrowseGroupsResult>.Fail("Loading DTCs is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LOAD BROWSE GROUPS ERROR: " + ex);
-            return OperationResult<BrowseGroupsResult>.Fail(ServiceHelper.MapError(ex, "We could not load the groups. Please check your connection and try again."));
+            return OperationResult<BrowseGroupsResult>.Fail(ServiceHelper.MapError(ex, "We could not load the DTCs. Please check your connection and try again."));
         }
     }
 
@@ -173,12 +173,12 @@ public class MembershipService : IMembershipService
         string? uid = GetMemberUid();
         if (uid == null)
         {
-            return OperationResult.Fail("Only members can join groups.");
+            return OperationResult.Fail("Only members can join DTCs.");
         }
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult.Fail("Unknown group.");
+            return OperationResult.Fail("Unknown DTC.");
         }
 
         if (!IsOnline())
@@ -194,13 +194,13 @@ public class MembershipService : IMembershipService
                 : await ServiceHelper.WithTimeoutAsync(_groupRepository.GetActiveAsync());
             if (!ContainsGroup(active, groupId))
             {
-                return OperationResult.Fail("This group is no longer available.");
+                return OperationResult.Fail("This DTC is no longer available.");
             }
 
             GroupMember? existing = await ServiceHelper.WithTimeoutAsync(_membershipRepository.GetAsync(groupId, uid));
             if (existing != null)
             {
-                return OperationResult.Fail("You are already a member of this group.");
+                return OperationResult.Fail("You are already a member of this DTC.");
             }
 
             await ServiceHelper.WithTimeoutAsync(_membershipRepository.AddAsync(groupId, uid, uid));
@@ -214,7 +214,7 @@ public class MembershipService : IMembershipService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("JOIN GROUP ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not join the group. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not join the DTC. Please try again."));
         }
     }
 
@@ -223,12 +223,12 @@ public class MembershipService : IMembershipService
         string? uid = GetMemberUid();
         if (uid == null)
         {
-            return OperationResult.Fail("Only members can leave groups.");
+            return OperationResult.Fail("Only members can leave DTCs.");
         }
 
         if (string.IsNullOrEmpty(groupId))
         {
-            return OperationResult.Fail("Unknown group.");
+            return OperationResult.Fail("Unknown DTC.");
         }
 
         if (!IsOnline())
@@ -249,7 +249,7 @@ public class MembershipService : IMembershipService
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("LEAVE GROUP ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not leave the group. Please try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not leave the DTC. Please try again."));
         }
     }
 
@@ -296,7 +296,7 @@ public class MembershipService : IMembershipService
         string? uid = GetMemberUid();
         if (uid == null)
         {
-            return OperationResult.Fail("Only members can view their groups.");
+            return OperationResult.Fail("Only members can view their DTCs.");
         }
 
         try
@@ -306,12 +306,12 @@ public class MembershipService : IMembershipService
         }
         catch (TimeoutException)
         {
-            return OperationResult.Fail("Loading your groups is taking too long. Please check your connection and try again.");
+            return OperationResult.Fail("Loading your DTCs is taking too long. Please check your connection and try again.");
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine("RECONCILE GROUPS ERROR: " + ex);
-            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not refresh your groups. Please check your connection and try again."));
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not refresh your DTCs. Please check your connection and try again."));
         }
     }
 

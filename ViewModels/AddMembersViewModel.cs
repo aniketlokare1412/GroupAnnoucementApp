@@ -82,7 +82,7 @@ public partial class AddMembersViewModel : BaseViewModel
 
         if (string.IsNullOrEmpty(GroupId))
         {
-            ErrorMessage = "Unknown group.";
+            ErrorMessage = "Unknown DTC.";
             return;
         }
 
