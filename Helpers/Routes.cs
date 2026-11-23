@@ -42,6 +42,9 @@ public static class Routes
     // Admin: people who asked to become administrators. Opened from Home.
     public const string AdminRequests = "adminrequests";
 
+    // A member fills in their details and sends the request to become an admin. Opened from Account.
+    public const string AdminRequestForm = "adminrequestform";
+
     // Admin: schedule a planned outage. Opened from Home.
     public const string OutageEdit = "outageedit";
 

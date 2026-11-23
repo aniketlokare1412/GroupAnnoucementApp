@@ -45,6 +45,20 @@ public sealed class MemberAnnouncementItem : ObservableObject
     public string DateText { get; private set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; private set; }
 
+    // "Published by <name>" and the admin's details (designation, section, sub station).
+    public string PublishedByText { get; private set; } = string.Empty;
+    public string PublishedByDetails { get; private set; } = string.Empty;
+
+    public bool HasPublishedBy
+    {
+        get { return PublishedByText.Length > 0; }
+    }
+
+    public bool HasPublishedByDetails
+    {
+        get { return PublishedByDetails.Length > 0; }
+    }
+
     private bool _isNotice;
 
     private ImageSource? _image;
@@ -235,6 +249,8 @@ public sealed class MemberAnnouncementItem : ObservableObject
         item.ApplyGroup(group);
         item.Title = announcement.Title;
         item.Message = announcement.Message;
+        item.PublishedByText = AdminAuthorText.ByLine(announcement.CreatedByName);
+        item.PublishedByDetails = announcement.CreatedByDetails;
         // A message just posted can still have no server time: it is the newest.
         item.CreatedAt = announcement.CreatedAt == default ? DateTimeOffset.UtcNow : announcement.CreatedAt;
         item.ConfigureAttachment(group.Id, announcement.Id, announcement, attachments);

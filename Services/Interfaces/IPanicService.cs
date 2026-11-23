@@ -20,6 +20,9 @@ public interface IPanicService
     // Admin: the count for the latest announcement of each group (groups without presses count 0).
     Task<Dictionary<string, int>> GetLatestCountsAsync(List<string> groupIds);
 
+    // Admin: removes the panic reports made on the 5-minute notice of a group (after the admin has seen them).
+    Task<OperationResult> ClearNoticeReportsAsync(string groupId);
+
     // Admin Home: panic count, last post time and completed flag of each group's newest announcement.
     Task<Dictionary<string, GroupActivity>> GetLatestActivityAsync(List<string> groupIds);
 }

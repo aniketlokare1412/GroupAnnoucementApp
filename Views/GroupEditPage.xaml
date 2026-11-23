@@ -57,7 +57,7 @@
                 </VerticalStackLayout>
 
 
-                <!-- New group only: optional placement. First a super community, then (once one is chosen) its communities. -->
+                <!-- Optional placement (new and edit): first a Feeder, then (once one is chosen) its AB Switches. Editing shows where the DTC is now. -->
                 <VerticalStackLayout Spacing="6" IsVisible="{Binding ShowStructure}">
                     <Label Style="{StaticResource FieldLabel}" Text="Feeder (optional)" />
                     <Border Style="{StaticResource FieldBorder}">

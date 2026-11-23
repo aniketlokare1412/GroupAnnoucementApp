@@ -34,13 +34,24 @@
                                             <Border Grid.Column="0" Style="{StaticResource InitialsTile}" VerticalOptions="Center">
                                                 <Label Style="{StaticResource InitialsText}" AutomationProperties.IsInAccessibleTree="False" Text="{Binding Initials}" />
                                             </Border>
-                                            <VerticalStackLayout Grid.Column="1" Spacing="0" VerticalOptions="Center">
+                                            <VerticalStackLayout Grid.Column="1" Spacing="2" VerticalOptions="Center">
                                                 <Label
                                                     Style="{StaticResource CardTitle}"
-                                                    Text="{Binding Phone}"
+                                                    Text="{Binding DisplayName}"
                                                     LineBreakMode="TailTruncation"
                                                     MaxLines="1" />
-                                                <Label Style="{StaticResource Caption}" Text="Wants to be an administrator" />
+                                                <Label Style="{StaticResource Caption}" Text="{Binding Phone}" />
+                                                <Label Style="{StaticResource Caption}" Text="Wants to be an administrator" IsVisible="{Binding HasNoDetails}" />
+                                                <Label Style="{StaticResource Caption}" Text="{Binding DesignationText}" IsVisible="{Binding HasDetails}" />
+                                                <Label Style="{StaticResource Caption}" Text="{Binding PlaceText}" IsVisible="{Binding HasDetails}" />
+                                                <Label Style="{StaticResource Caption}" Text="{Binding SectionText}" IsVisible="{Binding HasDetails}" />
+                                                <Button
+                                                    Style="{StaticResource LinkButtonBlue}"
+                                                    Text="View ID card"
+                                                    Command="{Binding ViewIdCardCommand}"
+                                                    IsVisible="{Binding HasIdCard}"
+                                                    HorizontalOptions="Start"
+                                                    SemanticProperties.Description="View the ID card photo" />
                                             </VerticalStackLayout>
                                         </Grid>
                                         <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">

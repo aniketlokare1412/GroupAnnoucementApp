@@ -88,6 +88,8 @@ public class FeedService : IFeedService
             ("aAttachmentKind", (object?)string.Empty),
             ("aFileId", (object?)string.Empty),
             ("aEdited", (object?)false),
+            ("aByName", (object?)string.Empty),
+            ("aByDetails", (object?)string.Empty),
             ("aAtMs", (object?)0L));
     }
 

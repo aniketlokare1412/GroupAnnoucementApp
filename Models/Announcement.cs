@@ -63,6 +63,14 @@ public sealed class Announcement : IFirestoreObject
     [FirestoreProperty("createdBy")]
     public string CreatedBy { get; set; } = string.Empty;
 
+    // Who posted it, as shown to the members ("Published by ..."). Copied from the admin's profile when it is posted.
+    // Old announcements have these empty.
+    [FirestoreProperty("createdByName")]
+    public string CreatedByName { get; set; } = string.Empty;
+
+    [FirestoreProperty("createdByDetails")]
+    public string CreatedByDetails { get; set; } = string.Empty;
+
     // Written by the Firestore server, never by the device clock.
     [FirestoreServerTimestamp("createdAt")]
     public DateTimeOffset CreatedAt { get; set; }

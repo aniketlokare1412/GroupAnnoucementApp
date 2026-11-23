@@ -62,6 +62,27 @@ public class PanicService : IPanicService
         }
     }
 
+    public async Task<OperationResult> ClearNoticeReportsAsync(string groupId)
+    {
+        try
+        {
+            // The press documents go first, then the counter the admin screens read.
+            await ServiceHelper.WithTimeoutAsync(_panicRepository.DeleteAllAsync(groupId, PanicLimits.NoticeAnnouncementId));
+            _repaired.Remove(groupId);
+            await _statsService.NoticeClearedAsync(groupId);
+            return OperationResult.Success();
+        }
+        catch (TimeoutException)
+        {
+            return OperationResult.Fail("The request is taking too long. Please try again.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("CLEAR NOTICE REPORTS ERROR: " + ex);
+            return OperationResult.Fail(ServiceHelper.MapError(ex, "We could not clear the reports. Please try again."));
+        }
+    }
+
     public async Task<OperationResult<bool>> HasPressedAsync(string groupId, string announcementId)
     {
         string? uid = _authService.GetCurrentUserId();
@@ -250,7 +271,8 @@ public class PanicService : IPanicService
             // With no open announcement the members see the 5-minute notice: its panic presses count.
             if (latest == null)
             {
-                activity.PanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
+                activity.NoticePanicCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
+                activity.PanicCount = activity.NoticePanicCount;
                 return activity;
             }
 
@@ -259,6 +281,7 @@ public class PanicService : IPanicService
             // Completed: only the notice's reports count. Open: its own reports plus the notice's (members press on the
             // notice once the message has expired).
             int noticeCount = await ServiceHelper.WithTimeoutAsync(_panicRepository.CountAsync(groupId, PanicLimits.NoticeAnnouncementId));
+            activity.NoticePanicCount = noticeCount;
             if (activity.IsCompleted)
             {
                 activity.PanicCount = noticeCount;

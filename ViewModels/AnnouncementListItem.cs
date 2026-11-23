@@ -21,6 +21,20 @@ public sealed class AnnouncementListItem : ObservableObject
     public string Title { get; private set; } = string.Empty;
     public string Message { get; private set; } = string.Empty;
     public string DateText { get; private set; } = string.Empty;
+
+    // "Published by <name>" and the admin's details (designation, section, sub station).
+    public string PublishedByText { get; private set; } = string.Empty;
+    public string PublishedByDetails { get; private set; } = string.Empty;
+
+    public bool HasPublishedBy
+    {
+        get { return PublishedByText.Length > 0; }
+    }
+
+    public bool HasPublishedByDetails
+    {
+        get { return PublishedByDetails.Length > 0; }
+    }
     public bool IsActive { get; private set; }
     public bool IsEdited { get; private set; }
     public bool IsNew { get; private set; }
@@ -146,6 +160,8 @@ public sealed class AnnouncementListItem : ObservableObject
         item.GroupId = announcement.GroupId;
         item.Title = announcement.Title;
         item.Message = announcement.Message;
+        item.PublishedByText = AdminAuthorText.ByLine(announcement.CreatedByName);
+        item.PublishedByDetails = announcement.CreatedByDetails;
         item.IsActive = announcement.IsActive;
         item.IsEdited = announcement.IsEdited;
         item.ConfigureAttachment(announcement.GroupId, announcement.Id, announcement, attachments);

@@ -21,5 +21,10 @@ public interface IGroupAdminService
 
     Task<OperationResult> UpdateGroupAsync(string id, string name, string description, string number);
 
+    // Edit: also changes which AB Switches (and so which Feeder) the DTC is in. `communityIds` are the AB Switches it should be in;
+    // AB Switches that have no Feeder are left as they are. On success the value is null, or a short warning when the DTC was
+    // saved but some AB Switches could not be updated.
+    Task<OperationResult<string?>> UpdateGroupAsync(string id, string name, string description, string number, List<string> communityIds);
+
     Task<OperationResult> SetActiveAsync(string id, bool isActive);
 }

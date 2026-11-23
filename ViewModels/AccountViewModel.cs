@@ -27,6 +27,10 @@ public partial class AccountViewModel : BaseViewModel
     [ObservableProperty]
     private string _userEmail = string.Empty;
 
+    // The phone number is its own line under the name.
+    [ObservableProperty]
+    private string _phoneText = string.Empty;
+
     [ObservableProperty]
     private string _roleText = string.Empty;
 
@@ -78,12 +82,16 @@ public partial class AccountViewModel : BaseViewModel
             return;
         }
 
-        DisplayName = string.IsNullOrWhiteSpace(profile.Phone) ? profile.Name : profile.Phone;
+        // The name and the phone number are different things: the name is the title, the phone is its own line.
+        DisplayName = !string.IsNullOrWhiteSpace(profile.Name)
+            ? profile.Name
+            : (!string.IsNullOrWhiteSpace(profile.Phone) ? profile.Phone : profile.Email);
+        PhoneText = string.IsNullOrWhiteSpace(profile.Phone) || profile.Phone == DisplayName ? string.Empty : profile.Phone;
         UserEmail = string.Empty;
         RoleText = _session.IsAdmin ? "Administrator" : "Member";
         IsAdmin = _session.IsAdmin;
         string digits = PhoneLogin.Normalize(DisplayName);
-        Initials = digits.Length >= 2 ? digits.Substring(digits.Length - 2) : BuildInitials(DisplayName);
+        Initials = NameHelper.LooksLikePhone(DisplayName) && digits.Length >= 2 ? digits.Substring(digits.Length - 2) : BuildInitials(DisplayName);
 
         bool pending = false;
         if (!_session.IsAdmin)
@@ -96,6 +104,7 @@ public partial class AccountViewModel : BaseViewModel
         CanRequestAdmin = !_session.IsAdmin && !pending;
     }
 
+    // Opens the form where the member fills in their details. The request is sent from there.
     [RelayCommand]
     private async Task RequestAdminAsync()
     {
@@ -104,24 +113,7 @@ public partial class AccountViewModel : BaseViewModel
             return;
         }
 
-        IsBusy = true;
-        ErrorMessage = null;
-        try
-        {
-            OperationResult result = await _adminRequests.RequestAsync();
-            if (!result.IsSuccess)
-            {
-                ErrorMessage = result.ErrorMessage;
-                return;
-            }
-
-            IsRequestPending = true;
-            CanRequestAdmin = false;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        await _navigation.GoToAsync(Routes.AdminRequestForm);
     }
 
     [RelayCommand]

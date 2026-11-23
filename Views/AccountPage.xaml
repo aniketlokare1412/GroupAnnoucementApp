@@ -26,7 +26,7 @@
 
                     <Label
                         Style="{StaticResource Caption}"
-                        Text="{Binding UserEmail}"
+                        Text="{Binding PhoneText}"
                         HorizontalOptions="Center" />
 
                     <Border Style="{StaticResource BadgeBrand}" HorizontalOptions="Center">

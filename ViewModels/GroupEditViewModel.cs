@@ -20,6 +20,13 @@ public partial class GroupEditViewModel : BaseViewModel
 
     private bool _isLoaded;
 
+    // True once the Feeders and AB Switches have loaded. Only then does Save also change the DTC's placement
+    // (otherwise an edit keeps the DTC where it is).
+    private bool _structureLoaded;
+
+    // Editing: the AB Switches the DTC is in now, ticked again when its Feeder is selected.
+    private HashSet<string>? _initialTicks;
+
     // The structure loaded for the optional "Super community" and "Communities" pickers (new group only).
     private List<SuperCommunity> _supers = new List<SuperCommunity>();
     private List<Community> _communities = new List<Community>();
@@ -151,6 +158,10 @@ public partial class GroupEditViewModel : BaseViewModel
             Description = result.Value.Description;
             Number = result.Value.Number;
             _isLoaded = true;
+
+            // The DTC's current Feeder and AB Switches are shown and can be changed.
+            ShowStructure = true;
+            await LoadStructureAsync(GroupId);
         }
         finally
         {
@@ -159,7 +170,7 @@ public partial class GroupEditViewModel : BaseViewModel
     }
 
     // The super communities and communities for the two optional drop-downs. A failure here never blocks creating the group.
-    private async Task LoadStructureAsync()
+    private async Task LoadStructureAsync(string? groupId = null)
     {
         StructureNote = null;
 
@@ -167,7 +178,9 @@ public partial class GroupEditViewModel : BaseViewModel
         OperationResult<List<Community>> communities = await _communityService.GetAllCommunitiesAsync();
         if (!supers.IsSuccess || !communities.IsSuccess || supers.Value == null || communities.Value == null)
         {
-            StructureNote = "Feeders and AB Switches could not be loaded. You can still create the DTC without them.";
+            StructureNote = groupId == null
+                ? "Feeders and AB Switches could not be loaded. You can still create the DTC without them."
+                : "Feeders and AB Switches could not be loaded. You can still save the DTC; its Feeder and AB Switches stay as they are.";
             return;
         }
 
@@ -180,8 +193,59 @@ public partial class GroupEditViewModel : BaseViewModel
             names.Add(_supers[i].Name);
         }
 
+        _structureLoaded = true;
         SuperNames = names;
-        SuperIndex = 0;
+
+        if (groupId == null)
+        {
+            SuperIndex = 0;
+            return;
+        }
+
+        // Editing: select the Feeder the DTC is in and tick its AB Switches under that Feeder.
+        int feederIndex = 0;
+        HashSet<string> feederIds = new HashSet<string>();
+        for (int i = 0; i < _communities.Count; i++)
+        {
+            if (!string.IsNullOrEmpty(_communities[i].SuperCommunityId) && _communities[i].GroupIds.Contains(groupId))
+            {
+                feederIds.Add(_communities[i].SuperCommunityId);
+            }
+        }
+
+        for (int i = 0; i < _supers.Count; i++)
+        {
+            if (feederIds.Contains(_supers[i].Id))
+            {
+                feederIndex = i + 1;
+                break;
+            }
+        }
+
+        if (feederIds.Count > 1)
+        {
+            StructureNote = "This DTC is in AB Switches of more than one Feeder. Saving keeps only the AB Switches ticked here.";
+        }
+
+        if (feederIndex > 0)
+        {
+            string chosenFeeder = _supers[feederIndex - 1].Id;
+            HashSet<string> ticks = new HashSet<string>();
+            for (int i = 0; i < _communities.Count; i++)
+            {
+                if (_communities[i].SuperCommunityId == chosenFeeder && _communities[i].GroupIds.Contains(groupId))
+                {
+                    ticks.Add(_communities[i].Id);
+                }
+            }
+
+            _initialTicks = ticks;
+            SuperIndex = feederIndex;
+        }
+        else
+        {
+            SuperIndex = 0;
+        }
     }
 
     // Choosing another super community clears the communities that were ticked under the old one.
@@ -209,10 +273,13 @@ public partial class GroupEditViewModel : BaseViewModel
             if (_communities[i].SuperCommunityId == superId)
             {
                 AbSwitchPickItem item = AbSwitchPickItem.FromCommunity(_communities[i]);
+                item.IsOn = _initialTicks != null && _initialTicks.Contains(item.Id);
                 item.PropertyChanged += OnCommunityOptionChanged;
                 CommunityOptions.Add(item);
             }
         }
+
+        _initialTicks = null;
 
         ShowCommunities = true;
         HasNoCommunityOptions = CommunityOptions.Count == 0;
@@ -270,11 +337,38 @@ public partial class GroupEditViewModel : BaseViewModel
         {
             if (IsEditing)
             {
-                OperationResult updated = await _groupService.UpdateGroupAsync(GroupId!, Name, Description, Number);
-                if (!updated.IsSuccess)
+                if (_structureLoaded)
                 {
-                    ErrorMessage = updated.ErrorMessage;
-                    return;
+                    // Details and placement: the ticked AB Switches (under the chosen Feeder) are where the DTC will be.
+                    List<string> ticked = new List<string>();
+                    foreach (AbSwitchPickItem item in CommunityOptions)
+                    {
+                        if (item.IsOn)
+                        {
+                            ticked.Add(item.Id);
+                        }
+                    }
+
+                    OperationResult<string?> updatedWithPlacement = await _groupService.UpdateGroupAsync(GroupId!, Name, Description, Number, ticked);
+                    if (!updatedWithPlacement.IsSuccess)
+                    {
+                        ErrorMessage = updatedWithPlacement.ErrorMessage;
+                        return;
+                    }
+
+                    if (!string.IsNullOrEmpty(updatedWithPlacement.Value))
+                    {
+                        _toasts.Show(updatedWithPlacement.Value);
+                    }
+                }
+                else
+                {
+                    OperationResult updated = await _groupService.UpdateGroupAsync(GroupId!, Name, Description, Number);
+                    if (!updated.IsSuccess)
+                    {
+                        ErrorMessage = updated.ErrorMessage;
+                        return;
+                    }
                 }
             }
             else

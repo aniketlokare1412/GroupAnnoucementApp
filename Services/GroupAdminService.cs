@@ -412,6 +412,129 @@ public class GroupAdminService : IGroupAdminService
 
     // Names must be unique across ALL groups (active and inactive), ignoring upper/lower case.
     // excludeId is the group being edited, so it does not clash with itself.
+    // Edit with placement: saves the details and moves the DTC between AB Switches (so between Feeders).
+    public async Task<OperationResult<string?>> UpdateGroupAsync(string id, string name, string description, string number, List<string> communityIds)
+    {
+        string cleanName = (name ?? string.Empty).Trim();
+        string cleanDescription = (description ?? string.Empty).Trim();
+        string cleanNumber = (number ?? string.Empty).Trim();
+
+        string? problem = CheckCanModify();
+        if (problem == null && string.IsNullOrEmpty(id))
+        {
+            problem = "Unknown DTC.";
+        }
+        if (problem == null)
+        {
+            problem = ValidateText(cleanName, cleanDescription) ?? ValidateNumber(cleanNumber);
+        }
+        if (problem != null)
+        {
+            return OperationResult<string?>.Fail(problem);
+        }
+
+        try
+        {
+            List<AnnouncementGroup> existing = await WithTimeoutAsync(_groupRepository.GetAllAsync());
+            if (FindById(existing, id) == null)
+            {
+                return OperationResult<string?>.Fail("This DTC no longer exists.");
+            }
+
+            List<Community> allCommunities = await WithTimeoutAsync(_communityRepository.GetAllAsync());
+
+            List<string> wanted = new List<string>();
+            for (int i = 0; i < communityIds.Count; i++)
+            {
+                if (!string.IsNullOrEmpty(communityIds[i]) && !wanted.Contains(communityIds[i]))
+                {
+                    wanted.Add(communityIds[i]);
+                }
+            }
+
+            // The number is unique everywhere. The name only has to be unique inside the Feeder the DTC is moving to.
+            HashSet<string> feeders = FeedersOfCommunities(allCommunities, wanted);
+            problem = CheckDuplicateName(existing, allCommunities, cleanName, feeders, id) ?? CheckDuplicateNumber(existing, cleanNumber, id);
+            if (problem != null)
+            {
+                return OperationResult<string?>.Fail(problem);
+            }
+
+            await WithTimeoutAsync(_groupRepository.UpdateDetailsAsync(id, cleanName, cleanDescription, cleanNumber));
+
+            // The DTC is saved. Moving it between AB Switches is the second step: if one fails, the admin is told which.
+            string? warning = await MoveBetweenCommunitiesAsync(id, wanted, allCommunities);
+
+            await _directory.TryRebuildAsync();
+            return OperationResult<string?>.Success(warning);
+        }
+        catch (TimeoutException)
+        {
+            return OperationResult<string?>.Fail("The request is taking too long. Check the DTCs list to see the current details.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("UPDATE GROUP (PLACEMENT) ERROR: " + ex);
+            return OperationResult<string?>.Fail(MapError(ex, "We could not save the DTC. Please try again."));
+        }
+    }
+
+    // Adds the DTC to the AB Switches it should be in and removes it from the ones it should not be in.
+    // AB Switches without a Feeder are never touched. Returns null, or a sentence naming the AB Switches that failed.
+    private async Task<string?> MoveBetweenCommunitiesAsync(string groupId, List<string> wanted, List<Community> all)
+    {
+        List<string> failed = new List<string>();
+        for (int i = 0; i < all.Count; i++)
+        {
+            Community community = all[i];
+            if (string.IsNullOrEmpty(community.SuperCommunityId))
+            {
+                continue;
+            }
+
+            bool isIn = community.GroupIds.Contains(groupId);
+            bool shouldBeIn = wanted.Contains(community.Id);
+            if (isIn == shouldBeIn)
+            {
+                continue;
+            }
+
+            try
+            {
+                List<string> groupIds = new List<string>(community.GroupIds);
+                if (shouldBeIn)
+                {
+                    // The rules allow at most 500 DTCs in one AB Switch.
+                    if (groupIds.Count >= 500)
+                    {
+                        failed.Add(community.Name);
+                        continue;
+                    }
+
+                    groupIds.Add(groupId);
+                }
+                else
+                {
+                    groupIds.Remove(groupId);
+                }
+
+                await WithTimeoutAsync(_communityRepository.UpdateAsync(community.Id, community.Name, community.Description, community.Number, groupIds, community.SuperCommunityId));
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine("MOVE GROUP BETWEEN COMMUNITIES ERROR: " + ex);
+                failed.Add(community.Name);
+            }
+        }
+
+        if (failed.Count == 0)
+        {
+            return null;
+        }
+
+        return "The DTC was saved, but these AB Switches could not be updated: " + string.Join(", ", failed) + ". Open them and check.";
+    }
+
     // The Feeders a DTC sits under: the Feeder of every AB Switch that contains it. Empty = no Feeder.
     private static HashSet<string> FeedersOfGroup(List<Community> communities, string groupId)
     {

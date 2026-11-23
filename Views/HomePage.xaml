@@ -74,6 +74,10 @@
                                                     <VerticalStackLayout Spacing="4">
                                                         <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" IsVisible="{Binding HasTitle}" />
                                                         <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                                        <VerticalStackLayout Spacing="0" IsVisible="{Binding HasPublishedBy}">
+                                                            <Label Style="{StaticResource Caption}" Text="{Binding PublishedByText}" />
+                                                            <Label Style="{StaticResource Caption}" Text="{Binding PublishedByDetails}" IsVisible="{Binding HasPublishedByDetails}" />
+                                                        </VerticalStackLayout>
                                                     </VerticalStackLayout>
                                                     <Image
                                                         Source="{Binding Image}"
@@ -315,6 +319,18 @@
                                                     <Border Style="{StaticResource BadgeNeutral}" IsVisible="{Binding IsInactive}">
                                                         <Label Style="{StaticResource BadgeNeutralText}" Text="Inactive" />
                                                     </Border>
+                                                    <!-- Reports made on the 5-minute notice: the admin clears them after seeing them -->
+                                                    <HorizontalStackLayout Spacing="8" IsVisible="{Binding HasNoticePanics}">
+                                                        <Border Style="{StaticResource BadgeDanger}">
+                                                            <Label Style="{StaticResource BadgeDangerText}" Text="{Binding NoticePanicText}" />
+                                                        </Border>
+                                                        <Button
+                                                            Style="{StaticResource LinkButtonBlue}"
+                                                            Text="Clear"
+                                                            Command="{Binding ClearNoticeCommand}"
+                                                            VerticalOptions="Center"
+                                                            SemanticProperties.Hint="Removes the panic reports made on the 5-minute notice" />
+                                                    </HorizontalStackLayout>
                                                 </VerticalStackLayout>
                                                 <Label
                                                     Grid.Column="2"
