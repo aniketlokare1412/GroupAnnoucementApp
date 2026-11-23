@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:GroupAnnouncementApp.ViewModels"
+    xmlns:h="clr-namespace:GroupAnnouncementApp.Helpers"
+    x:Class="GroupAnnouncementApp.Views.AdminRequestFormPage"
+    x:DataType="vm:AdminRequestFormViewModel"
+    Title="Request admin access">
+
+    <!-- A member fills in these details, then the request is sent. Everything is required except the ID card photo.
+         Cancel = the back arrow. -->
+    <Grid RowDefinitions="*,Auto">
+
+        <ScrollView Grid.Row="0">
+            <VerticalStackLayout Padding="16,12,16,12" Spacing="18">
+
+                <Label Style="{StaticResource Caption}" Text="Fill in your details. An administrator will review them before approving. Letters, numbers and spaces only." />
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Name" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Your full name"
+                            ReturnType="Next"
+                            Text="{Binding Name}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Name" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Designation" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Picker
+                            Title="Choose your designation"
+                            ItemsSource="{Binding Designations}"
+                            SelectedIndex="{Binding DesignationIndex}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Designation"
+                            SemanticProperties.Hint="Choose one" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="CPF Number" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="CPF number"
+                            ReturnType="Next"
+                            Text="{Binding CpfNumber}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="CPF Number" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Division" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Division"
+                            ReturnType="Next"
+                            Text="{Binding Division}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Division" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Sub Division" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Sub division"
+                            ReturnType="Next"
+                            Text="{Binding SubDivision}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Sub Division" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Section" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Section"
+                            ReturnType="Next"
+                            Text="{Binding Section}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Section" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="Sub Station Code" />
+                    <Border Style="{StaticResource FieldBorder}">
+                        <Entry
+                            Placeholder="Sub station code"
+                            ReturnType="Done"
+                            Text="{Binding SubStationCode}"
+                            MaxLength="{Binding MaxTextLength}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Sub Station Code" />
+                    </Border>
+                </VerticalStackLayout>
+
+                <!-- Optional ID card photo: JPEG or PNG -->
+                <VerticalStackLayout Spacing="6">
+                    <Label Style="{StaticResource FieldLabel}" Text="ID card photo (optional)" />
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8">
+                        <Button
+                            Grid.Column="0"
+                            Style="{StaticResource IconButton}"
+                            Text="{x:Static h:Icons.AttachFile}"
+                            Command="{Binding PickIdCardCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Add an ID card photo"
+                            SemanticProperties.Hint="Optional. A JPEG or PNG photo" />
+                        <Label
+                            Grid.Column="1"
+                            Style="{StaticResource Caption}"
+                            Text="{Binding IdCardSummary}"
+                            VerticalOptions="Center"
+                            LineBreakMode="MiddleTruncation"
+                            MaxLines="1" />
+                        <Button
+                            Grid.Column="2"
+                            Style="{StaticResource IconButtonPlain}"
+                            Text="{x:Static h:Icons.Close}"
+                            Command="{Binding ClearIdCardCommand}"
+                            IsVisible="{Binding HasIdCard}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            SemanticProperties.Description="Remove the ID card photo" />
+                    </Grid>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+
+        <VerticalStackLayout Grid.Row="1" Spacing="0">
+            <BoxView Style="{StaticResource Hairline}" />
+            <VerticalStackLayout Padding="16,8,16,12" Spacing="8">
+                <Border Style="{StaticResource ErrorBanner}" IsVisible="{Binding HasError}">
+                    <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
+                </Border>
+                <Button
+                    Style="{StaticResource PillBlue}"
+                    Text="Send request"
+                    Command="{Binding SendCommand}"
+                    IsEnabled="{Binding IsNotBusy}"
+                    HorizontalOptions="Fill" />
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+
+        <ActivityIndicator
+            Grid.Row="0"
+            IsRunning="{Binding IsBusy}"
+            IsVisible="{Binding IsBusy}"
+            HorizontalOptions="Center"
+            VerticalOptions="Start"
+            Margin="0,48,0,0" />
+
+    </Grid>
+</ContentPage>

@@ -13,6 +13,7 @@ public partial class AppShell : Shell
     {
         Routing.RegisterRoute(Routes.Account, typeof(AccountPage));
         Routing.RegisterRoute(Routes.AdminRequests, typeof(AdminRequestsPage));
+        Routing.RegisterRoute(Routes.AdminRequestForm, typeof(AdminRequestFormPage));
         Routing.RegisterRoute(Routes.OutageEdit, typeof(OutageEditPage));
         Routing.RegisterRoute(Routes.GroupEdit, typeof(GroupEditPage));
         Routing.RegisterRoute(Routes.CommunityEdit, typeof(CommunityEditPage));

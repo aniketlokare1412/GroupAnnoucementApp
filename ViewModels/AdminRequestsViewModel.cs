@@ -73,7 +73,7 @@ public partial class AdminRequestsViewModel : BaseViewModel
             Items.Clear();
             for (int i = 0; i < list.Count; i++)
             {
-                Items.Add(AdminRequestItem.From(list[i], ApproveAsync, DeclineAsync));
+                Items.Add(AdminRequestItem.From(list[i], ApproveAsync, DeclineAsync, ViewIdCardAsync));
             }
 
             _hasLoaded = true;
@@ -100,6 +100,25 @@ public partial class AdminRequestsViewModel : BaseViewModel
         }
     }
 
+    // Saves the ID card photo to the phone's cache and opens it with a viewer app.
+    private async Task ViewIdCardAsync(AdminRequestItem item)
+    {
+        try
+        {
+            byte[] bytes = Convert.FromBase64String(item.IdCardData);
+            string name = string.IsNullOrEmpty(item.IdCardName) ? "id-card.jpg" : item.IdCardName;
+            string path = Path.Combine(FileSystem.CacheDirectory, AttachmentLimits.SafeFileName(name));
+            await System.IO.File.WriteAllBytesAsync(path, bytes);
+            string type = string.IsNullOrEmpty(item.IdCardContentType) ? "image/jpeg" : item.IdCardContentType;
+            await Launcher.Default.OpenAsync(new OpenFileRequest(name, new ReadOnlyFile(path, type)));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("OPEN ID CARD ERROR: " + ex);
+            ErrorMessage = "We could not open the ID card photo.";
+        }
+    }
+
     private Task ApproveAsync(AdminRequestItem item)
     {
         return DecideAsync(item, true);
@@ -119,8 +138,8 @@ public partial class AdminRequestsViewModel : BaseViewModel
 
         string title = approve ? "Make administrator" : "Decline request";
         string message = approve
-            ? "Make " + item.Phone + " an administrator? Administrators can manage users, DTCs and announcements."
-            : "Decline the request from " + item.Phone + "?";
+            ? "Make " + item.DisplayName + " an administrator? Administrators can manage users, DTCs and announcements."
+            : "Decline the request from " + item.DisplayName + "?";
 
         bool confirmed = await _dialogs.ConfirmAsync(title, message, approve ? "Approve" : "Decline", "Cancel");
         if (!confirmed)
@@ -142,7 +161,7 @@ public partial class AdminRequestsViewModel : BaseViewModel
                 return;
             }
 
-            _toasts.Show(approve ? item.Phone + " is now an administrator" : "Request declined");
+            _toasts.Show(approve ? item.DisplayName + " is now an administrator" : "Request declined");
         }
         finally
         {

@@ -25,6 +25,9 @@ public interface IGroupStatsService
     // A member pressed the panic button on this announcement (or on the notice, id "notice"): adds 1 to the counter.
     Task PanicPressedAsync(string groupId, string announcementId);
 
+    // The admin cleared the reports made on the 5-minute notice: that counter goes back to 0.
+    Task NoticeClearedAsync(string groupId);
+
     // A group without a stats document: works it out the old way (announcements + press documents), saves it
     // for next time and returns it. Null when that failed.
     Task<GroupStatsDocument?> RepairGroupAsync(string groupId);

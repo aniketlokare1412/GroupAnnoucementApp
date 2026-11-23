@@ -10,8 +10,8 @@ public interface IAdminRequestService
     // Member: true when this person already has an open request.
     Task<OperationResult<bool>> HasPendingRequestAsync();
 
-    // Member: sends the request (does nothing if one is already open).
-    Task<OperationResult> RequestAsync();
+    // Member: sends the request with the details from the form (does nothing if one is already open).
+    Task<OperationResult> RequestAsync(AdminRequestDetails details);
 
     // Admin: open requests, oldest first.
     Task<OperationResult<List<AdminRequest>>> GetPendingAsync();

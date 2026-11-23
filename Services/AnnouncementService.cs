@@ -20,6 +20,7 @@ public class AnnouncementService : IAnnouncementService
     private readonly IGroupStatsService _stats;
     private readonly IFirestoreBatchFactory _batches;
     private readonly IAdminStatsWatcher _watcher;
+    private readonly IAdminProfileRepository _adminProfiles;
 
     public AnnouncementService(
         ISessionService session,
@@ -31,8 +32,10 @@ public class AnnouncementService : IAnnouncementService
         IFeedService feed,
         IGroupStatsService stats,
         IFirestoreBatchFactory batches,
-        IAdminStatsWatcher watcher)
+        IAdminStatsWatcher watcher,
+        IAdminProfileRepository adminProfiles)
     {
+        _adminProfiles = adminProfiles;
         _batches = batches;
         _watcher = watcher;
         _feed = feed;
@@ -192,6 +195,7 @@ public class AnnouncementService : IAnnouncementService
             // Phase 4: a file is stored ONCE for the whole broadcast (every group's announcement points at it).
             PostSettings settings = new PostSettings();
             settings.Uid = uid;
+            await FillAuthorAsync(settings, uid);
             settings.BatchId = batchId;
             settings.Title = cleanTitle;
             settings.Message = cleanMessage;
@@ -458,6 +462,8 @@ public class AnnouncementService : IAnnouncementService
     private sealed class PostSettings
     {
         public string Uid = string.Empty;
+        public string ByName = string.Empty;
+        public string ByDetails = string.Empty;
         public string BatchId = string.Empty;
         public string Title = string.Empty;
         public string Message = string.Empty;
@@ -477,6 +483,35 @@ public class AnnouncementService : IAnnouncementService
         public string? Error;
     }
 
+    // The publisher's name and details, saved on every announcement of this post. A failure never blocks the post.
+    private async Task FillAuthorAsync(PostSettings settings, string uid)
+    {
+        string name = _session.CurrentProfile?.Name ?? string.Empty;
+        string details = string.Empty;
+        try
+        {
+            AdminProfile? profile = await ServiceHelper.WithTimeoutAsync(_adminProfiles.GetAsync(uid));
+            if (profile != null)
+            {
+                if (!string.IsNullOrWhiteSpace(profile.Name))
+                {
+                    name = profile.Name;
+                }
+
+                details = AdminAuthorText.Details(profile);
+            }
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("LOAD ADMIN PROFILE ERROR: " + ex);
+        }
+
+        // A phone number is not a name: the "Published by" line is left out instead.
+        name = NameHelper.LooksLikePhone(name) ? string.Empty : name.Trim();
+        settings.ByName = name.Length > AdminAuthorText.MaxNameLength ? name.Substring(0, AdminAuthorText.MaxNameLength) : name;
+        settings.ByDetails = details;
+    }
+
     private static Announcement BuildAnnouncement(string groupId, string announcementId, PostSettings s)
     {
         Announcement announcement = new Announcement();
@@ -488,6 +523,8 @@ public class AnnouncementService : IAnnouncementService
         announcement.IsActive = true;
         announcement.IsEdited = false;
         announcement.CreatedBy = s.Uid;
+        announcement.CreatedByName = s.ByName;
+        announcement.CreatedByDetails = s.ByDetails;
         announcement.Status = AnnouncementStatus.Active;
         announcement.ResolveMinutes = s.ResolveMinutes;
         announcement.SharedFileId = s.SharedFileId;

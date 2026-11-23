@@ -125,6 +125,9 @@
 		<MauiXaml Update="Views\AddMembersPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Views\AdminRequestFormPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Views\AdminRequestsPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -188,6 +191,12 @@
 		<None Update="Views\AccountPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>
+		<None Update="Views\AdminRequestFormPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
+		<None Update="Views\AdminRequestsPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
 		<None Update="Views\AnnouncementEditPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>
@@ -195,6 +204,9 @@
 			<Generator>MSBuild:Compile</Generator>
 		</None>
 		<None Update="Views\AudiencePickerPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
+		<None Update="Views\GroupEditPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</None>
 		<None Update="Views\HomePage.xaml">

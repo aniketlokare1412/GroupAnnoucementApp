@@ -30,7 +30,7 @@ public sealed class UserListItem
 
     public bool HasPhone
     {
-        get { return !string.IsNullOrWhiteSpace(Phone); }
+        get { return !string.IsNullOrWhiteSpace(Phone) && Phone != Name; }
     }
 
     // Admins cannot change their own role or status, so their own card has no action buttons.
@@ -115,16 +115,23 @@ public sealed class UserListItem
         item.IsAdmin = string.Equals(profile.UserType, UserTypes.Admin, StringComparison.Ordinal);
         item.IsSelf = currentUid != null && profile.Id == currentUid;
 
-        // The list shows phone numbers only (older accounts without one fall back to the name).
-        if (!string.IsNullOrWhiteSpace(profile.Phone))
+        // The name is the title and the phone number is its own line. An account with no name falls back to the phone, then the email.
+        if (!string.IsNullOrWhiteSpace(profile.Name))
         {
-            item.Name = profile.Phone;
-            string digits = PhoneLogin.Normalize(profile.Phone);
+            item.Name = profile.Name;
+        }
+        else
+        {
+            item.Name = !string.IsNullOrWhiteSpace(profile.Phone) ? profile.Phone : profile.Email;
+        }
+
+        if (NameHelper.LooksLikePhone(item.Name))
+        {
+            string digits = PhoneLogin.Normalize(item.Name);
             item.Initials = digits.Length >= 2 ? digits.Substring(digits.Length - 2) : "#";
         }
         else
         {
-            item.Name = string.IsNullOrWhiteSpace(profile.Name) ? profile.Email : profile.Name;
             item.Initials = InitialsHelper.From(item.Name);
         }
 

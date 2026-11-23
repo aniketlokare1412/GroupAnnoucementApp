@@ -88,6 +88,22 @@ public class GroupStatsService : IGroupStatsService
         }
     }
 
+    public async Task NoticeClearedAsync(string groupId)
+    {
+        try
+        {
+            await ServiceHelper.WithTimeoutAsync(_stats.UpdateAsync(groupId, ("noticePanicCount", (object?)0)));
+        }
+        catch (Exception ex) when (IsNotFound(ex))
+        {
+            await RepairGroupAsync(groupId);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("STATS NOTICE CLEARED ERROR: " + ex);
+        }
+    }
+
     public async Task PanicPressedAsync(string groupId, string announcementId)
     {
         try

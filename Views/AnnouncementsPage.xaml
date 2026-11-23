@@ -60,7 +60,17 @@
 
                 <!-- Admin: panic reports made on the 5-minute notice (after the work was completed or its time was up) -->
                 <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding HasNoticePanics}" Padding="12,8">
-                    <Label Style="{StaticResource BadgeDangerText}" Text="{Binding NoticePanicText}" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
+                        <Label Grid.Column="0" Style="{StaticResource BadgeDangerText}" Text="{Binding NoticePanicText}" VerticalOptions="Center" />
+                        <Button
+                            Grid.Column="1"
+                            Style="{StaticResource LinkButtonBlue}"
+                            Text="Clear"
+                            Command="{Binding ClearNoticePanicsCommand}"
+                            IsEnabled="{Binding IsNotBusy}"
+                            VerticalOptions="Center"
+                            SemanticProperties.Hint="Removes the panic reports made on the 5-minute notice" />
+                    </Grid>
                 </Border>
 
                 <!-- Admin: the planned outage (or its cancellation), next to the regular messages.
@@ -159,6 +169,10 @@
                                             <VerticalStackLayout Spacing="4">
                                                 <Label Style="{StaticResource AnnouncementTitle}" Text="{Binding Title}" />
                                                 <Label Style="{StaticResource BodyText}" Text="{Binding Message}" />
+                                                <VerticalStackLayout Spacing="0" IsVisible="{Binding HasPublishedBy}">
+                                                    <Label Style="{StaticResource Caption}" Text="{Binding PublishedByText}" />
+                                                    <Label Style="{StaticResource Caption}" Text="{Binding PublishedByDetails}" IsVisible="{Binding HasPublishedByDetails}" />
+                                                </VerticalStackLayout>
                                             </VerticalStackLayout>
                                             <Image
                                                 Source="{Binding Image}"

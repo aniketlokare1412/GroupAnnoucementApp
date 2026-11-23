@@ -191,6 +191,36 @@ public partial class AnnouncementsViewModel : BaseViewModel
         }
     }
 
+    // Admin: removes the reports made on the 5-minute notice of this DTC, after the admin has seen them.
+    [RelayCommand]
+    private async Task ClearNoticePanicsAsync()
+    {
+        if (!IsAdminView || string.IsNullOrEmpty(GroupId) || IsBusy)
+        {
+            return;
+        }
+
+        bool confirmed = await _dialogs.ConfirmAsync(
+            "Clear notice reports",
+            "Remove the panic reports made on the 5-minute notice? Do this after you have seen them.",
+            "Clear",
+            "Cancel");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        OperationResult result = await _panicService.ClearNoticeReportsAsync(GroupId);
+        if (!result.IsSuccess)
+        {
+            ErrorMessage = result.ErrorMessage;
+            return;
+        }
+
+        _toasts.Show("Notice reports cleared");
+        await LoadNoticePanicsAsync();
+    }
+
     [RelayCommand]
     private async Task RefreshAsync()
     {
@@ -315,8 +345,13 @@ public partial class AnnouncementsViewModel : BaseViewModel
     [RelayCommand]
     private Task NewAsync()
     {
-        // Even from one group's page the admin first chooses the audience (here: one group), then writes the post.
-        return _audiencePicker.StartAsync(Routes.AnnouncementEdit);
+        // From one DTC's own page the DTC is already known: the post form opens with that DTC chosen and goes only to it.
+        if (string.IsNullOrEmpty(GroupId))
+        {
+            return _audiencePicker.StartAsync(Routes.AnnouncementEdit);
+        }
+
+        return _navigation.GoToAsync(BuildEditRoute(GroupId, GroupName, null));
     }
 
     private Task EditItemAsync(AnnouncementListItem item)

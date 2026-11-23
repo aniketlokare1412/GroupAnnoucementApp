@@ -12,14 +12,17 @@ public class AdminRequestService : IAdminRequestService
     private readonly IUserListCache _userCache;
     private readonly IAdminRequestRepository _requestRepository;
     private readonly IUserRepository _userRepository;
+    private readonly IAdminProfileRepository _adminProfiles;
 
     public AdminRequestService(
         ISessionService session,
         IAuthService authService,
         IAdminRequestRepository requestRepository,
         IUserRepository userRepository,
-        IUserListCache userCache)
+        IUserListCache userCache,
+        IAdminProfileRepository adminProfiles)
     {
+        _adminProfiles = adminProfiles;
         _userCache = userCache;
         _session = session;
         _authService = authService;
@@ -47,7 +50,7 @@ public class AdminRequestService : IAdminRequestService
         }
     }
 
-    public async Task<OperationResult> RequestAsync()
+    public async Task<OperationResult> RequestAsync(AdminRequestDetails details)
     {
         string? uid = _authService.GetCurrentUserId();
         UserProfile? profile = _session.CurrentProfile;
@@ -61,6 +64,46 @@ public class AdminRequestService : IAdminRequestService
             return OperationResult.Fail("You are already an administrator.");
         }
 
+        string name = (details.Name ?? string.Empty).Trim();
+        string designation = (details.Designation ?? string.Empty).Trim();
+        string cpf = (details.CpfNumber ?? string.Empty).Trim();
+        string division = (details.Division ?? string.Empty).Trim();
+        string subDivision = (details.SubDivision ?? string.Empty).Trim();
+        string section = (details.Section ?? string.Empty).Trim();
+        string subStation = (details.SubStationCode ?? string.Empty).Trim();
+
+        // All fields are required; the only rule is no special characters (spaces are fine).
+        string? problem = AdminRequestLimits.CheckText("your name", name);
+        if (problem == null && !AdminRequestLimits.IsValidDesignation(designation))
+        {
+            problem = "Choose your designation.";
+        }
+
+        problem = problem
+            ?? AdminRequestLimits.CheckText("your CPF number", cpf)
+            ?? AdminRequestLimits.CheckText("your division", division)
+            ?? AdminRequestLimits.CheckText("your sub division", subDivision)
+            ?? AdminRequestLimits.CheckText("your section", section)
+            ?? AdminRequestLimits.CheckText("your sub station code", subStation);
+
+        if (problem == null && details.IdCard != null)
+        {
+            string type = details.IdCard.ContentType;
+            if (type != "image/jpeg" && type != "image/png")
+            {
+                problem = "The ID card photo must be a JPEG or PNG image.";
+            }
+            else if (details.IdCard.Bytes.Length > AttachmentLimits.MaxBytes)
+            {
+                problem = "The ID card photo is too large. Please choose a smaller one.";
+            }
+        }
+
+        if (problem != null)
+        {
+            return OperationResult.Fail(problem);
+        }
+
         try
         {
             AdminRequest? existing = await ServiceHelper.WithTimeoutAsync(_requestRepository.GetByIdAsync(uid));
@@ -72,6 +115,20 @@ public class AdminRequestService : IAdminRequestService
             AdminRequest request = new AdminRequest();
             request.UserId = uid;
             request.Phone = profile.Phone;
+            request.Name = name;
+            request.Designation = designation;
+            request.CpfNumber = cpf;
+            request.Division = division;
+            request.SubDivision = subDivision;
+            request.Section = section;
+            request.SubStationCode = subStation;
+            if (details.IdCard != null)
+            {
+                request.IdCardName = details.IdCard.FileName;
+                request.IdCardContentType = details.IdCard.ContentType;
+                request.IdCardData = details.IdCard.Base64;
+            }
+
             await ServiceHelper.WithTimeoutAsync(_requestRepository.CreateAsync(uid, request));
             return OperationResult.Success();
         }
@@ -102,6 +159,34 @@ public class AdminRequestService : IAdminRequestService
         }
     }
 
+    // Copies the request's details to adminProfiles/{uid}. Never blocks the approval: an admin without details shows a name only.
+    private async Task SaveAdminProfileAsync(string uid)
+    {
+        try
+        {
+            AdminRequest? request = await ServiceHelper.WithTimeoutAsync(_requestRepository.GetByIdAsync(uid));
+            if (request == null || string.IsNullOrWhiteSpace(request.Designation))
+            {
+                return;
+            }
+
+            AdminProfile profile = new AdminProfile();
+            profile.Id = uid;
+            profile.Name = request.Name;
+            profile.Designation = request.Designation;
+            profile.CpfNumber = request.CpfNumber;
+            profile.Division = request.Division;
+            profile.SubDivision = request.SubDivision;
+            profile.Section = request.Section;
+            profile.SubStationCode = request.SubStationCode;
+            await ServiceHelper.WithTimeoutAsync(_adminProfiles.SetAsync(uid, profile));
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine("SAVE ADMIN PROFILE ERROR: " + ex);
+        }
+    }
+
     public async Task<OperationResult> ApproveAsync(string uid)
     {
         if (!_session.IsAdmin)
@@ -113,6 +198,9 @@ public class AdminRequestService : IAdminRequestService
         {
             return OperationResult.Fail("This request cannot be approved.");
         }
+
+        // The details from the form are kept as the admin's profile (shown with the messages they publish).
+        await SaveAdminProfileAsync(uid);
 
         try
         {

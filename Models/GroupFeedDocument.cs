@@ -52,6 +52,13 @@ public sealed class GroupFeedDocument : IFirestoreObject
     [FirestoreProperty("aEdited")]
     public bool IsEdited { get; set; }
 
+    // "Published by ..." of the latest announcement.
+    [FirestoreProperty("aByName")]
+    public string ByName { get; set; } = string.Empty;
+
+    [FirestoreProperty("aByDetails")]
+    public string ByDetails { get; set; } = string.Empty;
+
     // Server time of the post. Written only when the whole document is written (a post or a rebuild),
     // never by the field updates for edit / complete / outage.
     [FirestoreServerTimestamp("aAt")]
@@ -107,6 +114,8 @@ public sealed class GroupFeedDocument : IFirestoreObject
         announcement.SharedFileId = SharedFileId;
         announcement.IsActive = true;
         announcement.IsEdited = IsEdited;
+        announcement.CreatedByName = ByName;
+        announcement.CreatedByDetails = ByDetails;
         announcement.CreatedAt = PostedAtMs > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(PostedAtMs) : PostedAt;
         return announcement;
     }
@@ -163,6 +172,8 @@ public sealed class GroupFeedDocument : IFirestoreObject
             feed.AttachmentKind = announcement.AttachmentKind;
             feed.SharedFileId = announcement.SharedFileId;
             feed.IsEdited = announcement.IsEdited;
+            feed.ByName = announcement.CreatedByName;
+            feed.ByDetails = announcement.CreatedByDetails;
             feed.PostedAtMs = announcement.CreatedAt == default ? 0 : announcement.CreatedAt.ToUnixTimeMilliseconds();
         }
 

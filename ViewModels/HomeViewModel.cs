@@ -787,9 +787,11 @@ public partial class HomeViewModel : BaseViewModel
     private void ApplyAdminList(List<AnnouncementGroup> groups, Dictionary<string, GroupActivity> activity)
     {
         Dictionary<string, int> panicCounts = new Dictionary<string, int>();
+        Dictionary<string, int> noticeCounts = new Dictionary<string, int>();
         foreach (KeyValuePair<string, GroupActivity> pair in activity)
         {
             panicCounts[pair.Key] = pair.Value.PanicCount;
+            noticeCounts[pair.Key] = pair.Value.NoticePanicCount;
         }
 
         List<AnnouncementGroup> ordered = OrderForAdminHome(groups, activity);
@@ -817,7 +819,7 @@ public partial class HomeViewModel : BaseViewModel
         ViewAllGroupsText = "View all " + ordered.Count + " DTCs";
 
         // Nothing the cards show has changed (the usual case when coming back from another screen): leave them alone.
-        string signature = BuildAdminListSignature(ordered, shown, panicCounts);
+        string signature = BuildAdminListSignature(ordered, shown, panicCounts, noticeCounts);
         if (string.Equals(signature, _adminListSignature, StringComparison.Ordinal) && AdminGroups.Count == shown)
         {
             return;
@@ -828,14 +830,14 @@ public partial class HomeViewModel : BaseViewModel
         List<HomeGroupItem> cards = new List<HomeGroupItem>();
         for (int i = 0; i < shown; i++)
         {
-            cards.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0));
+            cards.Add(HomeGroupItem.FromGroup(ordered[i], OpenAnnouncementsAsync, panicCounts.TryGetValue(ordered[i].Id, out int panics) ? panics : 0, noticeCounts.TryGetValue(ordered[i].Id, out int notices) ? notices : 0, ClearNoticeAsync));
         }
 
         AdminGroups.ReplaceAll(cards);
     }
 
     // Everything a Home group card shows (and its order), as one string.
-    private static string BuildAdminListSignature(List<AnnouncementGroup> ordered, int shown, Dictionary<string, int> panicCounts)
+    private static string BuildAdminListSignature(List<AnnouncementGroup> ordered, int shown, Dictionary<string, int> panicCounts, Dictionary<string, int> noticeCounts)
     {
         System.Text.StringBuilder text = new System.Text.StringBuilder();
         text.Append(ordered.Count).Append('|').Append(shown);
@@ -844,12 +846,15 @@ public partial class HomeViewModel : BaseViewModel
             AnnouncementGroup group = ordered[i];
             int panics;
             panicCounts.TryGetValue(group.Id, out panics);
+            int notices;
+            noticeCounts.TryGetValue(group.Id, out notices);
             text.Append('|').Append(group.Id)
                 .Append('~').Append(group.Name)
                 .Append('~').Append(group.Number)
                 .Append('~').Append(group.Description)
                 .Append('~').Append(group.IsActive ? '1' : '0')
-                .Append('~').Append(panics);
+                .Append('~').Append(panics)
+                .Append('~').Append(notices);
         }
 
         return text.ToString();
@@ -864,6 +869,37 @@ public partial class HomeViewModel : BaseViewModel
 
         _adminHooked = true;
         _statsWatcher.Changed += OnAdminStatsChanged;
+    }
+
+    // Admin: clears the panic reports made on the 5-minute notice of one DTC, after the admin has seen them.
+    private async Task ClearNoticeAsync(HomeGroupItem item)
+    {
+        bool confirmed = await _dialogs.ConfirmAsync(
+            "Clear notice reports",
+            "Remove the panic reports made on the 5-minute notice of " + item.Name + "? Do this after you have seen them.",
+            "Clear",
+            "Cancel");
+        if (!confirmed)
+        {
+            return;
+        }
+
+        OperationResult result = await _panicService.ClearNoticeReportsAsync(item.Id);
+        if (!result.IsSuccess)
+        {
+            ErrorMessage = result.ErrorMessage;
+            return;
+        }
+
+        _toasts.Show("Notice reports cleared");
+        if (_statsWatcher.IsLive)
+        {
+            await ScheduleAdminRebuildAsync();
+        }
+        else
+        {
+            await LoadAdminAsync();
+        }
     }
 
     // Listener callbacks arrive on any thread.
