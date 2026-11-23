@@ -93,58 +93,8 @@ public class GroupAdminService : IGroupAdminService
 
     public async Task<OperationResult> CreateGroupAsync(string name, string description, string number)
     {
-        string cleanName = (name ?? string.Empty).Trim();
-        string cleanDescription = (description ?? string.Empty).Trim();
-        string cleanNumber = (number ?? string.Empty).Trim();
-
-        string? problem = CheckCanModify();
-        if (problem == null)
-        {
-            problem = ValidateText(cleanName, cleanDescription) ?? ValidateNumber(cleanNumber);
-        }
-        if (problem != null)
-        {
-            return OperationResult.Fail(problem);
-        }
-
-        string? uid = _authService.GetCurrentUserId();
-        if (string.IsNullOrEmpty(uid))
-        {
-            return OperationResult.Fail("You are signed out. Please sign in again.");
-        }
-
-        try
-        {
-            // Read the current groups first: needed for the duplicate checks.
-            List<AnnouncementGroup> existing = await WithTimeoutAsync(_groupRepository.GetAllAsync());
-
-            problem = CheckDuplicateName(existing, cleanName, null) ?? CheckDuplicateNumber(existing, cleanNumber, null);
-            if (problem != null)
-            {
-                return OperationResult.Fail(problem);
-            }
-
-            AnnouncementGroup group = new AnnouncementGroup();
-            group.Name = cleanName;
-            group.Description = cleanDescription;
-            group.Number = cleanNumber;
-            group.IsActive = true;
-            group.CreatedBy = uid;
-
-            string id = Guid.NewGuid().ToString("N");
-            await WithTimeoutAsync(_groupRepository.CreateAsync(id, group));
-            await _directory.TryRebuildAsync();
-            return OperationResult.Success();
-        }
-        catch (TimeoutException)
-        {
-            return OperationResult.Fail("The request is taking too long. Check the DTCs list to see whether the DTC was created.");
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine("CREATE GROUP ERROR: " + ex);
-            return OperationResult.Fail(MapError(ex, "We could not create the DTC. Please try again."));
-        }
+        OperationResult<string?> created = await CreateGroupAsync(name, description, number, new List<string>());
+        return created.IsSuccess ? OperationResult.Success() : OperationResult.Fail(created.ErrorMessage ?? "We could not create the DTC. Please try again.");
     }
 
     // Creates the group and, when communities are chosen, adds the new group to each of them.
@@ -173,8 +123,11 @@ public class GroupAdminService : IGroupAdminService
         try
         {
             List<AnnouncementGroup> existing = await WithTimeoutAsync(_groupRepository.GetAllAsync());
+            List<Community> allCommunities = await WithTimeoutAsync(_communityRepository.GetAllAsync());
 
-            problem = CheckDuplicateName(existing, cleanName, null) ?? CheckDuplicateNumber(existing, cleanNumber, null);
+            // The number is unique everywhere. The name only has to be unique inside the same Feeder.
+            HashSet<string> feeders = FeedersOfCommunities(allCommunities, communityIds);
+            problem = CheckDuplicateName(existing, allCommunities, cleanName, feeders, null) ?? CheckDuplicateNumber(existing, cleanNumber, null);
             if (problem != null)
             {
                 return OperationResult<string?>.Fail(problem);
@@ -192,7 +145,7 @@ public class GroupAdminService : IGroupAdminService
 
             // The group exists now. Adding it to the communities is a second step: if it fails the group is kept
             // and the admin is told which communities still need it.
-            string? warning = await AddToCommunitiesAsync(id, communityIds);
+            string? warning = await AddToCommunitiesAsync(id, communityIds, allCommunities);
 
             await _directory.TryRebuildAsync();
             return OperationResult<string?>.Success(warning);
@@ -209,7 +162,7 @@ public class GroupAdminService : IGroupAdminService
     }
 
     // Returns null when every community was updated, otherwise a short sentence naming the ones that were not.
-    private async Task<string?> AddToCommunitiesAsync(string groupId, List<string>? communityIds)
+    private async Task<string?> AddToCommunitiesAsync(string groupId, List<string>? communityIds, List<Community> all)
     {
         List<string> wanted = new List<string>();
         if (communityIds != null)
@@ -229,17 +182,6 @@ public class GroupAdminService : IGroupAdminService
         }
 
         List<string> failed = new List<string>();
-        List<Community> all;
-        try
-        {
-            all = await WithTimeoutAsync(_communityRepository.GetAllAsync());
-        }
-        catch (Exception ex)
-        {
-            System.Diagnostics.Debug.WriteLine("ADD GROUP TO COMMUNITIES (LOAD) ERROR: " + ex);
-            return "The DTC was created, but it could not be added to the AB Switches. Open the AB Switches and add it there.";
-        }
-
         for (int i = 0; i < wanted.Count; i++)
         {
             Community? community = null;
@@ -319,7 +261,10 @@ public class GroupAdminService : IGroupAdminService
                 return OperationResult.Fail("This DTC no longer exists.");
             }
 
-            problem = CheckDuplicateName(existing, cleanName, id) ?? CheckDuplicateNumber(existing, cleanNumber, id);
+            // The name only has to be unique inside the Feeder(s) this DTC sits under (through its AB Switches).
+            List<Community> allCommunities = await WithTimeoutAsync(_communityRepository.GetAllAsync());
+            HashSet<string> feeders = FeedersOfGroup(allCommunities, id);
+            problem = CheckDuplicateName(existing, allCommunities, cleanName, feeders, id) ?? CheckDuplicateNumber(existing, cleanNumber, id);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -467,7 +412,43 @@ public class GroupAdminService : IGroupAdminService
 
     // Names must be unique across ALL groups (active and inactive), ignoring upper/lower case.
     // excludeId is the group being edited, so it does not clash with itself.
-    private static string? CheckDuplicateName(List<AnnouncementGroup> existing, string name, string? excludeId)
+    // The Feeders a DTC sits under: the Feeder of every AB Switch that contains it. Empty = no Feeder.
+    private static HashSet<string> FeedersOfGroup(List<Community> communities, string groupId)
+    {
+        HashSet<string> feeders = new HashSet<string>();
+        for (int i = 0; i < communities.Count; i++)
+        {
+            if (!string.IsNullOrEmpty(communities[i].SuperCommunityId) && communities[i].GroupIds.Contains(groupId))
+            {
+                feeders.Add(communities[i].SuperCommunityId);
+            }
+        }
+
+        return feeders;
+    }
+
+    // The Feeders of the AB Switches a new DTC is being added to.
+    private static HashSet<string> FeedersOfCommunities(List<Community> communities, List<string>? communityIds)
+    {
+        HashSet<string> feeders = new HashSet<string>();
+        if (communityIds == null)
+        {
+            return feeders;
+        }
+
+        for (int i = 0; i < communities.Count; i++)
+        {
+            if (communityIds.Contains(communities[i].Id) && !string.IsNullOrEmpty(communities[i].SuperCommunityId))
+            {
+                feeders.Add(communities[i].SuperCommunityId);
+            }
+        }
+
+        return feeders;
+    }
+
+    // A DTC name may repeat when the DTCs sit under different Feeders. Two DTCs with no Feeder count as the same place.
+    private static string? CheckDuplicateName(List<AnnouncementGroup> existing, List<Community> communities, string name, HashSet<string> feeders, string? excludeId)
     {
         for (int i = 0; i < existing.Count; i++)
         {
@@ -477,9 +458,20 @@ public class GroupAdminService : IGroupAdminService
                 continue;
             }
 
-            if (string.Equals(other.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(other.Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
             {
-                return "A DTC named \"" + other.Name + "\" already exists.";
+                continue;
+            }
+
+            HashSet<string> otherFeeders = FeedersOfGroup(communities, other.Id);
+            if (feeders.Count == 0 && otherFeeders.Count == 0)
+            {
+                return "A DTC named \"" + other.Name + "\" already exists with no Feeder. Choose a Feeder or use another name.";
+            }
+
+            if (feeders.Overlaps(otherFeeders))
+            {
+                return "A DTC named \"" + other.Name + "\" already exists in this Feeder.";
             }
         }
 

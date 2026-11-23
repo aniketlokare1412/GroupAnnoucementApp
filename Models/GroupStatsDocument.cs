@@ -36,10 +36,12 @@ public sealed class GroupStatsDocument : IFirestoreObject
     [FirestoreProperty("version")]
     public int Version { get; set; } = 1;
 
-    // The reports that need attention: on the open message, or on the 5-minute notice (same rule as before Phase 3).
+    // The reports that need attention. An open message counts its own reports PLUS the reports on the 5-minute notice:
+    // once a message has expired the members see the notice instead, and their presses are saved on the notice
+    // (posting a new message clears them). A completed message or no message: the notice reports only.
     public int OpenPanics
     {
-        get { return HasAnnouncement && !IsCompleted ? PanicCount : NoticePanicCount; }
+        get { return HasAnnouncement && !IsCompleted ? PanicCount + NoticePanicCount : NoticePanicCount; }
     }
 
     public GroupActivity ToActivity()

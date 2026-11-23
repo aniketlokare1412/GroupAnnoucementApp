@@ -48,7 +48,7 @@ public partial class OutageEditViewModel : BaseViewModel
     private string _selectedCountText = "No DTCs selected";
 
     [ObservableProperty]
-    private string _audienceCaption = "Choose DTCs or AB Switches below";
+    private string _audienceCaption = "Choose DTCs or Feeders below";
 
     [ObservableProperty]
     private bool _isGroupsOn;
@@ -139,7 +139,7 @@ public partial class OutageEditViewModel : BaseViewModel
         List<string> chosen = new List<string>(_audience.GroupIds);
         if (chosen.Count == 0)
         {
-            ErrorMessage = "Choose who this is for: tap DTCs or AB Switches.";
+            ErrorMessage = "Choose who this is for: tap DTCs or Feeders.";
             return;
         }
 

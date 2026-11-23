@@ -194,7 +194,13 @@
 		<None Update="Views\AnnouncementsPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>
+		<None Update="Views\AudiencePickerPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
 		<None Update="Views\HomePage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</None>
+		<None Update="Views\OutageEditPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</None>
 		<None Update="Views\UsersPage.xaml">

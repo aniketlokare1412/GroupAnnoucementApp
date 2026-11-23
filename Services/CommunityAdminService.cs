@@ -192,7 +192,8 @@ public class CommunityAdminService : ICommunityAdminService
         try
         {
             List<Community> existing = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
-            problem = CheckDuplicates("AB Switch", ToKeys(existing), cleanName, cleanNumber, null);
+            // Name and number only have to be unique inside the same Feeder.
+            problem = CheckDuplicates("AB Switch", ToKeys(InFeeder(existing, superId)), cleanName, cleanNumber, null, " in this Feeder");
             if (problem == null)
             {
                 problem = await CheckSuperExistsAsync(superId);
@@ -204,6 +205,12 @@ public class CommunityAdminService : ICommunityAdminService
             }
 
             List<string> validGroupIds = await KeepExistingGroupIdsAsync(groupIds);
+
+            problem = await CheckDtcNamesInFeederAsync(superId, null, validGroupIds, existing);
+            if (problem != null)
+            {
+                return OperationResult.Fail(problem);
+            }
 
             Community community = new Community();
             community.Name = cleanName;
@@ -264,7 +271,8 @@ public class CommunityAdminService : ICommunityAdminService
                 return OperationResult.Fail("This AB Switch no longer exists.");
             }
 
-            problem = CheckDuplicates("AB Switch", ToKeys(existing), cleanName, cleanNumber, id);
+            // Name and number only have to be unique inside the same Feeder.
+            problem = CheckDuplicates("AB Switch", ToKeys(InFeeder(existing, superId)), cleanName, cleanNumber, id, " in this Feeder");
             if (problem == null)
             {
                 problem = await CheckSuperExistsAsync(superId);
@@ -276,6 +284,13 @@ public class CommunityAdminService : ICommunityAdminService
             }
 
             List<string> validGroupIds = await KeepExistingGroupIdsAsync(groupIds);
+
+            problem = await CheckDtcNamesInFeederAsync(superId, id, validGroupIds, existing);
+            if (problem != null)
+            {
+                return OperationResult.Fail(problem);
+            }
+
             await ServiceHelper.WithTimeoutAsync(_communityRepository.UpdateAsync(id, cleanName, cleanDescription, cleanNumber, validGroupIds, superId));
             await _directory.TryRebuildAsync();
             return OperationResult.Success();
@@ -315,6 +330,12 @@ public class CommunityAdminService : ICommunityAdminService
         {
             List<SuperCommunity> existing = await ServiceHelper.WithTimeoutAsync(_superRepository.GetAllAsync());
             problem = CheckDuplicates("Feeder", ToKeys(existing), cleanName, cleanNumber, null);
+            if (problem != null)
+            {
+                return OperationResult.Fail(problem);
+            }
+
+            problem = await CheckFeederContentsAsync(null, communityIds);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -383,6 +404,12 @@ public class CommunityAdminService : ICommunityAdminService
             }
 
             problem = CheckDuplicates("Feeder", ToKeys(existing), cleanName, cleanNumber, id);
+            if (problem != null)
+            {
+                return OperationResult.Fail(problem);
+            }
+
+            problem = await CheckFeederContentsAsync(id, communityIds);
             if (problem != null)
             {
                 return OperationResult.Fail(problem);
@@ -464,6 +491,108 @@ public class CommunityAdminService : ICommunityAdminService
 
     // ---------- Checks ----------
 
+    // The AB Switches that sit under one Feeder. Name and number rules only compare these.
+    private static List<Community> InFeeder(List<Community> all, string superId)
+    {
+        List<Community> inside = new List<Community>();
+        for (int i = 0; i < all.Count; i++)
+        {
+            if (all[i].SuperCommunityId == superId)
+            {
+                inside.Add(all[i]);
+            }
+        }
+
+        return inside;
+    }
+
+    // Under one Feeder two different DTCs may not share a name (the same name is fine under another Feeder).
+    // Looks at this AB Switch's DTCs together with the DTCs of the other AB Switches of the same Feeder.
+    private async Task<string?> CheckDtcNamesInFeederAsync(string superId, string? thisCommunityId, List<string> thisGroupIds, List<Community> all)
+    {
+        HashSet<string> ids = new HashSet<string>(thisGroupIds);
+        for (int i = 0; i < all.Count; i++)
+        {
+            if (all[i].SuperCommunityId == superId && all[i].Id != thisCommunityId)
+            {
+                for (int j = 0; j < all[i].GroupIds.Count; j++)
+                {
+                    ids.Add(all[i].GroupIds[j]);
+                }
+            }
+        }
+
+        return await CheckDtcNamesAsync(ids);
+    }
+
+    private async Task<string?> CheckDtcNamesAsync(HashSet<string> groupIds)
+    {
+        List<AnnouncementGroup> groups = await ServiceHelper.WithTimeoutAsync(_groupRepository.GetAllAsync());
+        Dictionary<string, string> seen = new Dictionary<string, string>();
+        for (int i = 0; i < groups.Count; i++)
+        {
+            if (!groupIds.Contains(groups[i].Id))
+            {
+                continue;
+            }
+
+            string key = groups[i].Name.Trim().ToLowerInvariant();
+            string? otherId;
+            if (seen.TryGetValue(key, out otherId) && otherId != groups[i].Id)
+            {
+                return "Two DTCs named \"" + groups[i].Name + "\" would be in the same Feeder. Rename one of them first.";
+            }
+
+            seen[key] = groups[i].Id;
+        }
+
+        return null;
+    }
+
+    // What a Feeder would contain after saving: its current AB Switches plus the ones being moved in.
+    // Names and numbers of the AB Switches, and the names of their DTCs, must not repeat inside it.
+    private async Task<string?> CheckFeederContentsAsync(string? superId, List<string>? communityIds)
+    {
+        List<Community> all = await ServiceHelper.WithTimeoutAsync(_communityRepository.GetAllAsync());
+        HashSet<string> wanted = new HashSet<string>(communityIds ?? new List<string>());
+
+        List<Community> inside = new List<Community>();
+        for (int i = 0; i < all.Count; i++)
+        {
+            if ((superId != null && all[i].SuperCommunityId == superId) || wanted.Contains(all[i].Id))
+            {
+                inside.Add(all[i]);
+            }
+        }
+
+        for (int i = 0; i < inside.Count; i++)
+        {
+            for (int j = i + 1; j < inside.Count; j++)
+            {
+                if (string.Equals(inside[i].Name.Trim(), inside[j].Name.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Two AB Switches named \"" + inside[i].Name + "\" would be in this Feeder. Rename one of them first.";
+                }
+
+                if (string.Equals(inside[i].Number.Trim(), inside[j].Number.Trim(), StringComparison.OrdinalIgnoreCase))
+                {
+                    return "Two AB Switches would use the number " + inside[i].Number + " in this Feeder. Change one of them first.";
+                }
+            }
+        }
+
+        HashSet<string> groupIds = new HashSet<string>();
+        for (int i = 0; i < inside.Count; i++)
+        {
+            for (int j = 0; j < inside[i].GroupIds.Count; j++)
+            {
+                groupIds.Add(inside[i].GroupIds[j]);
+            }
+        }
+
+        return await CheckDtcNamesAsync(groupIds);
+    }
+
     private string? CheckCanModify(string what)
     {
         if (!_session.IsAdmin)
@@ -525,7 +654,7 @@ public class CommunityAdminService : ICommunityAdminService
     }
 
     // Names and numbers must be unique within the same kind, ignoring upper/lower case.
-    private static string? CheckDuplicates(string noun, List<(string Id, string Name, string Number)> others, string name, string number, string? excludeId)
+    private static string? CheckDuplicates(string noun, List<(string Id, string Name, string Number)> others, string name, string number, string? excludeId, string scope = "")
     {
         for (int i = 0; i < others.Count; i++)
         {
@@ -536,12 +665,12 @@ public class CommunityAdminService : ICommunityAdminService
 
             if (string.Equals(others[i].Name.Trim(), name, StringComparison.OrdinalIgnoreCase))
             {
-                return "A " + noun + " named \"" + others[i].Name + "\" already exists.";
+                return "A " + noun + " named \"" + others[i].Name + "\" already exists" + scope + ".";
             }
 
             if (string.Equals(others[i].Number.Trim(), number, StringComparison.OrdinalIgnoreCase))
             {
-                return "Another " + noun + " already uses the number " + number + ".";
+                return "Another " + noun + " already uses the number " + number + scope + ".";
             }
         }
 

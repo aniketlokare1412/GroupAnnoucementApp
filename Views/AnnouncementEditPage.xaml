@@ -189,15 +189,15 @@
                     </Border>
                 </Grid>
 
-                <Grid SemanticProperties.Description="AB Switches" SemanticProperties.Hint="Choose a Feeder and its AB Switches">
+                <Grid SemanticProperties.Description="Feeders" SemanticProperties.Hint="Choose a Feeder; all its AB Switches are ticked and you can untick any">
                     <Grid.GestureRecognizers>
                         <TapGestureRecognizer Command="{Binding ChooseAudienceCommand}" CommandParameter="1" />
                     </Grid.GestureRecognizers>
                     <Border Style="{StaticResource GroupPill}" IsVisible="{Binding IsCommunitiesOff}">
-                        <Label Style="{StaticResource GroupPillText}" Text="AB Switches" />
+                        <Label Style="{StaticResource GroupPillText}" Text="Feeders" />
                     </Border>
                     <Border Style="{StaticResource GroupPillOnViolet}" IsVisible="{Binding IsCommunitiesOn}">
-                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="AB Switches" />
+                        <Label Style="{StaticResource GroupPillTextOnViolet}" Text="Feeders" />
                     </Border>
                 </Grid>
 

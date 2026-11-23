@@ -75,7 +75,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
     private string _selectedCountText = "No DTCs selected";
 
     [ObservableProperty]
-    private string _audienceCaption = "Choose DTCs or AB Switches below";
+    private string _audienceCaption = "Choose DTCs or Feeders below";
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasNoSelection))]
@@ -557,7 +557,7 @@ public partial class AnnouncementEditViewModel : BaseViewModel
 
                 if (groupIds.Count == 0)
                 {
-                    ErrorMessage = "Choose who this is for: tap DTCs or AB Switches.";
+                    ErrorMessage = "Choose who this is for: tap DTCs or Feeders.";
                     return;
                 }
 

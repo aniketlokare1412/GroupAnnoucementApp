@@ -53,10 +53,10 @@ public sealed class AudienceSelection
         {
             if (Count == 0)
             {
-                return "Choose DTCs or AB Switches below";
+                return "Choose DTCs or Feeders below";
             }
 
-            return Kind == 1 ? "From AB Switches - tap to change" : "From DTCs - tap to change";
+            return Kind == 1 ? "From Feeders - tap to change" : "From DTCs - tap to change";
         }
     }
 

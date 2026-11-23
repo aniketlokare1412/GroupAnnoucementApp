@@ -163,7 +163,14 @@ public partial class AudiencePickerViewModel : BaseViewModel
             return;
         }
 
+        // Choosing a Feeder selects the whole Feeder: all its AB Switches start ticked (untick any you do not want).
         _communityIds.Clear();
+        BuildCommunityOptions();
+        for (int i = 0; i < CommunityOptions.Count; i++)
+        {
+            _communityIds.Add(CommunityOptions[i].Id);
+        }
+
         BuildCommunityOptions();
         RebuildHierarchyGroups();
         IsCommunityPanelOpen = CommunityOptions.Count > 0;

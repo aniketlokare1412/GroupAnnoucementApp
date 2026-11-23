@@ -58,6 +58,11 @@
                     <Label Style="{StaticResource ErrorBannerText}" Text="{Binding ErrorMessage}" />
                 </Border>
 
+                <!-- Admin: panic reports made on the 5-minute notice (after the work was completed or its time was up) -->
+                <Border Style="{StaticResource BadgeDanger}" IsVisible="{Binding HasNoticePanics}" Padding="12,8">
+                    <Label Style="{StaticResource BadgeDangerText}" Text="{Binding NoticePanicText}" />
+                </Border>
+
                 <!-- Admin: the planned outage (or its cancellation), next to the regular messages.
                      Amber stripe while planned, green once cancelled. A cancelled one can be deleted. -->
                 <Border Style="{StaticResource AccentCard}" IsVisible="{Binding HasOutage}">

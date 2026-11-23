@@ -574,9 +574,13 @@ public partial class GroupsViewModel : BaseViewModel
         List<AnnouncementGroup> matching = new List<AnnouncementGroup>();
         System.Text.StringBuilder signature = new System.Text.StringBuilder();
         signature.Append(term);
-        for (int i = 0; i < _allGroups.Count; i++)
+        // DTCs with panic reports come first (most reports first); the rest keep their A to Z order.
+        List<AnnouncementGroup> ordered = new List<AnnouncementGroup>(_allGroups);
+        ordered = ordered.OrderByDescending(g => _panicCounts.TryGetValue(g.Id, out int reports) ? reports : 0).ToList();
+
+        for (int i = 0; i < ordered.Count; i++)
         {
-            AnnouncementGroup group = _allGroups[i];
+            AnnouncementGroup group = ordered[i];
 
             if (group.IsActive)
             {
