@@ -1114,58 +1114,67 @@ public partial class HomeViewModel : BaseViewModel
         return string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase);
     }
 
-    // Shows every card ONCE, under the first community its group is in (communities inside a super
-    // community come first). A group in more than one community shows "Also in: ..." on its first card.
-    // Groups in no community go last under "Other groups".
-    // With no communities around the member's groups there is one block without headings.
+    // Shows every card ONCE, under the Feeder its DTC is in (Feeders A to Z). The AB Switches are not shown.
+    // A DTC in more than one Feeder shows "Also in: ..." on its card. DTCs in no Feeder go last under "Other DTCs".
+    // With no Feeders around the member's DTCs there is one block without headings.
     private void BuildMemberSections(List<MemberAnnouncementItem> items)
     {
         MemberSections.Clear();
 
-        Dictionary<string, List<MemberAnnouncementItem>> byCommunity = new Dictionary<string, List<MemberAnnouncementItem>>();
+        Dictionary<string, List<MemberAnnouncementItem>> byFeeder = new Dictionary<string, List<MemberAnnouncementItem>>();
+        Dictionary<string, SuperCommunity> feederById = new Dictionary<string, SuperCommunity>();
         List<MemberAnnouncementItem> others = new List<MemberAnnouncementItem>();
-        HashSet<string> alsoShown = new HashSet<string>();
+        CommunityDirectory? directory = _directory;
 
         for (int i = 0; i < items.Count; i++)
         {
-            List<Community> communities = new List<Community>();
-            if (_directory != null)
+            // The Feeders of this DTC: the Feeder of every AB Switch it is in.
+            List<SuperCommunity> feeders = new List<SuperCommunity>();
+            if (directory != null)
             {
-                communities.AddRange(_directory.CommunitiesOfGroup(items[i].GroupId));
+                foreach (Community community in directory.CommunitiesOfGroup(items[i].GroupId))
+                {
+                    SuperCommunity? feeder = directory.SuperOf(community);
+                    if (feeder != null && !feeders.Exists(x => x.Id == feeder.Id))
+                    {
+                        feeders.Add(feeder);
+                    }
+                }
             }
 
-            if (communities.Count == 0)
+            if (feeders.Count == 0)
             {
                 others.Add(items[i]);
                 continue;
             }
 
-            CommunityDirectory knownDirectory = _directory!;
-            communities.Sort((a, b) => CompareCommunities(knownDirectory, a, b));
+            feeders.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
-            // The primary community only: the card is not repeated under the other communities.
+            // The first Feeder only: the card is not repeated under the other Feeders.
+            SuperCommunity primary = feeders[0];
             List<MemberAnnouncementItem>? list;
-            if (!byCommunity.TryGetValue(communities[0].Id, out list))
+            if (!byFeeder.TryGetValue(primary.Id, out list))
             {
                 list = new List<MemberAnnouncementItem>();
-                byCommunity[communities[0].Id] = list;
+                byFeeder[primary.Id] = list;
+                feederById[primary.Id] = primary;
             }
 
             list.Add(items[i]);
 
-            if (communities.Count > 1 && alsoShown.Add(items[i].GroupId))
+            if (feeders.Count > 1)
             {
                 List<string> otherNames = new List<string>();
-                for (int j = 1; j < communities.Count; j++)
+                for (int j = 1; j < feeders.Count; j++)
                 {
-                    otherNames.Add(communities[j].Name);
+                    otherNames.Add(feeders[j].Name);
                 }
 
                 items[i].AlsoInText = "Also in: " + string.Join(", ", otherNames);
             }
         }
 
-        if (_directory == null || byCommunity.Count == 0)
+        if (byFeeder.Count == 0)
         {
             if (items.Count > 0)
             {
@@ -1175,30 +1184,13 @@ public partial class HomeViewModel : BaseViewModel
             return;
         }
 
-        CommunityDirectory directory = _directory;
-        List<Community> used = new List<Community>();
-        for (int i = 0; i < directory.Communities.Count; i++)
-        {
-            if (byCommunity.ContainsKey(directory.Communities[i].Id))
-            {
-                used.Add(directory.Communities[i]);
-            }
-        }
+        List<SuperCommunity> used = new List<SuperCommunity>(feederById.Values);
+        used.Sort((a, b) => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase));
 
-        // Communities inside a super community first (by super community name), the others after.
-        used.Sort((a, b) => CompareCommunities(directory, a, b));
-
-        string lastSuperName = string.Empty;
         for (int i = 0; i < used.Count; i++)
         {
-            SuperCommunity? parent = directory.SuperOf(used[i]);
-            string superName = parent == null ? string.Empty : parent.Name;
-
-            // The super community heading only appears above its first community.
-            string heading = superName != lastSuperName ? superName : string.Empty;
-            lastSuperName = superName;
-
-            AddSection(heading, used[i].Name, byCommunity[used[i].Id]);
+            // The Feeder name is the heading of its block.
+            AddSection(used[i].Name, string.Empty, byFeeder[used[i].Id]);
         }
 
         if (others.Count > 0)

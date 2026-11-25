@@ -18,7 +18,7 @@
 
         <Label
             Style="{StaticResource PageTitle}"
-            Text="DTC Announcements"
+            Text="Vidyut Alert"
             HorizontalOptions="Center" />
 
         <ActivityIndicator
