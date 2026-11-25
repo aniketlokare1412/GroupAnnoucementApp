@@ -22,7 +22,7 @@
 		<MauiXamlInflator>SourceGen</MauiXamlInflator>
 
 		<!-- Display name -->
-		<ApplicationTitle>GroupAnnouncementApp</ApplicationTitle>
+		<ApplicationTitle>Vidyut Alert</ApplicationTitle>
 
 		<!-- App Identifier -->
 		<ApplicationId>com.acme.groupannouncementapp</ApplicationId>
@@ -43,10 +43,10 @@
 
 	<ItemGroup>
 		<!-- App Icon -->
-		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#0E7C86" />
+		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#12254A" />
 
 		<!-- Splash Screen -->
-		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#0E7C86" BaseSize="128,128" />
+		<MauiSplashScreen Include="Resources\Splash\splash.svg" Color="#12254A" BaseSize="128,128" />
 
 		<!-- Images -->
 		<MauiImage Include="Resources\Images\*" />
@@ -125,9 +125,6 @@
 		<MauiXaml Update="Views\AddMembersPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
-		<MauiXaml Update="Views\AdminRequestFormPage.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</MauiXaml>
 		<MauiXaml Update="Views\AdminRequestsPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
@@ -191,12 +188,6 @@
 		<None Update="Views\AccountPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>
-		<None Update="Views\AdminRequestFormPage.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</None>
-		<None Update="Views\AdminRequestsPage.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</None>
 		<None Update="Views\AnnouncementEditPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</None>
@@ -204,9 +195,6 @@
 			<Generator>MSBuild:Compile</Generator>
 		</None>
 		<None Update="Views\AudiencePickerPage.xaml">
-		  <Generator>MSBuild:Compile</Generator>
-		</None>
-		<None Update="Views\GroupEditPage.xaml">
 		  <Generator>MSBuild:Compile</Generator>
 		</None>
 		<None Update="Views\HomePage.xaml">

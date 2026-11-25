@@ -367,8 +367,7 @@
                         <VerticalStackLayout Spacing="10">
                             <Label Style="{StaticResource SectionLabel}" Text="Announcements" />
 
-                            <!-- Cards under community / super community headings (one block, no headings, when the
-                                 member's groups are in no community) -->
+                            <!-- Cards under Feeder headings (one block, no headings, when the member's DTCs are in no Feeder) -->
                             <VerticalStackLayout Spacing="14" BindableLayout.ItemsSource="{Binding MemberSections}">
                                 <BindableLayout.ItemTemplate>
                                     <DataTemplate x:DataType="vm:MemberHomeSection">

@@ -21,7 +21,7 @@
                     AutomationProperties.IsInAccessibleTree="False" />
                 <Label
                     Style="{StaticResource PageTitle}"
-                    Text="DTC Announcements"
+                    Text="Vidyut Alert"
                     HorizontalOptions="Center"
                     SemanticProperties.HeadingLevel="Level1" />
                 <Label
