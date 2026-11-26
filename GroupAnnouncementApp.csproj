@@ -41,6 +41,24 @@
 		<TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>-->
 	</PropertyGroup>
 
+	<!-- Release (dotnet publish) on Android: keep everything the app and Firebase need at run time.
+	     Trimming, AOT and marshal methods can remove or break code that Plugin.Firebase and the Google libraries
+	     reach only by reflection / JNI, which shows up as a crash in Release but never in Debug.
+	     The apk gets a little bigger, it starts reliably. Remove one line at a time later if you want a smaller apk. -->
+	<PropertyGroup Condition="'$(Configuration)' == 'Release' And $(TargetFramework.Contains('-android'))">
+		<PublishTrimmed>false</PublishTrimmed>
+		<RunAOTCompilation>false</RunAOTCompilation>
+		<AndroidEnableProfiledAot>false</AndroidEnableProfiledAot>
+		<AndroidEnableMarshalMethods>false</AndroidEnableMarshalMethods>
+		<EmbedAssembliesIntoApk>true</EmbedAssembliesIntoApk>
+
+		<!-- One ABI only: the 64-bit ARM phones (almost every phone today). By default the apk carries a copy of the
+		     .NET runtime and native libraries for 4 ABIs (arm64, arm, x86, x64). arm64 only removes the other copies.
+		     An x86/x64 emulator or an old 32-bit phone cannot run this apk; Debug builds are not affected.
+		     Add ";android-arm" to also support old 32-bit ARM phones. -->
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+	</PropertyGroup>
+
 	<ItemGroup>
 		<!-- App Icon -->
 		<MauiIcon Include="Resources\AppIcon\appicon.svg" ForegroundFile="Resources\AppIcon\appiconfg.svg" Color="#12254A" />
